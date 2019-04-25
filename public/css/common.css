@@ -1,0 +1,322 @@
+.gnav {
+    flex-direction: column !important;
+}
+
+
+/* -------------- for debug -------------- */
+/*.tweet-references {*/
+/*background-color: darkgreen;*/
+/*}*/
+/*.product-info {*/
+/*background-color: blue;*/
+/*}*/
+
+.product-block {
+    /*background-color: lightgray;*/
+}
+
+/* ---------------------------------------- */
+
+.container-fluid {
+    margin-top: 10px;
+    margin-right: auto;
+    margin-left: auto;
+    max-width: 90%;
+}
+
+/* md */
+@media (min-width: 0px) {
+    .tweet-count-text {
+        /*font-size: 3rem;*/
+        font-size: 4vw;
+    }
+
+    .tweet-count-suffix {
+        /*font-size: 3rem;*/
+        font-size: 1vw;
+    }
+
+    .rank-img-area {
+        font-size: 5vw;
+    }
+
+    .rank-text {
+        font-size: 4vw;
+    }
+
+    .rank-num {
+        font-size: 10vw;
+    }
+}
+
+/* lg */
+@media (min-width: 992px) {
+    .tweet-count-text {
+        /*font-size: 3rem;*/
+        font-size: 2vw;
+    }
+
+    .tweet-count-suffix {
+        /*font-size: 3rem;*/
+        font-size: 0.5vw;
+    }
+
+    .rank-img-area {
+        font-size: 3vw;
+    }
+
+    .rank-text {
+        font-size: 2vw;
+    }
+
+    .rank-num {
+        font-size: 4vw;
+    }
+}
+
+.absolute-position {
+    position: absolute !important;
+}
+
+.best-3-rank-num {
+    color: red;
+
+    text-shadow: 1px 1px 0 orangered,
+    -1px -1px 0 orangered,
+    -1px 1px 0 orangered,
+    1px -1px 0 orangered,
+    0px 1px 0 orangered,
+    0 -1px 0 orangered,
+    -1px 0 0 orangered,
+    1px 0 0 orangered;
+}
+
+.rank-text {
+    letter-spacing: -3px;
+    line-height: initial;
+    white-space: nowrap;
+    padding: 0px !important;
+}
+
+.rank-num {
+    /*font-family: 'arial black';*/
+    font-weight: bold;
+}
+
+.rank-crown-img {
+    position: relative;
+    /*margin: 0px;*/
+    height: 100%;
+    width: 100%;
+    max-width: 120px;
+
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+}
+
+.lum-lightbox {
+    z-index: 4;
+}
+
+.twitter-reaction-loading {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    margin: auto;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.book-caption {
+    text-align: left;
+    background-color: rgba(0, 0, 0, 0.5);
+    margin-top: 1rem;
+    font-family: serif;
+    padding: 1rem;
+}
+
+.tweet-count {
+    font-weight: bold;
+}
+
+.tweet-count-suffix {
+    font-size: 0.5rem;
+    /*overflow: visible;*/
+    /*white-space: nowrap;*/
+}
+
+.product-block {
+    postion: -webkit-sticky;
+    position: sticky;
+    top: 2vw;
+
+    margin-left: -5px !important;
+    margin-right: -5px !important;
+}
+
+.product-info {
+    postion: -webkit-sticky;
+    position: sticky;
+    top: 2vw;
+    text-align: center;
+}
+
+.rank-area {
+    text-align: center;
+    margin: 0px !important;
+}
+
+.product-title {
+    margin: 1vw;
+    position: relative;
+    font-family: serif;
+    font-weight: bold;
+    font-size: 1em;
+}
+
+.product-title::after {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    content: '';
+    width: 100%;
+    height: 10px;
+    background-color: #E4F9E9;
+}
+
+.tweet-count-area {
+    line-height: 100%;
+    padding-left: 0px !important;
+}
+
+.rank-img-area {
+    font-family: 'Courier';
+    font-weight: bold;
+    padding-right: 0px !important;
+    color: #ae794c;
+}
+
+.tweet-count-text {
+    /*font-size: 3rem;*/
+    /*font-size: 2vw;*/
+}
+
+.tweet-references {
+    padding: 0px !important;
+    overflow-x: hidden;
+    height: auto;
+}
+
+.twitter-tweet {
+    width: 100% !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    max-width: initial !important;
+    min-width: initial !important;
+    backgrounf: #fff;
+    margin-top: 1px !important;
+    margin-bottom: 1px !important;
+}
+
+.book-title {
+    width: 100%;
+    font-size: 30px;
+}
+
+.book-img {
+    box-shadow: -3px 3px 3px rgba(0, 0, 0, 0.6);
+    max-height: 200px;
+}
+
+.EmbeddedTweet {
+    max-width: 30px !important;
+}
+
+/* ------------------ readmore -------------------------- */
+.mosaic-tweet-list-img {
+    width: 100%;
+    height: 100%;
+}
+
+.product-row-block {
+    margin-bottom: -15px;
+}
+
+.product-col {
+    padding: 5px !important;
+}
+
+.grad-trigger {
+    visibility: hidden;
+    z-index: 2;
+    position: absolute;
+    right: 0;
+    bottom: 10px;
+    left: 0;
+    width: 100%;
+    margin: auto;
+    padding: .5em 0;
+    border-radius: 2px;
+    background-color: green;
+    color: #fff;
+    font-size: 3vw;
+    text-align: center;
+    cursor: pointer;
+    transition: .2s ease;
+    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
+}
+
+.read-more-adjust {
+    bottom: initial;
+}
+
+.grad-trigger:hover {
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+.grad-wrap {
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.grad-wrap + .grad-wrap {
+    margin-top: 40px;
+}
+
+.grad-item {
+    height: 0px;
+    position: relative;
+    overflow: hidden;
+}
+
+.grad-item.is-hide {
+    height: 1vw; /*隠した後の高さ*/
+}
+
+.grad-item p + p {
+    margin-top: 1em;
+}
+
+.grad-item::before {
+    z-index: 1;
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    content: "";
+    width: 100%;
+    height: 40px; /*グラデーションで隠す高さ*/
+    background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.9) 50%, #fff 100%);
+    background: linear-gradient(top, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.9) 50%, #fff 100%);
+}
+
+.grad-trigger.is-show + .grad-item::before {
+    display: none;
+}

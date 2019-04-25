@@ -1,0 +1,6 @@
+.sass-cache/*
+bin/others/*
+config/*
+node_modules/*
+.idea/*
+*.*~
