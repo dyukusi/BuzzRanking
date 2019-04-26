@@ -15,7 +15,7 @@ const DailyBookRankingModel = require(appRoot + '/models/daily_book_ranking.js')
 
 async.waterfall([
   (callback) => {
-    DailyBookRankingModel.selectByISBNCodes(new Date('2019-04-10'))
+    DailyBookRankingModel.selectByDate(new Date('2019-04-10'))
       .then(bookRankingModels => {
         var top100productIds = _.chain(bookRankingModels)
           .filter(m => {

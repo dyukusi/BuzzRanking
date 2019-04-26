@@ -31,7 +31,7 @@ app.use(express.static('public'));
 
 // Auto HTTP => HTTPS
 // Don't redirect if the hostname is `localhost:port` or the route is `/insecure`
-app.use(redirectToHTTPS([/localhost:(\d{4})/], [/\/insecure/], 301));
+app.use(redirectToHTTPS([/localhost:(\d{4})/], [/\/health/], 301));
 
 app.use(logger('dev'));
 app.use(express.json());
