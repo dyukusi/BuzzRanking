@@ -1,5 +1,5 @@
 .sass-cache/*
-bin/others/*
+bin/for_dev/
 config/*
 node_modules/*
 .idea/*
