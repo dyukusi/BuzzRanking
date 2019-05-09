@@ -2,10 +2,12 @@ const appRoot = require('app-root-path');
 const con = require(appRoot + '/my_libs/db.js');
 const Q = require('q');
 const _ = require('underscore');
+const ModelBase = require(appRoot + '/models/base');
+const TABLE_NAME = 'tweet';
 
-module.exports = class Tweet {
-  constructor(id, tweet_id, retweet_target_id, product_type, product_id, source, user_id, name, screen_name, followers_count, follow_count, tweet_count, favourite_count, text, tweeted_at, created_at) {
-    this.id = id;
+module.exports = class Tweet extends ModelBase {
+  constructor(tweet_id, retweet_target_id, product_type, product_id, source, user_id, name, screen_name, followers_count, follow_count, tweet_count, favourite_count, text, tweeted_at, created_at) {
+    super();
     this.tweet_id = tweet_id;
     this.retweet_target_id = retweet_target_id;
     this.product_type = product_type;
@@ -23,7 +25,7 @@ module.exports = class Tweet {
     this.created_at = created_at;
   }
 
-  getId() {
+  getTweetId() {
     return this.tweet_id;
   }
 
@@ -53,7 +55,6 @@ module.exports = class Tweet {
 
   static rowToModel(row) {
     return new Tweet(
-      row['id'],
       row['tweet_id'],
       row['retweet_target_id'],
       row['product_type'],
@@ -72,12 +73,68 @@ module.exports = class Tweet {
     );
   }
 
-  static selectByProductIds(productIds) {
+  static selectByProductTypeIdAndProductIds(productTypeId, productIds, options) {
+    var d = Q.defer();
+    var that = this;
+    var placeHolderParams = [productTypeId, productIds];
+    var sql = 'SELECT * FROM tweet WHERE product_type = ? AND product_id IN (?)';
+
+    if (options.excludeRetweet) {
+      sql += ' AND retweet_target_id IS NULL';
+    }
+
+    if (options.since) {
+      sql += ' AND ? <= tweeted_at';
+      placeHolderParams.push(options.since.toLocaleString());
+    }
+
+    if (options.until) {
+      sql += ' AND tweeted_at <= ?';
+      placeHolderParams.push(options.until.toLocaleString());
+    }
+
+    con.query(sql, placeHolderParams,
+      function (e, rows, fields) {
+        if (e) {
+          d.reject(e);
+          return con.rollback(function () {
+            throw e;
+          });
+        }
+
+        var models = _.map(rows, function(row) {
+          return that.rowToModel(row);
+        });
+
+        d.resolve(models);
+      }
+    );
+
+    return d.promise;
+  }
+
+  static selectByProductTypeId(productTypeId, options) {
     var d = Q.defer();
     var that = this;
 
-    con.query('SELECT * FROM tweet WHERE product_id IN (?)',
-      [productIds],
+    var placeHolderParams = [productTypeId];
+    var sql = 'SELECT * FROM tweet WHERE product_type = ?';
+
+    if (options.excludeRetweet) {
+      sql += ' AND retweet_target_id IS NULL';
+    }
+
+    if (options.since) {
+      sql += ' AND ? <= tweeted_at';
+      placeHolderParams.push(options.since);
+    }
+
+    if (options.until) {
+      sql += ' AND tweeted_at <= ?';
+      placeHolderParams.push(options.until);
+    }
+
+    con.query(sql, placeHolderParams,
       function (e, rows, fields) {
         if (e) {
           d.reject(e);
@@ -98,8 +155,15 @@ module.exports = class Tweet {
   }
 
 
+
+
   static insert(insertObjects) {
     var d = Q.defer();
+
+    if (_.isEmpty(insertObjects)) {
+      d.resolve();
+      return d.promise;
+    }
 
     con.beginTransaction(function (e) {
       if (e) {
@@ -112,7 +176,6 @@ module.exports = class Tweet {
           _.map(insertObjects, function (item) {
             return [
               item.tweet_id,
-
               item.retweet_target_id,
               item.product_type,
               item.product_id,

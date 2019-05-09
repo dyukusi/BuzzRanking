@@ -2,8 +2,18 @@ const appRoot = require('app-root-path');
 const con = require(appRoot + '/my_libs/db.js');
 const Q = require('q');
 const _ = require('underscore');
+const ModelBase = require(appRoot + '/models/base');
+const TABLE_NAME = 'rakuten_game_product';
 
-module.exports = class RakutenGameModel {
+module.exports = class RakutenGameModel extends ModelBase {
+  constructor() {
+    super();
+  }
+
+  static getTableName() {
+    return TABLE_NAME;
+  }
+
   static insert(insertObjects) {
     var d = Q.defer();
 

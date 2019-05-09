@@ -8,11 +8,12 @@ var isFirstTwitterWigetsLoad = true;
 require('bootstrap');
 require('readmore-js');
 
+var ADD_TWEETS_NUM_PER_READ_MORE = 5;
 var gradEleTempHeightHash = {};
 var updatedGradElements = [];
 
 $(window).on('load', function() {
-  initGradElementsHeight();
+  // initGradElementsHeight();
 });
 
 $(() => {
@@ -20,8 +21,8 @@ $(() => {
   initReadMoreButtons();
   initImageZoom();
   initCaptionTruncate();
-  initGradElementsHeight();
-
+  // initGradElementsHeight();
+  //
   // TODO : fix scroll bar diff glitch
   // initAutoTweetsDivCloser();
 });
@@ -79,8 +80,9 @@ function initReadMoreButtons() {
     var bookCaption = tweetsListDiv.siblings('.book-caption')[0];
     var truncator = bookCaption ? bookCaption.truncator : null;
     var fromIdx = tweetsListDiv.children('.twitter-tweet').length;
-    var additionalTweets = $(this).data('read-more-tweet-ids').slice(fromIdx, fromIdx + 5);
+    var additionalTweets = $(this).data('read-more-tweet-ids').slice(fromIdx, fromIdx + ADD_TWEETS_NUM_PER_READ_MORE);
     var gradIdx = $(this).siblings('.grad-item').data('grad-idx');
+    var productInfoEle = $(this).parents('.product-block').find('.product-info');
 
     // clear the book caption truncation
     if (truncator) {
@@ -89,6 +91,9 @@ function initReadMoreButtons() {
 
     // set button text to 'loading'
     setButtonLoading(readMoreButtonEle);
+
+    // set productinfo sticy
+    productInfoEle.css('position', 'sticky');
 
     _.each(additionalTweets, function (tweet) {
       var html = sprintf(
@@ -138,15 +143,20 @@ function initEmbeddedTweets() {
 
   twttr.ready(function (twttr) {
     twttr.events.bind('loaded', function (event) {
-
       if (isFirstTwitterWigetsLoad) {
+        // hide medias
+        _.each(event.widgets, w => {
+          var shadowRoot = w.shadowRoot;
+          controlEmbeddedTweetMedia(shadowRoot, 'hide');
+        });
+
         // display read-more button
         $('.grad-trigger').css({
           visibility: 'visible',
         });
-        $('.twitter-reaction-loading').css({
-          visibility: 'hidden',
-        });
+        $('.twitter-reaction-loading').remove();
+
+        initGradElementsHeight();
 
         isFirstTwitterWigetsLoad = false;
         return;
@@ -162,11 +172,19 @@ function initEmbeddedTweets() {
         })
         .value();
 
-      _.each(updatedGradElements, function (gradEle) {
+      _.each(updatedGradElements, gradEle => {
         var readMoreButtonEle = $(gradEle.siblings('.grad-trigger'));
         var addHeight = gradEle.prop('scrollHeight');
 
-        setButtonReset(readMoreButtonEle);
+        var tweetsListDiv = readMoreButtonEle.siblings('.grad-item');;
+        var remainingTweetsNum = readMoreButtonEle.data('read-more-tweet-ids').length - tweetsListDiv.children('.twitter-tweet').length;
+
+        if (remainingTweetsNum > 0) {
+          setButtonReset(readMoreButtonEle);
+        } else {
+          readMoreButtonEle.remove();
+          tweetsListDiv.addClass('remove-gradient');
+        }
 
         gradEle.children('.mosaic-tweet-list-img').remove();
 
@@ -174,16 +192,21 @@ function initEmbeddedTweets() {
         gradEle.animate({height: addHeight}, 1000, 'swing', function () {
           gradEle.css('height', '100%');
         });
+
+        // show hidden media cards
+        _.each(tweetsListDiv.children(), c => {
+          var shadowRoot = c.shadowRoot;
+          controlEmbeddedTweetMedia(shadowRoot, 'show');
+        });
+
         updatedGradElements = [];
       });
 
       console.log("load process finished")
     });
 
-
     twttr.events.bind('rendered', function (event) {
       var tgt = event.target;
-
       $(tgt.shadowRoot).find(".EmbeddedTweet").css({
         // "border":"30px solid black",
         // "border-radius":"7px",
@@ -192,6 +215,10 @@ function initEmbeddedTweets() {
 
       $(tgt.shadowRoot).find(".EmbeddedTweet-tweet").css({
         "padding": "5px",
+        "border-top-width": "1px",
+        "border-bottom-width": "1px",
+        // "border-bottom": "solid",
+        "border-radius": "1px",
       });
 
       $(tgt.shadowRoot).find(".CallToAction").css({
@@ -227,4 +254,23 @@ function isOutOfView(e) {
   var targetBottom = targetTop + target.height();
 
   return !(scrollBottom > targetTop && scrollTop < targetBottom);
+}
+
+function controlEmbeddedTweetMedia(shadowRoot, command) {
+  var e = $(shadowRoot);
+  var mediaCard = e.find('.MediaCard');
+  var infoCircle = e.find('.tweet-InformationCircle--top');
+
+  switch (command) {
+    case 'hide':
+      mediaCard.hide();
+      infoCircle.hide();
+      break;
+    case 'show':
+      mediaCard.show();
+      infoCircle.show();
+      break;
+    default:
+      throw new Error('unknown control command');
+  }
 }

@@ -9,19 +9,23 @@ const Q = require('q');
 const Util = require(appRoot + '/my_libs/util.js');
 const QueryString = require('query-string');
 const Twitter = require('twitter');
+const sprintf = require('sprintf-js').sprintf;
+const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
 
-const RakutenBookModel = require(appRoot + '/models/rakuten_book');
+const BookModel = require(appRoot + '/models/book');
 const TweetModel = require(appRoot + '/models/tweet');
 
-var c = Config.twitter_api;
-var twitterAPIKeyParams = {
-  consumer_key: c.consumer_key,
-  consumer_secret: c.consumer_secret,
-  access_token_key: c.access_token_key,
-  access_token_secret: c.access_token_secret,
-};
+var RANGE_DAYS_AGO = 7;
 
 var queue = [];
+var productRangeDays = 7;
+
+if (!process.argv[2]) {
+  console.log('pls specify base date.   ex... node hoge.js 2019-04-28')
+  return;
+}
+
+var baseDate = new Date(process.argv[2]);
 
 // forAPITesting();
 initQueue()
@@ -33,21 +37,30 @@ initQueue()
 function initQueue() {
   var d = Q.defer();
 
-  RakutenBookModel.selectAllNewProducts()
-    .then(function (models) {
-      console.log(models.length + ' products found.');
-      _.each(models, function (model) {
+  BookModel.selectAllNewProducts(baseDate, productRangeDays)
+    .then(function (bookModels) {
+      console.log(bookModels.length + ' products found.');
+
+      var tempDate = new Date(baseDate);
+      var thresholdDate = new Date(new Date(tempDate.setDate(tempDate.getDate() - RANGE_DAYS_AGO)).toDateString());
+
+      _.each(bookModels, function (bookModel) {
         queue.push({
           api_param: {
-            q: model.getTitle(),
+            q: sprintf(
+              '%s since:%s until:%s source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+              bookModel.getTitle(),
+              thresholdDate.toLocaleDateString(),
+              baseDate.toLocaleDateString(),
+            ),
             lang: 'ja',
             locale: 'ja',
             count: 100,
             result_type: 'recent',
             max_id: '',
           },
-          product_id: model.getId(),
-          product_type: RakutenBookModel.getProductType(),
+          product_id: bookModel.getProductId(),
+          product_type: bookModel.getProductTypeId(),
         });
       });
 
@@ -69,27 +82,12 @@ function main() {
     } else {
       console.log('■ Processing... ' + task.api_param.q + ' Queue: ' + queue.length);
 
-      gatherTweets(param)
+      BatchUtil.searchTweets(param)
         .then(function (json) {
           var metaData = json['search_metadata'];
           var tweets = json['statuses'];
           var insertObjects = _.map(tweets, function (tweet) {
-            return {
-              tweet_id: tweet['id_str'],
-              retweet_target_id: tweet['retweeted_status'] ? tweet['retweeted_status']['id_str'] : null,
-              product_type: task.product_type,
-              product_id: task.product_id,
-              user_id: tweet['user']['id'],
-              name: tweet['user']['name'],
-              screen_name: tweet['user']['screen_name'],
-              followers_count: tweet['user']['followers_count'],
-              follow_count: tweet['user']['friends_count'] || 0,
-              tweet_count: tweet['user']['statuses_count'] || 0,
-              source: tweet['source'],
-              favourite_count: tweet['favorite_count'] || 0,
-              text: tweet['text'],
-              tweeted_at: new Date(tweet['created_at']).toLocaleString(),
-            };
+            return BatchUtil.tweetJSONIntoInsertObject(tweet, task.product_type, task.product_id);
           });
 
           if (!insertObjects.length) {
@@ -103,10 +101,10 @@ function main() {
           TweetModel.insert(insertObjects)
             .then(function () {
               if (tweets.length >= task.api_param.count && metaData['next_results']) {
-                var oneWeekAgoDate = new Date(new Date(new Date().setDate(new Date().getDate() - 7)).toDateString());
+                var thresholdDate = new Date(new Date(baseDate.setDate(baseDate.getDate() - RANGE_DAYS_AGO)).toDateString());
                 var shouldSearchNext = _.every(insertObjects, function (obj) {
                   var tweetedAtDate = new Date(obj.tweeted_at);
-                  return tweetedAtDate - oneWeekAgoDate >= 0;
+                  return tweetedAtDate - thresholdDate >= 0;
                 });
 
                 if (shouldSearchNext) {
@@ -136,26 +134,12 @@ function main() {
   }, 6000);
 }
 
-function gatherTweets(param) {
-  var d = Q.defer();
-
-  var client = new Twitter(twitterAPIKeyParams);
-
-  client.get('search/tweets', param, function (e, tweets, response) {
-    if (e) {
-      d.reject(e);
-      return;
-    }
-
-    d.resolve(tweets);
-  });
-
-  return d.promise;
-}
-
 function forAPITesting() {
-  gatherTweets({
-    q: '獄丁ヒグマ 1',
+  BatchUtil.searchTweets({
+    q: '"進撃の巨人" since:2019-04-27 until:2019-04-28 source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+
+    // 'OR "ハッピーメール" source:Twitter_for_Android -filter:links -filter:hashtags',
+
     lang: 'ja',
     locale: 'ja',
     count: 100,
@@ -163,7 +147,10 @@ function forAPITesting() {
     max_id: '',
   })
     .then(tweets => {
-      console.log(tweets);
+      fs.writeFile('out.json', JSON.stringify(tweets), function (e, data) {
+        if (e) console.log(e);
+        else console.log("finished");
+      });
     })
     .fail(e => {
       console.log(e);

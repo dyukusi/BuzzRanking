@@ -1,79 +1,62 @@
 <!DOCTYPE html>
+<link href="/css/common.css" rel="stylesheet">
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+      integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
 
 <html>
 <head>
-    <title>About</title>
+    <title>【毎日更新】BuzzRanking 今バズってる話題の商品・サービスをランキング形式で紹介！</title>
 </head>
 <body>
-<div id="header"></div>
 
-<div class="container-fluid" id="about-base-div">
+<%- include(appRoot + '/views/header.ejs') %>
 
-    <div class="row">
-        YO!
+<h1>今、本当に注目されているものランキング</h1>
+
+<div class="container">
+    BuzzRankingはTwitterにおいて、あるトピックに関して<span style="font-weight: bold;">話題にしているユーザ数を集計</span>することによって、
+    今本当にバズっている(注目されている)商品やサービスを、<span style="font-weight: bold;">一切の恣意的な情報操作無くランキング形式で紹介</span>するサービスです。
+    <br><br>
+    データ収集・集計は<span style="font-weight: bold; ">毎日</span>行われ、即時ランキングに反映されるため、常に最新のトレンドを追うことができます。
+    <br><br>
+    集計においてはより正確な注目度を測定するため、集計対象からBOTユーザーや宣伝のみを目的としたツイートを除外するなどの工夫を施しています。
+
+    <div class="contacts">
+        <h5>お問い合わせ・ご要望</h5>
+        <ul>
+            <li>E-mail: buzzranking.net@gmail.com</li>
+        </ul>
     </div>
-
-    <section id="demo">
-        <article>
-            <h1>Artisanal Narwahls</h1>
-            <p>From this distant vantage point, the Earth might not seem of any particular interest. But for us, it's
-                different. Consider again that dot. That's here. That's home. That's us. On it everyone you love,
-                everyone you know, everyone you ever heard of, every human being who ever was, lived out their lives.
-                The aggregate of our joy and suffering, thousands of confident religions, ideologies, and economic
-                doctrines, every hunter and forager, every hero and coward, every creator and destroyer of civilization,
-                every king and peasant, every young couple in love, every mother and father, hopeful child, inventor and
-                explorer, every teacher of morals, every corrupt politician, every "superstar," every "supreme leader,"
-                every saint and sinner in the history of our species lived there&nbsp;– on a mote of dust suspended in a
-                sunbeam.</p>
-            <p>Space, the final frontier. These are the voyages of the starship Enterprise. Its five year mission: to
-                explore strange new worlds, to seek out new life and new civilizations, to boldly go where no man has
-                gone before!</p>
-            <p>Here's how it is: Earth got used up, so we terraformed a whole new galaxy of Earths, some rich and flush
-                with the new technologies, some not so much. Central Planets, them was formed the Alliance, waged war to
-                bring everyone under their rule; a few idiots tried to fight it, among them myself. I'm Malcolm
-                Reynolds, captain of Serenity. Got a good crew: fighters, pilot, mechanic. We even picked up a preacher,
-                and a bona fide companion. There's a doctor, too, took his genius sister out of some Alliance camp, so
-                they're keeping a low profile. You got a job, we can do it, don't much care what it is.</p>
-            <p>Space, the final frontier. These are the voyages of the starship Enterprise. Its five year mission: to
-                explore strange new worlds, to seek out new life and new civilizations, to boldly go where no man has
-                gone before!</p></article>
-        <article><h1>
-                Portland Leggings</h1>
-            <p>Here's how it is: Earth got used up, so we terraformed a whole new galaxy of Earths, some rich and flush
-                with the new technologies, some not so much. Central Planets, them was formed the Alliance, waged war to
-                bring everyone under their rule; a few idiots tried to fight it, among them myself. I'm Malcolm
-                Reynolds, captain of Serenity. Got a good crew: fighters, pilot, mechanic. We even picked up a preacher,
-                and a bona fide companion. There's a doctor, too, took his genius sister out of some Alliance camp, so
-                they're keeping a low profile. You got a job, we can do it, don't much care what it is.</p>
-            <p>I am Duncan Macleod, born 400 years ago in the Highlands of Scotland. I am Immortal, and I am not alone.
-                For centuries, we have waited for the time of the Gathering when the stroke of a sword and the fall of a
-                head will release the power of the Quickening. In the end, there can be only one.</p>
-            <p>From this distant vantage point, the Earth might not seem of any particular interest. But for us, it's
-                different. Consider again that dot. That's here. That's home. That's us. On it everyone you love,
-                everyone you know, everyone you ever heard of, every human being who ever was, lived out their lives.
-                The aggregate of our joy and suffering, thousands of confident religions, ideologies, and economic
-                doctrines, every hunter and forager, every hero and coward, every creator and destroyer of civilization,
-                every king and peasant, every young couple in love, every mother and father, hopeful child, inventor and
-                explorer, every teacher of morals, every corrupt politician, every "superstar," every "supreme leader,"
-                every saint and sinner in the history of our species lived there&nbsp;– on a mote of dust suspended in a
-                sunbeam.</p>
-            <p>Space, the final frontier. These are the voyages of the starship Enterprise. Its five year mission: to
-                explore strange new worlds, to seek out new life and new civilizations, to boldly go where no man has
-                gone before!</p></article>
-    </section>
-
-
 </div>
+
+<%- include(appRoot + '/views/footer.ejs') %>
 
 </body>
 </html>
 
-<script
-        src="https://code.jquery.com/jquery-2.2.4.min.js"
-        integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
-        crossorigin="anonymous"></script>
+<script src="/js/compressed/index.min.js" type="text/javascript"></script>
 
-<script>
-  $('article').readmore();
-</script>
-<!--<script src="/js/compressed/index.min.js" type="text/javascript"></script>-->
+<style>
+    h1 {
+        text-align: center;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        font-weight: bold;
+    }
+
+    .container {
+        max-width: 35%;
+        min-width: 300px;
+    }
+
+    .contacts {
+        margin-top: 3rem;
+    }
+
+    .calc-policy {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>

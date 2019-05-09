@@ -3,16 +3,20 @@ const con = require(appRoot + '/my_libs/db.js');
 const Q = require('q');
 const _ = require('underscore');
 const ModelBase = require(appRoot + '/models/base');
-const TABLE_NAME = 'daily_book_ranking';
+const TABLE_NAME = 'ranking_data';
 
-module.exports = class DailyBookRanking extends ModelBase {
-  constructor(date, product_id, tweet_count, user_count, is_invalid) {
+module.exports = class StatData extends ModelBase {
+  constructor(stat_id, product_id, tweet_count, user_count, is_invalid) {
     super();
-    this.date = date;
+    this.stat_id = stat_id;
     this.product_id = product_id;
     this.tweet_count = tweet_count;
     this.user_count = user_count;
     this.is_invalid = is_invalid;
+  }
+
+  getStatId() {
+    return this.stat_id;
   }
 
   getTweetCount() {
@@ -44,18 +48,13 @@ module.exports = class DailyBookRanking extends ModelBase {
     return TABLE_NAME;
   }
 
-  static selectByDate(date, options) {
+  static selectByStatId(rankingId, options) {
     var d = Q.defer();
     var that = this;
 
-    var sql = 'SELECT * FROM daily_book_ranking WHERE date = ?';
+    var sql = 'SELECT * FROM stat_data WHERE stat_id = ?';
 
-    if (options.ignoreInvalidRecords) {
-      sql += ' AND is_invalid = 0';
-    }
-
-    con.query(sql,
-      [date.toLocaleDateString()],
+    con.query(sql, [rankingId],
       function (e, rows, fields) {
         if (e) {
           d.reject(e);
@@ -75,8 +74,9 @@ module.exports = class DailyBookRanking extends ModelBase {
     return d.promise;
   }
 
-  static insertRankingResult(insertObjects) {
+  static insertStats(insertObjects) {
     var d = Q.defer();
+    var that = this;
 
     con.beginTransaction(function (e) {
       if (e) {
@@ -84,11 +84,12 @@ module.exports = class DailyBookRanking extends ModelBase {
       }
 
       con.query(
-        'REPLACE daily_book_ranking (date, product_id, tweet_count, user_count, is_invalid) VALUES ?',
+        'REPLACE stat_data (date, product_type_id, product_id, tweet_count, user_count, is_invalid) VALUES ?',
         [
           _.map(insertObjects, function (item) {
             return [
               item.date,
+              item.product_type_id,
               item.product_id,
               item.tweet_count,
               item.user_count,
@@ -123,8 +124,8 @@ module.exports = class DailyBookRanking extends ModelBase {
   }
 
   static rowToModel(row) {
-    return new DailyBookRanking(
-      row['date'],
+    return new StatData(
+      row['stat_id'],
       row['product_id'],
       row['tweet_count'],
       row['user_count'],
