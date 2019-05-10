@@ -9,6 +9,8 @@ const Q = require('q');
 const Util = require(appRoot + '/my_libs/util.js');
 const Twitter = require('twitter');
 const sprintf = require('sprintf-js').sprintf;
+const A8ProgramModel = require(appRoot + '/models/a8_program');
+const BookModel = require(appRoot + '/models/book');
 
 var twitterAPIKeyParams = {
   consumer_key: Config.twitter_api.consumer_key,
@@ -51,4 +53,26 @@ exports.tweetJSONIntoInsertObject = (tweet, productType, productId) => {
     text: tweet['text'],
     tweeted_at: Util.convertDateObjectIntoMySqlDateObjectReadableString(new Date(tweet['created_at'])),
   };
+}
+
+exports.getProductModels = (productTypeId, since, until) => {
+  var d = Q.defer();
+
+  Q.allSettled([
+    BookModel.selectByProductTypeId(productTypeId, {
+      excludeUndefinedReleaseDate: true,
+      since: since,
+      until: until
+    }),
+    A8ProgramModel.selectByProductTypeId(productTypeId, {
+      ignoreChildProgram: true,
+    }),
+  ]).then(function (results) {
+    d.resolve({
+      bookModels: results[0].value,
+      a8ProgramModels: results[1].value,
+    });
+  });
+
+  return d.promise;
 }

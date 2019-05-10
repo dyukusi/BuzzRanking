@@ -1,3 +1,4 @@
+// node create_ranking.js ProductTypeId rankingDate tweetSince tweetUntil productSince productUntil
 const appRoot = require('app-root-path');
 const {JSDOM} = require('jsdom');
 const $ = jQuery = require('jquery')(new JSDOM().window);
@@ -10,34 +11,50 @@ const QueryString = require('query-string');
 const Twitter = require('twitter');
 const con = require(appRoot + '/my_libs/db.js');
 const async = require('async');
-
+const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
 const StatModel = require(appRoot + '/models/stat.js');
 const TweetModel = require(appRoot + '/models/tweet.js');
-
-if (!process.argv[2] || !process.argv[3] || !process.argv[4]) {
-  console.log('pls specify args. ex.. node hoge.js 2 2019-04-29 2019-04-28 2019-05-03');
-  return;
-}
 
 var targetProductTypeId = Number(process.argv[2]);
 var rankingDate = new Date(process.argv[3]);
 var since = new Date(process.argv[4]);
 var until = new Date(process.argv[5]);
+var productSince = new Date(process.argv[6]);
+var productUntil = new Date(process.argv[7]);
+
+if (!process.argv[2] || !process.argv[3] || !process.argv[4] || !process.argv[5] || !process.argv[6] || !process.argv[7]) {
+  throw new Error('pls specify args. node create_ranking.js ProductTypeId RankingDate TweetSince TweetUntil ProductSince ProductUntil');
+}
 
 console.log('ranking date: ' + rankingDate.toLocaleDateString());
 console.log('since: ' + since.toLocaleDateString());
 console.log('until: ' + until.toLocaleDateString());
+console.log('product since: ' + productSince.toLocaleDateString());
+console.log('product until: ' + productUntil.toLocaleDateString());
 
-createRanking(
-  targetProductTypeId,
-  since,
-  until,
-).then(function () {
-  console.log('done!');
-  return;
-});
+BatchUtil.getProductModels(targetProductTypeId, productSince, productUntil)
+  .then(targetProductsHash => {
+    var isTargetProductHash = {};
+    _.chain(targetProductsHash)
+      .values()
+      .flatten()
+      .each(m => {
+        isTargetProductHash[m.getProductId] = true;
+      });
 
-function createRanking(targetProductTypeId, since, until) {
+
+    createRanking(
+      isTargetProductHash,
+      targetProductTypeId,
+      since,
+      until,
+    ).then(function () {
+      console.log('done!');
+      return;
+    });
+  });
+
+function createRanking(isTargetProductHash, targetProductTypeId, since, until) {
   var d = Q.defer();
   var that = this;
 
@@ -48,8 +65,12 @@ function createRanking(targetProductTypeId, since, until) {
           since: since,
           until: until,
         })
-          .then(tweetModels => {
-            var productIdIntoTweetModelsHash = _.groupBy(tweetModels, m => {
+          .then(allTweetModels => {
+            var targetTweetModels = _.filter(allTweetModels, m => {
+              return isTargetProductHash[m.getProductId()];
+            });
+
+            var productIdIntoTweetModelsHash = _.groupBy(targetTweetModels, m => {
               return m.getProductId();
             });
 

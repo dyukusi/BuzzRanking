@@ -66,7 +66,7 @@ function createTaskQueue() {
       (callback) => {
         Q.allSettled([
           TwitterAlternativeSearchWordModel.selectAll(),
-          getProductModels(productTypeId, since, until),
+          BatchUtil.getProductModels(productTypeId, since, until),
         ]).then(function (results) {
           var twitterAltSearchWordModels = results[0].value;
           var productModelsHash = results[1].value;
@@ -111,28 +111,6 @@ function createTaskQueue() {
       }
       d.resolve(taskQueue);
     });
-
-  return d.promise;
-}
-
-function getProductModels(productTypeId, since, until) {
-  var d = Q.defer();
-
-  Q.allSettled([
-    BookModel.selectByProductTypeId(productTypeId, {
-      excludeUndefinedReleaseDate: true,
-      since: since,
-      until: until
-    }),
-    A8ProgramModel.selectByProductTypeId(productTypeId, {
-      ignoreChildProgram: true,
-    }),
-  ]).then(function (results) {
-    d.resolve({
-      bookModels: results[0].value,
-      a8ProgramModels: results[1].value,
-    });
-  });
 
   return d.promise;
 }
