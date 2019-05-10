@@ -12,6 +12,7 @@ const Twitter = require('twitter');
 const sprintf = require('sprintf-js').sprintf;
 const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
 const async = require('async');
+const con = require(appRoot + '/my_libs/db.js');
 
 const TweetModel = require(appRoot + '/models/tweet');
 const A8ProgramModel = require(appRoot + '/models/a8_program');
@@ -34,7 +35,8 @@ var until = process.argv[4] ? new Date(process.argv[4]) : null;
 var isStrictWordSearchMode = _.contains(STRICT_WORD_SEARCH_PRODUCT_TYPES, productTypeId);
 
 process.on('uncaughtException', (err) => {
-  fs.writeSync(1, `Caught exception: ${err}\n`);
+  throw new Error(err);
+  // fs.writeSync(1, `Caught exception: ${err}\n`);
 });
 
 process.on('unhandledRejection', (reason, p) => {
@@ -52,7 +54,6 @@ if (_.contains(isNeedToSpecifyReleaseDatePeriodProductTypeIds, productTypeId) &&
 createTaskQueue()
   .then(taskQueue => {
     console.log("initialization process finished");
-    // taskQueue = [createTask(11, 'YYC')];
     collectTweets(taskQueue);
   });
 
@@ -159,11 +160,12 @@ function createTask(productTypeId, productId, searchWord) {
 function collectTweets(taskQueue) {
   setTimeout(function () {
     var task = taskQueue.pop();
-    var param = task.api_param;
+    var param = task ? task.api_param : null;
 
     if (!task) {
       console.log('task not found');
-      collectTweets(taskQueue);
+      console.log('Finished!');
+      con.end();
       return;
     } else {
       console.log('■ Processing... ' + task.api_param.q + ' Queue: ' + taskQueue.length);

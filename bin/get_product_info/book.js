@@ -8,6 +8,7 @@ const request = require('request');
 const Q = require('q');
 const Util = require(appRoot + '/my_libs/util.js');
 const async = require('async');
+const con = require(appRoot + '/my_libs/db.js');
 
 const BookModel = require(appRoot + '/models/book');
 
@@ -58,7 +59,8 @@ function main() {
 
     if (!task) {
       console.log('task not found');
-      main();
+      console.log('Finished!')
+      con.end();
       return;
     } else {
       console.log('Processing... ' + task.genreId + ' ' + task.page);
