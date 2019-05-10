@@ -4,6 +4,7 @@ const Q = require('q');
 const _ = require('underscore');
 const ModelBase = require(appRoot + '/models/base');
 const TABLE_NAME = 'tweet';
+const Util = require(appRoot + '/my_libs/util.js');
 
 module.exports = class Tweet extends ModelBase {
   constructor(tweet_id, retweet_target_id, product_type, product_id, source, user_id, name, screen_name, followers_count, follow_count, tweet_count, favourite_count, text, tweeted_at, created_at) {
@@ -85,12 +86,12 @@ module.exports = class Tweet extends ModelBase {
 
     if (options.since) {
       sql += ' AND ? <= tweeted_at';
-      placeHolderParams.push(options.since.toLocaleString());
+      placeHolderParams.push(Util.convertDateObjectIntoMySqlDateObjectReadableString(options.since));
     }
 
     if (options.until) {
       sql += ' AND tweeted_at <= ?';
-      placeHolderParams.push(options.until.toLocaleString());
+      placeHolderParams.push(Util.convertDateObjectIntoMySqlDateObjectReadableString(options.until));
     }
 
     con.query(sql, placeHolderParams,
@@ -126,12 +127,12 @@ module.exports = class Tweet extends ModelBase {
 
     if (options.since) {
       sql += ' AND ? <= tweeted_at';
-      placeHolderParams.push(options.since);
+      placeHolderParams.push(Util.convertDateObjectIntoMySqlDateObjectReadableString(options.since));
     }
 
     if (options.until) {
       sql += ' AND tweeted_at <= ?';
-      placeHolderParams.push(options.until);
+      placeHolderParams.push(Util.convertDateObjectIntoMySqlDateObjectReadableString(options.until));
     }
 
     con.query(sql, placeHolderParams,
@@ -153,9 +154,6 @@ module.exports = class Tweet extends ModelBase {
 
     return d.promise;
   }
-
-
-
 
   static insert(insertObjects) {
     var d = Q.defer();

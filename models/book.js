@@ -4,6 +4,7 @@ const Q = require('q');
 const _ = require('underscore');
 const ModelBase = require(appRoot + '/models/base');
 const TABLE_NAME = 'book';
+const Util = require(appRoot + '/my_libs/util.js');
 
 module.exports = class Book extends ModelBase {
   constructor(product_id, product_type_id, isbn_code, title, title_kana, sub_title, sub_title_kana, series, series_kana, contents, author, author_kana, publisher, size, caption, item_url, affiliate_item_url, image_url_base, chirayomi_url, price, review_count, review_rate_average, genre_id, sale_date_str, sale_date, created_at) {
@@ -271,29 +272,6 @@ module.exports = class Book extends ModelBase {
     return d.promise;
   }
 
-  static selectNewProductsByGenreId(genreId) {
-    var d = Q.defer();
-    var that = this;
-
-    var currentDate = new Date();
-    var from = new Date(currentDate.setDate(currentDate.getDate() - 7)).toLocaleString().replace(/\//g, '-');
-    var to = new Date(currentDate.setDate(currentDate.getDate() + 7)).toLocaleString().replace(/\//g, '-');;
-
-    con.query(
-      'SELECT * FROM book WHERE sale_date > ? && sale_date < ? && sale_date != \'9999-12-31\' && genre_id LIKE ?',
-      [from, to, '%' + genreId + '%'],
-      function (err, rows, fields) {
-        var models = [];
-        _.each(rows, function(row) {
-          models.push(that.rowToModel(row));
-        });
-        d.resolve(models);
-      }
-    );
-
-    return d.promise;
-  }
-
   static selectByProductTypeId(productTypeId, options) {
     var d = Q.defer();
     var that = this;
@@ -308,12 +286,12 @@ module.exports = class Book extends ModelBase {
 
     if (options.since) {
       sql += ' AND ? <= sale_date';
-      placeHolderParams.push(options.since.toLocaleString());
+      placeHolderParams.push(Util.convertDateObjectIntoMySqlDateObjectReadableString(options.since));
     }
 
     if (options.until) {
       sql += ' AND sale_date <= ?';
-      placeHolderParams.push(options.until.toLocaleString());
+      placeHolderParams.push(Util.convertDateObjectIntoMySqlDateObjectReadableString(options.until));
     }
 
     con.query(sql,
@@ -343,16 +321,19 @@ module.exports = class Book extends ModelBase {
     var that = this;
 
     var tempDate = new Date(baseDate);
-    var from = new Date(tempDate.setDate(tempDate.getDate() - rangeDays)).toLocaleString().replace(/\//g, '-');
+    var from = new Date(tempDate.setDate(tempDate.getDate() - rangeDays));
 
     tempDate = new Date(baseDate);
-    var to = new Date(tempDate.setDate(tempDate.getDate() + rangeDays)).toLocaleString().replace(/\//g, '-');;
+    var to = new Date(tempDate.setDate(tempDate.getDate() + rangeDays));
 
     console.log("selecting target products... " + from + "  ~  " + to);
 
     con.query(
       'SELECT * FROM book WHERE sale_date > ? && sale_date < ? && sale_date != \'9999-12-31\'',
-      [from, to],
+      [
+        Util.convertDateObjectIntoMySqlDateObjectReadableString(from),
+        Util.convertDateObjectIntoMySqlDateObjectReadableString(to)
+      ],
       function (err, rows, fields) {
         var models = [];
         _.each(rows, function(row) {

@@ -13,6 +13,17 @@ exports.convertDateObjectIntoJapaneseDateString = function (date) {
   );
 };
 
+exports.convertDateObjectIntoMySqlDateObjectReadableString = function (date) {
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1
+  const d = date.getDate();
+  const hour = date.getHours();
+  const min = date.getMinutes();
+  const sec = date.getSeconds();
+
+  return y + '-' + m + '-' + d + ' ' + hour + ':' + min + ':' + sec;
+}
+
 exports.generateStatRangeJapaneseString = function (baseDate) {
   var tempDate = new Date(baseDate);
   var oneWeekAgo = new Date(tempDate.setDate(tempDate.getDate() - 7));

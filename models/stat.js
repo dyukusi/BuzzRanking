@@ -3,6 +3,7 @@ const con = require(appRoot + '/my_libs/db.js');
 const Q = require('q');
 const ModelBase = require(appRoot + '/models/base');
 const __ = require('underscore');
+const Util = require(appRoot + '/my_libs/util.js');
 
 const TABLE_NAME = 'stat';
 
@@ -60,7 +61,7 @@ module.exports = class Stat extends ModelBase {
     con.query(sql,
       [
         productTypeId,
-        date.toLocaleDateString(),
+        Util.convertDateObjectIntoMySqlDateObjectReadableString(date),
       ],
       function (e, rows, fields) {
         if (e) {
@@ -89,9 +90,9 @@ module.exports = class Stat extends ModelBase {
         'INSERT INTO stat (product_type_id, ranking_date, stat_since, stat_until) VALUES (?)',
         [[
           targetProductTypeId,
-          rankingDate.toLocaleDateString(),
-          since.toLocaleDateString(),
-          until.toLocaleDateString(),
+          Util.convertDateObjectIntoMySqlDateObjectReadableString(rankingDate),
+          Util.convertDateObjectIntoMySqlDateObjectReadableString(since),
+          Util.convertDateObjectIntoMySqlDateObjectReadableString(until),
         ]],
         function (e, results, fields) {
           if (e) {

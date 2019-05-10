@@ -4,6 +4,7 @@ const Q = require('q');
 const _ = require('underscore');
 const ModelBase = require(appRoot + '/models/base');
 const TABLE_NAME = 'release_control';
+const Util = require(appRoot + '/my_libs/util.js');
 
 module.exports = class ReleaseControl extends ModelBase {
   constructor(product_type_id, date) {
@@ -58,7 +59,7 @@ module.exports = class ReleaseControl extends ModelBase {
 
     con.query(
       'REPLACE release_control (product_type_id, date) VALUES (?)',
-      [[productTypeId, date.toLocaleDateString()]],
+      [[productTypeId, Util.convertDateObjectIntoMySqlDateObjectReadableString(date)]],
       function (e, results, fields) {
         if (e) {
           d.reject(e);
@@ -73,5 +74,3 @@ module.exports = class ReleaseControl extends ModelBase {
     return d.promise;
   }
 };
-
-

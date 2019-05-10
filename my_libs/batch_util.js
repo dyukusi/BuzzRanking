@@ -49,6 +49,6 @@ exports.tweetJSONIntoInsertObject = (tweet, productType, productId) => {
     source: tweet['source'],
     favourite_count: tweet['favorite_count'] || 0,
     text: tweet['text'],
-    tweeted_at: new Date(tweet['created_at']).toLocaleString(),
+    tweeted_at: Util.convertDateObjectIntoMySqlDateObjectReadableString(new Date(tweet['created_at'])),
   };
 }

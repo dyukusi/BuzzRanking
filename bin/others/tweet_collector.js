@@ -51,7 +51,7 @@ if (_.contains(isNeedToSpecifyReleaseDatePeriodProductTypeIds, productTypeId) &&
   throw new Error('must specify product release date period');
 }
 
-console.log('productTypeId: ' + productTypeId + '  product release date range: ' + since.toLocaleDateString() + ' ~ ' + until.toLocaleDateString())
+console.log('productTypeId: ' + productTypeId);
 
 createTaskQueue()
   .then(taskQueue => {
