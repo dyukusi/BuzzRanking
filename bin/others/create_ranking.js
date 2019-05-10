@@ -24,6 +24,10 @@ var rankingDate = new Date(process.argv[3]);
 var since = new Date(process.argv[4]);
 var until = new Date(process.argv[5]);
 
+console.log('ranking date: ' + rankingDate.toLocaleDateString());
+console.log('since: ' + since.toLocaleDateString());
+console.log('until: ' + until.toLocaleDateString());
+
 createRanking(
   targetProductTypeId,
   since,
