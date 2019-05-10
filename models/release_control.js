@@ -25,6 +25,13 @@ module.exports = class ReleaseControl extends ModelBase {
     return TABLE_NAME;
   }
 
+  static rowToModel(row) {
+    return new ReleaseControl(
+      row['id'],
+      row['date'],
+    );
+  }
+
   static selectByProductTypeId(productTypeId) {
     var d = Q.defer();
     var that = this;
@@ -46,11 +53,24 @@ module.exports = class ReleaseControl extends ModelBase {
     return d.promise;
   }
 
-  static rowToModel(row) {
-    return new ReleaseControl(
-      row['id'],
-      row['date'],
+  static updateCurrentReleaseDate(productTypeId, date) {
+    var d = Q.defer();
+
+    con.query(
+      'REPLACE release_control (product_type_id, date) VALUES (?)',
+      [[productTypeId, date.toLocaleDateString()]],
+      function (e, results, fields) {
+        if (e) {
+          d.reject(e);
+          con.rollback(function () {
+            throw new Error(e);
+          });
+        }
+        d.resolve();
+      }
     );
+
+    return d.promise;
   }
 };
 
