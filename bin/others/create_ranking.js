@@ -39,9 +39,8 @@ BatchUtil.getProductModels(targetProductTypeId, productSince, productUntil)
       .values()
       .flatten()
       .each(m => {
-        isTargetProductHash[m.getProductId] = true;
+        isTargetProductHash[m.getProductId()] = true;
       });
-
 
     createRanking(
       isTargetProductHash,

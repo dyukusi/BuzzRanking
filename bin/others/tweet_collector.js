@@ -26,8 +26,12 @@ var STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
 ];
 
+var TWITTER_SEARCH_OPTION_BY_PRODUCT_TYPE_ID = {
+  1: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+  2: '-filter:links source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+};
+
 var TWITTER_COLLECTION_RANGE_DAYS_AGO = 7;
-var TWITTER_SEARCH_COMMON_SEARCH_OPTION = '-filter:links source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App';
 var productTypeId = Number(process.argv[2]);
 var since = process.argv[3] ? new Date(process.argv[3]) : null;
 var until = process.argv[4] ? new Date(process.argv[4]) : null;
@@ -123,7 +127,7 @@ function createTask(productTypeId, productId, searchWord) {
       q: sprintf(
         searchQueryBase,
         searchWord,
-        TWITTER_SEARCH_COMMON_SEARCH_OPTION
+        TWITTER_SEARCH_OPTION_BY_PRODUCT_TYPE_ID[productTypeId],
       ),
       lang: 'ja',
       locale: 'ja',
