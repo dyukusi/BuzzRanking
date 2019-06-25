@@ -1,42 +1,43 @@
 const appRoot = require('app-root-path');
-const con = require(appRoot + '/my_libs/db.js');
-const Q = require('q');
-const _ = require('underscore');
-const ModelBase = require(appRoot + '/models/base');
-const TABLE_NAME = 'twitter_alternative_search_word';
+const __ = require('underscore');
+const Sequelize = require('sequelize');
+const sequelize = require(appRoot + '/db/sequelize_config');
+const Util = require(appRoot + '/my_libs/util.js');
 
-module.exports = class TwitterAlternativeSearchWord extends ModelBase {
-  constructor(product_type_id, product_id, search_word) {
-    super();
-    this.product_type_id = product_type_id;
-    this.product_id = product_id;
-    this.search_word = search_word;
+class TwitterAlternativeSearchWord extends Sequelize.Model {
+  // ------------------- Instance Methods -------------------
+
+  // ------------------- Class Methods -------------------
+}
+
+TwitterAlternativeSearchWord.init({
+    productId: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: false,
+      field: 'product_id',
+    },
+    searchWord: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      defaultValue: '',
+      field: 'search_word'
+    },
+    createdAt: {
+      type: Sequelize.DATE,
+      allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+      field: 'created_at'
+    }
+  }, {
+    freezeTableName: true,
+    underscored: true,
+    modelName: 'twitter_alternative_search_word',
+    timestamps: false,
+    sequelize
   }
+);
 
-  getProductTypeId() {
-    return this.product_type_id;
-  }
+// NOTE: Sequelize considers 'id' as primary key in default if no primary key set but we dont need in this case
+TwitterAlternativeSearchWord.removeAttribute('id');
 
-  getProductId() {
-    return this.product_id;
-  }
-
-  getSearchWord() {
-    return this.search_word;
-  }
-
-  // ------------------- static functions -------------------
-  static getTableName() {
-    return TABLE_NAME;
-  }
-  
-  static rowToModel(row) {
-    return new TwitterAlternativeSearchWord(
-      row['product_type_id'],
-      row['product_id'],
-      row['search_word'],
-    );
-  }
-};
-
-
+module.exports = TwitterAlternativeSearchWord;

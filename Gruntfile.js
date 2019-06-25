@@ -11,14 +11,14 @@ module.exports = function(grunt) {
         dest : 'public/js/compressed/index.min.js',
       },
 
-      book_ranking : {
-        src : ['public/js/book_ranking/book_ranking.js', 'public/js/header.js'],
-        dest : 'public/js/compressed/book_ranking.min.js',
+      product_detail : {
+        src : ['public/js/product_detail.js', 'public/js/header.js'],
+        dest : 'public/js/compressed/product_detail.min.js',
       },
 
-      dating_ranking : {
-        src : ['public/js/dating_ranking/dating_ranking.js', 'public/js/header.js'],
-        dest : 'public/js/compressed/dating_ranking.min.js',
+      ranking : {
+        src : ['public/js/ranking.js', 'public/js/header.js'],
+        dest : 'public/js/compressed/ranking.min.js',
       },
 
     },
@@ -34,7 +34,7 @@ module.exports = function(grunt) {
     watch: {
       header : {
         files : ['public/js/header.js'],
-        tasks : ['browserify:header', 'browserify:index', 'browserify:book_ranking', 'browserify:dating_ranking'],
+        tasks : ['browserify:header', 'browserify:index', 'browserify:ranking', 'browserify:product_detail'],
       },
 
       index : {
@@ -42,20 +42,20 @@ module.exports = function(grunt) {
         tasks : ['browserify:index'],
       },
 
-      book_ranking : {
-        files : ['public/js/book_ranking/book_ranking.js'],
-        tasks : ['browserify:book_ranking'],
+      product_detail : {
+        files : ['public/js/product_detail.js'],
+        tasks : ['browserify:product_detail'],
       },
 
-      dating_ranking : {
-        files : ['public/js/dating_ranking/dating_ranking.js'],
-        tasks : ['browserify:dating_ranking'],
+      ranking : {
+        files : ['public/js/ranking.js'],
+        tasks : ['browserify:ranking'],
       },
 
-      css: {
-        files: 'public/sass/common.sass',
-        tasks: ['sass'],
-      }
+      // css: {
+      //   files: 'public/sass/common.sass',
+      //   tasks: ['sass'],
+      // }
     },
 
   });

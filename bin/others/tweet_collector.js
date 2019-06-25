@@ -1,42 +1,41 @@
 const appRoot = require('app-root-path');
-const Config = require('config');
-const {JSDOM} = require('jsdom');
-const $ = jQuery = require('jquery')(new JSDOM().window);
-const fs = require('fs');
 const _ = require('underscore');
-const request = require('request');
-const Q = require('q');
 const Util = require(appRoot + '/my_libs/util.js');
 const QueryString = require('query-string');
-const Twitter = require('twitter');
 const sprintf = require('sprintf-js').sprintf;
 const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
-const async = require('async');
-const con = require(appRoot + '/my_libs/db.js');
+const CONST = require(appRoot + '/my_libs/const.js');
+const Sequelize = require('sequelize');
+const sequelize = require(appRoot + '/db/sequelize_config');
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+const Moment = require('moment');
 
-const TweetModel = require(appRoot + '/models/tweet');
-const A8ProgramModel = require(appRoot + '/models/a8_program');
-const BookModel = require(appRoot + '/models/book');
-const TwitterAlternativeSearchWordModel = require(appRoot + '/models/twitter_alternative_search_word');
+const Tweet = require(appRoot + '/models/tweet');
+const TweetCountLog = require(appRoot + '/models/tweet_count_log');
+const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
+const InvalidProduct = require(appRoot + '/models/invalid_product.js');
 
-var isNeedToSpecifyReleaseDatePeriodProductTypeIds = [
-  1, // new manga
-];
-var STRICT_WORD_SEARCH_PRODUCT_TYPES = [
+const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 6;
+const WAITING_TIME_MSEC_PER_USING_TWITTER_API = 6500; // 6.5sec
+const ABNORMAL_THRESHOLD_USER_COUNT = 1000;
+const SEARCH_TARGET_NUM_PER_EXECUTION = 9999999;
+const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
 ];
 
-var TWITTER_SEARCH_OPTION_BY_PRODUCT_TYPE_ID = {
+let TWITTER_SEARCH_OPTION_BY_PRODUCT_TYPE_ID = {
   1: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
   2: '-filter:links source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+  3: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+  4: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+  5: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+  6: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
 };
 
-var TWITTER_COLLECTION_RANGE_DAYS_AGO = 7;
-var productTypeId = Number(process.argv[2]);
-var since = process.argv[3] ? new Date(process.argv[3]) : null;
-var until = process.argv[4] ? new Date(process.argv[4]) : null;
-
-var isStrictWordSearchMode = _.contains(STRICT_WORD_SEARCH_PRODUCT_TYPES, productTypeId);
+let tempTweetCountHash = {};
+let tempUserCountHash = {};
+let taskQueue = [];
+let productIdToPriorityHash = {};
 
 process.on('uncaughtException', (err) => {
   throw new Error(err);
@@ -47,80 +46,145 @@ process.on('unhandledRejection', (reason, p) => {
   console.log('Unhandled Rejection at:', p, 'reason:', reason);
 });
 
-if (!process.argv[2]) {
-  throw new Error('pls specify args correctly.   ex... node hoge.js productTypeId 2019-04-28 2019-05-03');
-}
+main()
+  .then(() => {
+    sequelize.close();
+    console.log("Finished!");
 
-if (_.contains(isNeedToSpecifyReleaseDatePeriodProductTypeIds, productTypeId) && !(process.argv[3] && process.argv[4])) {
-  throw new Error('must specify product release date period');
-}
-
-console.log('productTypeId: ' + productTypeId);
-
-createTaskQueue()
-  .then(taskQueue => {
-    console.log("initialization process finished");
-    collectTweets(taskQueue);
+    process.exit();
   });
 
-function createTaskQueue() {
-  var d = Q.defer();
+// ---------------------------------------------------------------------------
+async function main() {
+  taskQueue = await createTaskQueue();
 
-  async.waterfall([
-      (callback) => {
-        Q.allSettled([
-          TwitterAlternativeSearchWordModel.selectAll(),
-          BatchUtil.getProductModels(productTypeId, since, until),
-        ]).then(function (results) {
-          var twitterAltSearchWordModels = results[0].value;
-          var productModelsHash = results[1].value;
-          var productIdIntoAltSearchWords = {};
+  console.log("New product num: " + _.filter(_.values(productIdToPriorityHash), priority => {
+    return priority == 0;
+  }).length);
 
-          _.each(twitterAltSearchWordModels, m => {
-            var altWords = productIdIntoAltSearchWords[m.getProductId()] || [];
-            altWords.push(m.getSearchWord());
-            productIdIntoAltSearchWords[m.getProductId()] = altWords;
-          });
+  while (taskQueue.length) {
+    await collectTweets(taskQueue.pop());
+    await sleep(WAITING_TIME_MSEC_PER_USING_TWITTER_API);
+    console.log("NEXT");
+  }
 
-          callback(null, productIdIntoAltSearchWords, productModelsHash);
-        });
-      },
-      (productIdIntoAltSearchWords, productModelsHash, callback) => {
-        var taskQueue = [];
+  return;
+}
 
-        // Book
-        _.each(productModelsHash.bookModels, bookModel => {
-          var searchWords = productIdIntoAltSearchWords[bookModel.getProductId()] || [bookModel.getTitle()];
-          _.each(searchWords, word => {
-            taskQueue.push(createTask(productTypeId, bookModel.getProductId(), word));
-          })
-        });
+async function createTaskQueue() {
+  let results = await Promise.all([
+    getProductIdArraySortedByTweetSearchPriority(),
+    TwitterAlternativeSearchWord.findAll(),
+    InvalidProduct.findAll(),
+  ]);
 
-        // A8 Program
-        _.each(productModelsHash.a8ProgramModels, a8ProgramModel => {
-          var searchWords = productIdIntoAltSearchWords[a8ProgramModel.getProductId()];
-          if (!searchWords) {
-            throw new Error('each A8Program records must have one alternative search word at least. ' + a8ProgramModel.getProgramName());
-          }
-          _.each(searchWords, word => {
-            taskQueue.push(createTask(productTypeId, a8ProgramModel.getProductId(), word));
-          })
-        });
+  let targetSortedProductIds = _.first(results[0], SEARCH_TARGET_NUM_PER_EXECUTION);
 
-        callback(null, taskQueue);
-      }],
-    (err, taskQueue) => {
-      if (err) {
-        d.reject(err);
-      }
-      d.resolve(taskQueue);
+  let altSearchWordsHash = _.groupBy(results[1], altSearchWordModel => {
+    return altSearchWordModel.productId;
+  });
+  let invalidProductModelHash = _.indexBy(results[2], invalidProductModel => {
+    return invalidProductModel.productId;
+  });
+  let productModels = await Util.selectProductModelsByProductIds(targetSortedProductIds);
+  let productIdToModel = _.indexBy(productModels, m => { return m.productId; });
+  let sortedProductModels = _.chain(targetSortedProductIds)
+    .map(productId => {
+      return productIdToModel[productId];
+    })
+    .compact()
+    .value();
+
+  let taskQueue = [];
+  _.each(sortedProductModels, productModel => {
+    if (invalidProductModelHash[productModel.productId]) {
+      return;
+    }
+
+    if (isMaybeInvalidProduct(productModel.getProductName())) {
+      InvalidProduct.create({
+        productId: productModel.productId,
+        status: 1,
+      });
+
+      return;
+    }
+
+    let altSearchWords = altSearchWordsHash[productModel.productId];
+    let searchWords = altSearchWords ? altSearchWords : [productModel.getProductName()];
+
+    _.each(searchWords, searchWord => {
+      taskQueue.push(createTask(productModel.productTypeId, productModel.productId, searchWord));
     });
+  });
 
-  return d.promise;
+  return taskQueue;
+}
+
+function calcPriority(row) {
+  let userCount = row.user_count;
+  let hoursSinceLastUpdated = (new Date() - new Date(row.created_at)) / (1000 * 60 * 60);
+
+  // いくら評価値が高くても最低x時間は次の更新までのインターバルをおくための閾値
+  if (hoursSinceLastUpdated <= PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE) {
+    return 0;
+  }
+
+  let priority = (userCount * hoursSinceLastUpdated) + 1;
+  row.priority = priority;
+
+  return priority;
+
+  // 底1.05, 真数userCount の対数を傾きとしている
+  // https://www.desmos.com/calculator/auubsajefh
+  // let rawSlope = Math.log(userCount) / Math.log(1.05);
+  // let slope = rawSlope <= 45 ? 45 : rawSlope;
+  // let hoursSinceLastUpdated = (new Date() - new Date(row.created_at)) / (1000 * 60 * 60);
+  // ↓
+  // tweet_count_logのuser_countの分布的に単純にuser_countを傾きとして計算して十分に見えるので複雑な計算はカット
+}
+
+async function getProductIdArraySortedByTweetSearchPriority() {
+  // 全プロダクトの最新のログをセレクトするクエリ
+  let latestTweetCountLogRowsPromise = sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.user_count, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date WHERE TweetCountLogA.product_id NOT IN (SELECT product_id FROM invalid_product);');
+
+  let newProductIdsPromises = _.map(CONST.PRODUCT_TABLE_NAMES, tableName => {
+    return sequelize.query('SELECT product_id FROM ' + tableName + ' WHERE product_id NOT IN (SELECT product_id FROM tweet_count_log) AND product_id NOT IN (SELECT product_id FROM invalid_product)');
+  });
+
+  let results = await Promise.all(_.flatten([
+    latestTweetCountLogRowsPromise,
+    newProductIdsPromises,
+  ]));
+
+  var latestTweetCountLogRows = results.shift()[0];
+  var newProductIdsResults = results;
+
+  let productIdsSortedByPriority = _.chain(latestTweetCountLogRows)
+    .sortBy(row => {
+      var priority = calcPriority(row);
+      productIdToPriorityHash[row.product_id] = priority;
+
+      return priority;
+    })
+    .map(row => {
+      return row.product_id;
+    })
+    // .reverse()
+    .value();
+
+  let newProductIds = _.flatten(_.map(newProductIdsResults, result => {
+    return _.map(result[0], row => {
+      productIdToPriorityHash[row.product_id] = -1;
+      return row.product_id;
+    });
+  }));
+
+  return _.flatten([productIdsSortedByPriority, newProductIds]);
 }
 
 function createTask(productTypeId, productId, searchWord) {
-  var searchQueryBase = isStrictWordSearchMode ? '"%s" %s' : '%s %s';
+  let searchQueryBase = _.contains(STRICT_WORD_SEARCH_PRODUCT_TYPES, productTypeId) ? '"%s" %s' : '%s %s';
 
   return {
     api_param: {
@@ -141,86 +205,102 @@ function createTask(productTypeId, productId, searchWord) {
   };
 }
 
-function collectTweets(taskQueue) {
-  setTimeout(function () {
-    var task = taskQueue.pop();
-    var param = task ? task.api_param : null;
+async function collectTweets(task) {
+  let param = task.api_param;
+  console.log('■ Processing... ' + task.api_param.q);
 
-    if (!task) {
-      console.log('task not found');
-      console.log('Finished!');
-      con.end();
-      return;
-    } else {
-      console.log('■ Processing... ' + task.api_param.q + ' Queue: ' + taskQueue.length);
+  let tweetJson = await BatchUtil.searchTweets(param);
+  let metaData = tweetJson['search_metadata'];
+  let tweets = tweetJson['statuses'];
 
-      BatchUtil.searchTweets(param)
-        .then(function (json) {
-          var excludedTweetCount = 0;
-          var metaData = json['search_metadata'];
-          var tweets = json['statuses'];
-          var insertObjects = _.chain(tweets)
-            .filter(tweet => {
-              if (isStrictWordSearchMode) {
-                var searchWord = task.search_word;
-                var text = tweet['text'];
-                var regExp = new RegExp('@\\w*\\s');
-                var modifiedText = text.replace(regExp, '');
-                var hasTargetWord = modifiedText.indexOf(searchWord) == -1 ? false : true;
-                if (!hasTargetWord) {
-                  excludedTweetCount++;
-                }
+  let excludedTweetCount = 0;
+  let insertObjects = _.chain(tweets)
+    .filter(tweet => {
+      if (_.contains(STRICT_WORD_SEARCH_PRODUCT_TYPES, task.product_type)) {
+        let searchWord = task.search_word;
+        let text = tweet['text'];
+        let regExp = new RegExp('@\\w*\\s');
+        let modifiedText = text.replace(regExp, '');
+        let hasTargetWord = modifiedText.indexOf(searchWord) == -1 ? false : true;
+        if (!hasTargetWord) {
+          excludedTweetCount++;
+        }
 
-                return hasTargetWord;
-              } else {
-                return true;
-              }
-            })
-            .map(tweet => {
-              return BatchUtil.tweetJSONIntoInsertObject(tweet, task.product_type, task.product_id);
-            })
-            .value();
+        return hasTargetWord;
+      } else {
+        return true;
+      }
+    })
+    .map(tweet => {
+      return BatchUtil.tweetJSONIntoInsertObject(tweet, task.product_id);
+    })
+    .value();
 
-          if (!tweets.length) {
-            console.log("Tweets not found. skip this task.");
-            collectTweets(taskQueue);
-            return;
-          }
+  let tweetModels = await Tweet.bulkCreate(insertObjects, {
+    ignoreDuplicates: true,
+  });
 
-          console.log('Tweet count: ' + insertObjects.length);
-          console.log('Excluded tweet count: ' + excludedTweetCount);
+  let tweetCountThisTime = tweets.length;
+  let userCountThisTime = _.chain(tweets).groupBy(tweet => {
+    return tweet['user']['id'];
+  }).keys().value().length;
 
-          TweetModel.insert(insertObjects)
-            .then(function () {
-              if (tweets.length >= task.api_param.count && metaData['next_results']) {
-                var thresholdDate = new Date(new Date().setDate(new Date().getDate() - TWITTER_COLLECTION_RANGE_DAYS_AGO)).toDateString();
-                var shouldSearchNext = _.every(insertObjects, function (obj) {
-                  var tweetedAtDate = new Date(obj.tweeted_at);
-                  return tweetedAtDate - thresholdDate >= 0;
-                });
+  tempTweetCountHash[task.product_id] = (tempTweetCountHash[task.product_id] || 0) + tweetCountThisTime;
+  tempUserCountHash[task.product_id] = (tempUserCountHash[task.product_id] || 0) + userCountThisTime;
 
-                if (shouldSearchNext) {
-                  console.log("should search for next page. added to taskQueue.");
-                  var newTask = createTask(task.product_id, task.search_word);
+  console.log('Tweet count: ' + tweetCountThisTime + ' User count: ' + userCountThisTime);
+  console.log('Excluded tweet count: ' + excludedTweetCount);
+  console.log('Priority: ' + productIdToPriorityHash[task.product_id]);
+  console.log('Remaining: ' + taskQueue.length);
 
-                  newTask.api_param = QueryString.parse(metaData['next_results']);
-                  taskQueue.push(newTask);
-                } else {
-                  console.log("skipped next page because they are expired(1week)");
-                }
-              }
-              collectTweets(taskQueue);
-            })
-            .fail(function (e) {
-              console.log(e);
-              taskQueue.push(task);
-              console.log("waiting 10secs...");
-              setTimeout(function () {
-                collectTweets(taskQueue);
-              }, 10000);
-            });
-        });
+  let totalUserCount = tempUserCountHash[task.product_id];
+  if (ABNORMAL_THRESHOLD_USER_COUNT <= totalUserCount) {
+    console.log("too much user count. maybe this is invalid product. added to invalid product");
+    InvalidProduct.create({
+      productId: task.product_id,
+      status: 1,
+    });
+    return;
+  }
 
+  let hasNextPage = !!metaData['next_results'];
+  if (hasNextPage) {
+    console.log("should search for next page. added to taskQueue.");
+    let newTask = createTask(task.product_type_id, task.product_id, task.search_word);
+    newTask.api_param = QueryString.parse(metaData['next_results']);
+
+    taskQueue.push(newTask);
+
+    return;
+  }
+
+  // doesn't have next page
+  let nowMoment = new Moment();
+  let oneWeekAgo = new Moment().subtract(7, 'day');
+
+  let inRangeTweetModels = await Tweet.selectByProductIds(
+    task.product_id,
+    {
+      since: oneWeekAgo.format(),
+      until: nowMoment.format(),
     }
-  }, 6000);
+  );
+
+  let userCount = _.chain(inRangeTweetModels).groupBy(tweetModel => {
+    return tweetModel.userId
+  }).keys().value().length;
+
+  let tweetCountLogModel = await TweetCountLog.create({
+    productId: task.product_id,
+    tweetCount: inRangeTweetModels.length,
+    userCount: userCount,
+  });
+
+  console.log('TweetCountLog inserted');
+  console.log(tweetCountLogModel.dataValues);
+}
+
+function isMaybeInvalidProduct(productName) {
+  if (productName.length <= 3) return true;
+  return false;
 }

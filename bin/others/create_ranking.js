@@ -3,6 +3,7 @@ const appRoot = require('app-root-path');
 const {JSDOM} = require('jsdom');
 const $ = jQuery = require('jquery')(new JSDOM().window);
 const fs = require('fs');
+const moment = require('moment');
 const _ = require('underscore');
 const request = require('request');
 const Q = require('q');
@@ -12,100 +13,80 @@ const Twitter = require('twitter');
 const con = require(appRoot + '/my_libs/db.js');
 const async = require('async');
 const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
-const StatModel = require(appRoot + '/models/stat.js');
-const TweetModel = require(appRoot + '/models/tweet.js');
 
-var targetProductTypeId = Number(process.argv[2]);
-var rankingDate = new Date(process.argv[3]);
-var since = new Date(process.argv[4]);
-var until = new Date(process.argv[5]);
-var productSince = new Date(process.argv[6]);
-var productUntil = new Date(process.argv[7]);
+const Tweet = require(appRoot + '/models/tweet.js');
+const InvalidProduct = require(appRoot + '/models/invalid_product.js');
+const Stat = require(appRoot + '/models/stat.js');
 
-if (!process.argv[2] || !process.argv[3] || !process.argv[4] || !process.argv[5] || !process.argv[6] || !process.argv[7]) {
-  throw new Error('pls specify args. node create_ranking.js ProductTypeId RankingDate TweetSince TweetUntil ProductSince ProductUntil');
+const CONST = require(appRoot + '/my_libs/const.js');
+const Sequelize = require('sequelize');
+const sequelize = require(appRoot + '/db/sequelize_config');
+const Op = Sequelize.Op;
+
+var rankingMoment = moment(process.argv[2]);
+var tweetSinceMoment = moment(rankingMoment).subtract(7, 'days');
+var tweetUntilMoment = moment(rankingMoment);
+
+if (!process.argv[2]) {
+  throw new Error('pls specify args. node create_ranking.js RankingDate');
 }
 
-console.log('ranking date: ' + rankingDate.toLocaleDateString());
-console.log('since: ' + since.toLocaleDateString());
-console.log('until: ' + until.toLocaleDateString());
-console.log('product since: ' + productSince.toLocaleDateString());
-console.log('product until: ' + productUntil.toLocaleDateString());
+console.log('ranking date: ' + rankingMoment.format());
+console.log('tweet since: ' + tweetSinceMoment.format());
+console.log('tweet until: ' + tweetUntilMoment.format());
 
-BatchUtil.getProductModels(targetProductTypeId, productSince, productUntil)
-  .then(targetProductsHash => {
-    var isTargetProductHash = {};
-    _.chain(targetProductsHash)
-      .values()
-      .flatten()
-      .each(m => {
-        isTargetProductHash[m.getProductId()] = true;
-      });
+main()
+  .then(() => {
+    console.log("Finish!");
+  });
 
-    createRanking(
-      isTargetProductHash,
-      targetProductTypeId,
-      since,
-      until,
-    ).then(function () {
-      console.log('done!');
-      return;
+async function main() {
+  var results = await Promise.all([
+    Tweet.findAll({
+      where: {
+        tweetedAt: {
+          [Op.gte]: tweetSinceMoment.format(),
+          [Op.lt]: tweetUntilMoment.format(),
+        },
+        isInvalid: 0,
+      },
+    }),
+    InvalidProduct.findAll(),
+  ]);
+
+  var tweetModels = results[0];
+  var invalidProductModels = results[1];
+
+  var tweetModelsHash = _.groupBy(tweetModels, m => {
+    return m.productId;
+  });
+
+  var invalidProductModelHash = _.indexBy(invalidProductModels, m => {
+    return m.productId;
+  });
+
+  var insertObjectBasesForStatData = [];
+
+  _.each(tweetModelsHash, (tweetModels, productId) => {
+    if (invalidProductModelHash[productId]) return;
+
+    var tweetCount = tweetModels.length;
+    var userCount = _.chain(tweetModels).groupBy(tweetModel => {
+      return tweetModel.userId;
+    }).keys().value().length;
+
+    if (userCount < CONST.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT) return;
+
+    insertObjectBasesForStatData.push({
+      statId: null, // this will be set in createRanking function
+      productId: productId,
+      tweetCount: tweetCount,
+      userCount: userCount,
+      isInvalid: 0,
     });
   });
 
-function createRanking(isTargetProductHash, targetProductTypeId, since, until) {
-  var d = Q.defer();
-  var that = this;
+  await Stat.createRankingData(rankingMoment, tweetSinceMoment, tweetUntilMoment, insertObjectBasesForStatData);
 
-  async.waterfall([
-      (callback) => {
-
-        TweetModel.selectByProductTypeId(targetProductTypeId, {
-          since: since,
-          until: until,
-        })
-          .then(allTweetModels => {
-            var targetTweetModels = _.filter(allTweetModels, m => {
-              return isTargetProductHash[m.getProductId()];
-            });
-
-            var productIdIntoTweetModelsHash = _.groupBy(targetTweetModels, m => {
-              return m.getProductId();
-            });
-
-            var insertObjectForRankingDataTemp = _.map(productIdIntoTweetModelsHash, (tweetModels, productId) => {
-              return {
-                // ranking_id: null,
-                product_id: Number(productId),
-                tweet_count: Number(tweetModels.length),
-                user_count: _.uniq(tweetModels, m => {
-                  return m.getScreenName();
-                }).length,
-                is_invalid: 0,
-              };
-            });
-
-            callback(null, insertObjectForRankingDataTemp);
-          });
-      },
-      (insertObjectForRankingDataTemp, callback) => {
-        StatModel.createRankingData(targetProductTypeId, rankingDate, since, until, insertObjectForRankingDataTemp)
-          .then((rankingId) => {
-            console.log('new ranking was successfully created! RankingId: ' + rankingId);
-            callback(null);
-          });
-      }],
-    (e) => {
-      con.end();
-
-      if (e) {
-        console.log(e);
-        return d.reject();
-      }
-
-      return d.resolve();
-    }
-  );
-
-  return d.promise;
+  console.log("finish!");
 }

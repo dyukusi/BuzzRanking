@@ -11,6 +11,7 @@ const Twitter = require('twitter');
 const sprintf = require('sprintf-js').sprintf;
 const A8ProgramModel = require(appRoot + '/models/a8_program');
 const BookModel = require(appRoot + '/models/book');
+const GameModel = require(appRoot + '/models/game');
 
 var twitterAPIKeyParams = {
   consumer_key: Config.twitter_api.consumer_key,
@@ -36,42 +37,45 @@ exports.searchTweets = param => {
   return d.promise;
 }
 
-exports.tweetJSONIntoInsertObject = (tweet, productType, productId) => {
+exports.tweetJSONIntoInsertObject = (tweet, productId) => {
   return {
-    tweet_id: tweet['id_str'],
-    retweet_target_id: tweet['retweeted_status'] ? tweet['retweeted_status']['id_str'] : null,
-    product_type: productType,
-    product_id: productId,
-    user_id: tweet['user']['id'],
+    tweetId: tweet['id_str'],
+    retweetTargetId: tweet['retweeted_status'] ? tweet['retweeted_status']['id_str'] : null,
+    productId: productId,
+    userId: tweet['user']['id'],
     name: tweet['user']['name'],
-    screen_name: tweet['user']['screen_name'],
-    followers_count: tweet['user']['followers_count'],
-    follow_count: tweet['user']['friends_count'] || 0,
-    tweet_count: tweet['user']['statuses_count'] || 0,
+    screenName: tweet['user']['screen_name'],
+    followersCount: tweet['user']['followers_count'],
+    followCount: tweet['user']['friends_count'] || 0,
+    tweetCount: tweet['user']['statuses_count'] || 0,
     source: tweet['source'],
-    favourite_count: tweet['favorite_count'] || 0,
+    favouriteCount: tweet['favorite_count'] || 0,
     text: tweet['text'],
-    tweeted_at: Util.convertDateObjectIntoMySqlDateObjectReadableString(new Date(tweet['created_at'])),
+    isInvalid: 0,
+    tweetedAt: Util.convertDateObjectIntoMySqlReadableString(new Date(tweet['created_at'])),
   };
 }
 
-exports.getProductModels = (productTypeId, since, until) => {
+exports.selectProductModels = (productTypeIds) => {
   var d = Q.defer();
 
   Q.allSettled([
-    BookModel.selectByProductTypeId(productTypeId, {
+    BookModel.selectByProductTypeIds(productTypeIds, {
       excludeUndefinedReleaseDate: true,
-      since: since,
-      until: until
     }),
-    A8ProgramModel.selectByProductTypeId(productTypeId, {
+    GameModel.selectByProductTypeIds(productTypeIds, {
+      excludeUndefinedReleaseDate: true,
+    }),
+    A8ProgramModel.selectByProductTypeIds(productTypeIds, {
       ignoreChildProgram: true,
     }),
   ]).then(function (results) {
-    d.resolve({
-      bookModels: results[0].value,
-      a8ProgramModels: results[1].value,
-    });
+    var bookModels = results[0].value;
+    var gameModels = results[1].value;
+    var a8ProgramModels = results[2].value;
+    var productModels = _.flatten([bookModels, gameModels, a8ProgramModels]);
+
+    d.resolve(productModels);
   });
 
   return d.promise;

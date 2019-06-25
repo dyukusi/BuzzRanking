@@ -9,48 +9,50 @@ const Q = require('q');
 const Util = require(appRoot + '/my_libs/util.js');
 const async = require('async');
 const con = require(appRoot + '/my_libs/db.js');
+const CONST = require(appRoot + '/my_libs/const.js');
 
 const BookModel = require(appRoot + '/models/book');
 
-var FETCH_PRODUCT_DATA_DAYS_AGO_FROM_NOW = 30;
-var TARGET_GENRE_IDS = [
-  '001001', // 漫画（コミック）
-  // '001002', // 語学・学習参考書
-  // '001003', // 絵本・児童書・図鑑
-  // '001004', // 小説・エッセイ
-  // '001005', // パソコン・システム開発
-  // '001006', // ビジネス・経済・就職
-  // '001007', // 旅行・留学・アウトドア
-  // '001008', // 人文・思想・社会
-  // '001009', // ホビー・スポーツ・美術
-  // '001010', // 美容・暮らし・健康・料理
-  // '001011', // エンタメ・ゲーム
-  // '001012', // 科学・技術
-  // '001013', // 写真集・タレント
-  // '001015', // その他
-  // '001016', // 資格・検定
-  // '001017', // ライトノベル
-  // '001018', // 楽譜
-  // '001019', // 文庫
-  // '001020', // 新書
-  // '001021', // ボーイズラブ（BL）
-  // '001022', // 付録付き
-  // '001023', // バーゲン本
-  // '001025', // コミックセット
-  // '001026', // カレンダー・手帳・家計簿
-  // '001027', // 文具・雑貨
-  // '001028', // 医学・薬学・看護学・歯科学
-];
+var FETCH_PRODUCT_DATA_DAYS_AGO_FROM_NOW = 365;
+var C = CONST.PRODUCT_TYPE_NAME_TO_ID_HASH;
+var thresholdDate = new Date(new Date().setDate(new Date().getDate() - FETCH_PRODUCT_DATA_DAYS_AGO_FROM_NOW));
+
+// remaining
+// '001002', // 語学・学習参考書
+// '001003', // 絵本・児童書・図鑑
+// '001005', // パソコン・システム開発
+// '001006', // ビジネス・経済・就職
+// '001007', // 旅行・留学・アウトドア
+// '001008', // 人文・思想・社会
+// '001009', // ホビー・スポーツ・美術
+// '001010', // 美容・暮らし・健康・料理
+// '001011', // エンタメ・ゲーム
+// '001012', // 科学・技術
+// '001013', // 写真集・タレント
+// '001015', // その他
+// '001016', // 資格・検定
+// '001017', // ライトノベル
+// '001018', // 楽譜
+// '001019', // 文庫
+// '001020', // 新書
+// '001021', // ボーイズラブ（BL）
+// '001022', // 付録付き
+// '001023', // バーゲン本
+// '001025', // コミックセット
+// '001026', // カレンダー・手帳・家計簿
+// '001027', // 文具・雑貨
+// '001028', // 医学・薬学・看護学・歯科学
+
+var PRODUCT_TYPE_ID_INTO_GENRE_ID_HASH = {};
+PRODUCT_TYPE_ID_INTO_GENRE_ID_HASH[C['comic']] = '001001';
+PRODUCT_TYPE_ID_INTO_GENRE_ID_HASH[C['novel']] = '001004';
+PRODUCT_TYPE_ID_INTO_GENRE_ID_HASH[C['it']] = '001005';
 
 var queue = [];
 
+console.log('product since ' + thresholdDate.toLocaleString());
+
 initQueue();
-
-// queue = [{
-//   genreId: '001001',
-//   page: 1,
-// }];
-
 main();
 
 function main() {
@@ -74,58 +76,41 @@ function main() {
           },
           (json, callback) => {
             console.log('Page ' + json['page'] + '/' + json['pageCount']);
-            var isbnCodes = _.map(json['Items'], item => {
-              return item['isbn'];
+
+            var insertObjects = _.map(json['Items'], item => {
+              return itemIntoInsertObjectBase(item, task.productTypeId);
             });
 
-            BookModel.selectByISBNCodes(isbnCodes)
-              .then(bookModels => {
-                var isbnCodeToRakutenBookModelHash = _.indexBy(bookModels, m => {
-                  return m.getISBNCode();
-                });
-                var newInsertObjects = [];
-                var replaceInsertObjects = [];
+            var shouldSearchNextPage = task.page < json['pageCount'];
+            _.each(insertObjects, obj => {
+              var saleDate = new Date(obj.saleDate);
+              if (saleDate < thresholdDate) {
+                shouldSearchNextPage = false;
+              }
+            });
 
-                _.each(json['Items'], item => {
-                  var isbnCode = item['isbn'];
-                  var insertObjectBase = itemIntoInsertObjectBase(item);
-
-                  // already has
-                  if (isbnCodeToRakutenBookModelHash[isbnCode]) {
-                    var m = isbnCodeToRakutenBookModelHash[isbnCode];
-                    var productId = m.getProductId();
-                    insertObjectBase.product_id = productId;
-                    replaceInsertObjects.push(insertObjectBase);
-                  }
-                  // new product
-                  else {
-                    newInsertObjects.push(insertObjectBase);
-                  }
-                });
-                callback(null, newInsertObjects, replaceInsertObjects, task.page < json['pageCount']);
+            BookModel.bulkInsert(insertObjects)
+              .then(models => {
+                callback(null, shouldSearchNextPage);
+              })
+              .fail(e => {
+                console.log(e);
               });
           },
-          (newInsertObjects, replaceInsertObjects, hasNextPage, callback) => {
-            Q.allSettled([
-              BookModel.insert(newInsertObjects),
-              BookModel.replace(replaceInsertObjects),
-            ]).then(results => {
-              console.log("insert: " + newInsertObjects.length + " replace: " + replaceInsertObjects.length);
-              callback(null, hasNextPage);
-            });
-          },
         ],
-        (err, hasNextPage) => {
+        (err, shouldSearchNextPage) => {
           if (err) {
             console.log(err);
             queue.push(task);
           }
 
-          if (hasNextPage) {
-            queue.push({
-              genreId: task.genreId,
-              page: task.page + 1,
-            });
+          if (shouldSearchNextPage) {
+            var newTask = _.clone(task);
+            newTask.page++;
+
+            queue.push(newTask);
+          } else {
+            console.log('next page isnt required to search');
           }
 
           main();
@@ -138,8 +123,9 @@ function main() {
 }
 
 function initQueue() {
-  _.each(TARGET_GENRE_IDS, function (genreId) {
+  _.each(PRODUCT_TYPE_ID_INTO_GENRE_ID_HASH, function (genreId, productTypeId) {
     queue.push({
+      productTypeId: productTypeId,
       genreId: genreId,
       page: 1,
     });
@@ -177,31 +163,31 @@ function getRakutenBookJSON(genreId, page) {
   return d.promise;
 }
 
-function itemIntoInsertObjectBase(item) {
+function itemIntoInsertObjectBase(item, productTypeId) {
   return {
-    product_type_id: 1,
-    isbn_code: item['isbn'],
+    productTypeId: productTypeId,
+    isbnCode: item['isbn'],
     title: item['title'],
-    title_kana: item['titleKana'],
-    sub_title: item['subTitle'],
-    sub_title_kana: item['subTitleKana'],
+    titleKana: item['titleKana'],
+    subTitle: item['subTitle'],
+    subTitleKana: item['subTitleKana'],
     series: item['seriesName'],
-    series_kana: item['seriesNameKana'],
+    seriesKana: item['seriesNameKana'],
     contents: item['contents'],
     author: item['author'],
-    author_kana: item['authorKana'],
+    authorKana: item['authorKana'],
     publisher: item['publisherName'],
     size: item['size'],
     caption: item['itemCaption'],
-    item_url: item['itemUrl'],
-    affiliate_item_url: item['affiliateUrl'],
-    image_url_base: item['smallImageUrl'].replace('?_ex=64x64', ''),
-    chirayomi_url: item['chirayomiUrl'],
+    itemUrl: item['itemUrl'],
+    affiliateItemUrl: item['affiliateUrl'],
+    imageUrlBase: item['smallImageUrl'].replace('?_ex=64x64', ''),
+    chirayomiUrl: item['chirayomiUrl'],
     price: item['itemPrice'],
-    review_count: item['reviewCount'],
-    review_rate_average: item['reviewAverage'],
-    genre_id: item['booksGenreId'],
-    sale_date_str: item['salesDate'],
-    sale_date: Util.convertJapaneseDateStrIntoMysqlDate(item['salesDate']),
+    reviewCount: item['reviewCount'],
+    reviewRateAverage: item['reviewAverage'],
+    genreId: item['booksGenreId'],
+    saleDateStr: item['salesDate'],
+    saleDate: Util.convertJapaneseDateStrIntoMysqlDate(item['salesDate']),
   };
 }

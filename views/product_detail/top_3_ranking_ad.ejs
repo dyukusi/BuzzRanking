@@ -1,0 +1,49 @@
+<%
+var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
+var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
+var productTypeName = Const.PRODUCT_TYPE_ID_TO_NAME_HASH[productModel.productTypeId];
+var productTypeJPName = Const.PRODUCT_TYPE_ID_TO_JA_NAME_HASH[productModel.productTypeId];
+var fontAwesomeClassName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS[productTypeBundleId];
+
+var productModelName = productModel._modelOptions.name.singular;
+var productImgTemplatePath = appRoot + '/views/top_3_ranking_ad/' + productModelName + '.ejs';
+%>
+
+<div class="common-border top-3-ranking-area m-3 mx-auto">
+        <span class="common-border-title">
+            <a href="/ranking/<%= productTypeBundleName %>?type=<%= productTypeName %>">
+                <%= productTypeJPName %>ランキング
+            </a>
+            上位
+        </span>
+    <div class="row top-3-ranking-row">
+        <% __.each(top3RankingData, data => { %>
+            <div class="col-4 d-flex align-items-center justify-content-center">
+                <div class="row">
+                    <div class="col-12 ">
+                        <%- include(productImgTemplatePath, { rankingProductModel: data.productModel, }) %>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+
+    <div class="row top-3-ranking-row">
+        <% __.each(top3RankingData, data => { %>
+            <div class="col-4 text-align-center">
+                (<%= data.statDataModel.userCount %>Buzz)
+            </div>
+        <% }); %>
+    </div>
+
+    <div class="row">
+        <div class="col-12 text-align-center">
+
+            <a href="/ranking/<%= productTypeBundleName %>?type=<%= productTypeName %>" type="button" class="btn common-button">
+                <i class="fas <%= fontAwesomeClassName %>"></i>
+                <%= productTypeJPName %>ランキングを見る
+            </a>
+
+        </div>
+    </div>
+</div>

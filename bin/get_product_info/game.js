@@ -1,4 +1,5 @@
 const appRoot = require('app-root-path');
+const Config = require('config');
 const {JSDOM} = require('jsdom');
 const $ = jQuery = require('jquery')(new JSDOM().window);
 const fs = require('fs');
@@ -6,31 +7,12 @@ const _ = require('underscore');
 const request = require('request');
 const Q = require('q');
 const Util = require(appRoot + '/my_libs/util.js');
+const async = require('async');
+const con = require(appRoot + '/my_libs/db.js');
 
-const RakutenGameModel = require(appRoot + '/models/rakuten_game');
+const GameModel = require(appRoot + '/models/game');
 
-// console.log(RakutenGameModel.hoge());
-// sampleRakutenBookAPI();
-// sampleTwitterAPI();
-// sampleRakutenGameAPI();
-
-var BOOKS_GENRE_ID_HASH = {
-  // 'PS3': '006501',
-  // 'PSP': '006502',
-  // 'Wii': '006503',
-  // 'Nintendo DS': '006504',
-  // 'Others': '006505',
-  // 'PS2': '006506',
-  // 'Xbox 360': '006507',
-  'Nintendo 3DS': '006508',
-  'PS Vita': '006509',
-  // 'Toys': '006510',
-  // 'Wii U': '006511',
-  'Xbox One': '006512',
-  'PS4': '006513',
-  'Nintendo Switch': '006514',
-};
-
+var FETCH_PRODUCT_DATA_DAYS_AGO_FROM_NOW = 365;
 var TARGET_GENRE_IDS = [
   '006508', // 3DS
   '006509', // PS Vita
@@ -38,12 +20,15 @@ var TARGET_GENRE_IDS = [
   '006513', // PS4
   '006514', // Switch
 ];
-
-var EXCLUDE_GENRE_IDS = [];
-
 var queue = [];
 
 initQueue();
+
+// queue = [{
+//   genreId: '001001',
+//   page: 1,
+// }];
+
 main();
 
 function main() {
@@ -52,47 +37,68 @@ function main() {
 
     if (!task) {
       console.log('task not found');
-      main();
+      console.log('Finished!')
+      con.end();
       return;
     } else {
       console.log('Processing... ' + task.genreId + ' ' + task.page);
 
-      getRakutenGameJSON(task.genreId, task.page)
-        .then(function(json) {
-          console.log('Page ' + json['page'] + '/' + json['pageCount']);
-          insertItemsIntoDB(json['Items'])
-            .then(function() {
+      async.waterfall([
+          (callback) => {
+            getRakutenGameJSON(task.genreId, task.page)
+              .then(json => {
+                callback(null, json);
+              });
+          },
+          (json, callback) => {
+            console.log('Page ' + json['page'] + '/' + json['pageCount']);
+            var shouldSearchNextPage = task.page < json['pageCount'];
+            var thresholdDate = new Date(new Date().setDate(new Date().getDate() - FETCH_PRODUCT_DATA_DAYS_AGO_FROM_NOW));
+            var insertObjects = _.map(json['Items'], item => {
+              var insertObject = itemIntoInsertObjectBase(item);
 
-              if (task.page < json['pageCount']) {
-                queue.push({
-                  genreId: task.genreId,
-                  page: task.page + 1,
-                });
+              // check fetch limit date
+              var saleDate = new Date(insertObject.sale_date);
+
+              if (saleDate < thresholdDate) {
+                shouldSearchNextPage = false;
               }
 
-              main();
-            })
-            .fail(function(e) {
-              console.log(e);
-              queue.push(task);
-              main();
+              return insertObject;
             });
-        })
-        .fail(function(e) {
-          console.log(e);
-          queue.push(task);
 
-          console.log("waiting 10secs...");
-          setTimeout(function() {
-            main();
-          }, 10000);
-        });
+            GameModel.bulkInsert(insertObjects)
+              .then(models => {
+                callback(null, shouldSearchNextPage);
+              });
+          },
+        ],
+        (err, shouldSearchNextPage) => {
+          if (err) {
+            console.log(err);
+            queue.push(task);
+          }
+
+          if (shouldSearchNextPage) {
+            queue.push({
+              genreId: task.genreId,
+              page: task.page + 1,
+            });
+          } else {
+            console.log('next page isnt required to search');
+          }
+
+          main();
+        }
+      );
     }
+
   }, 1000);
+
 }
 
 function initQueue() {
-  _.each(TARGET_GENRE_IDS, function(genreId) {
+  _.each(TARGET_GENRE_IDS, function (genreId) {
     queue.push({
       genreId: genreId,
       page: 1,
@@ -106,62 +112,40 @@ function getRakutenGameJSON(genreId, page) {
   request.get({
     url: 'https://app.rakuten.co.jp/services/api/BooksGame/Search/20170404',
     qs: {
-      applicationId: '1070442127214195482',
-      // keyword: '進撃の巨人',
+      applicationId: Config.rakuten_api.applicationId,
+      affiliateId: Config.rakuten_api.affiliateId,
       format: 'json',
       formatVersion: 2,
-      page: page,
-      availability: 0,
       sort: '-releaseDate',
-      // hardware: 'Nintendo Switch',
-      booksGenreId: genreId,
 
-      affiliateId: '1836ca53.70853406.1836ca54.54f28f4a',
-    }
+      page: page,
+      booksGenreId: genreId,
+    },
   }, function (e, response, body) {
     if (e) {
       d.reject(e);
       return;
     }
 
-    d.resolve(JSON.parse(body));
-    return;
+    return d.resolve(JSON.parse(body));
+    ;
   });
 
   return d.promise;
 }
 
-function insertItemsIntoDB(items) {
-  var d = Q.defer();
-
-  var insertObjects = [];
-  _.each(items, function(item) {
-    insertObjects.push({
-      jan_code: item['jan'],
-      title: item['title'],
-      title_kana: item['titleKana'],
-      made_by: item['label'],
-      maker_code: item['makerCode'],
-      caption: item['itemCaption'],
-      item_url: item['itemUrl'],
-      affiliate_item_url: item['affiliateUrl'],
-      image_url_base: item['smallImageUrl'].replace('?_ex=64x64', ''),
-      price: item['itemPrice'],
-      review_count: item['reviewCount'],
-      review_rate_average: item['reviewAverage'],
-      genre_id: item['booksGenreId'],
-      sale_date_str: item['salesDate'],
-      sale_date: Util.convertJapaneseDateStrIntoMysqlDate(item['salesDate']),
-    });
-  });
-
-  RakutenGameModel.insert(insertObjects)
-    .then(function() {
-      d.resolve();
-    })
-    .fail(function(e) {
-      d.reject(e);
-    });
-
-  return d.promise;
+function itemIntoInsertObjectBase(item) {
+  return {
+    productTypeId: 3,
+    janCode: item['jan'],
+    title: item['title'],
+    titleKana: item['titleKana'],
+    makerCode: item['makerCode'],
+    caption: item['itemCaption'],
+    rakutenAffiliateItemUrl: item['affiliateUrl'],
+    imageUrlBase: item['smallImageUrl'].replace('?_ex=64x64', ''),
+    genreId: item['booksGenreId'],
+    saleDateStr: item['salesDate'],
+    saleDate: Util.convertJapaneseDateStrIntoMysqlDate(item['salesDate']),
+  };
 }

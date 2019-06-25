@@ -1,32 +1,28 @@
 const appRoot = require('app-root-path');
-const con = require(appRoot + '/my_libs/db.js');
-const Q = require('q');
-const _ = require('underscore');
-const ModelBase = require(appRoot + '/models/base');
-const TABLE_NAME = 'block_twitter_user';
+const __ = require('underscore');
+const Sequelize = require('sequelize');
+const sequelize = require(appRoot + '/db/sequelize_config');
 
-// example
-// INSERT IGNORE INTO block_twitter_user (screen_name) (SELECT DISTINCT screen_name FROM tweet WHERE name LIKE '%アニメイト%');
+class BlockTwitterUser extends Sequelize.Model {
+  // ------------------- Instance Methods -------------------
 
-module.exports = class BlockTwitterUser extends ModelBase {
-  constructor(screen_name) {
-    super();
-    this.screen_name = screen_name;
+  // ------------------- Class Methods -------------------
+}
+
+BlockTwitterUser.init({
+    screenName: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      primaryKey: true,
+      field: 'screen_name'
+    }
+  }, {
+    freezeTableName: true,
+    underscored: true,
+    modelName: 'block_twitter_user',
+    timestamps: false,
+    sequelize
   }
+);
 
-  getScreenName() {
-    return this.screen_name;
-  }
-
-  static getTableName() {
-    return TABLE_NAME;
-  }
-
-  static rowToModel(row) {
-    return new BlockTwitterUser(
-      row['screen_name'],
-    );
-  }
-};
-
-
+module.exports = BlockTwitterUser;

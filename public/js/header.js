@@ -2,6 +2,9 @@ const $ = jQuery = require('jquery');
 const _ = require('underscore');
 require('bootstrap');
 
+disableStickyHeaderTemporarily = false;
+var remainingCountOfDisableScrollEvent = 0;
+
 $(() => {
   if (location.pathname.match('book')) {
     $('#nav-book-ranking').addClass("active");
@@ -15,17 +18,46 @@ $(() => {
   }
 
   initScrollHideNavbar();
+  initTopBtn();
+  initAboutBtn();
 });
+
+function initAboutBtn() {
+  var scrollTarget = $('body,html');
+
+  $('#nav-about').click(function() {
+    scrollTarget.animate({
+      scrollTop: $('#footer')[0].offsetTop,
+    }, 300);
+    return false;
+  });
+}
 
 function initScrollHideNavbar() {
   var startPos = 0, winScrollTop = 0;
   $(window).on('scroll', function () {
+    if (disableStickyHeaderTemporarily) {
+      remainingCountOfDisableScrollEvent = 3;
+      disableStickyHeaderTemporarily = false;
+
+      winScrollTop = $(this).scrollTop();
+      startPos = winScrollTop;
+    }
+
+    if (remainingCountOfDisableScrollEvent) {
+      remainingCountOfDisableScrollEvent--;
+      return;
+    }
+
     var navEle = $('nav');
+    var aboutIcon = $('#nav-about a');
     var navHeight = navEle.outerHeight(true);
     var buzzrankingLogoHeight = $('.navbar-brand').outerHeight();
     winScrollTop = $(this).scrollTop();
 
     if (winScrollTop > navHeight) {
+      aboutIcon.addClass('about-icon-bottom');
+
       navEle.addClass('fixed-top');
       $('body').css('padding-top', navHeight + 'px');
 
@@ -40,6 +72,7 @@ function initScrollHideNavbar() {
       }
     } else {
       navEle.removeClass('fixed-top');
+      aboutIcon.removeClass('about-icon-bottom');
       $('body').css('padding-top', '0px');
       navEle.css('top', '0px');
     }
@@ -47,3 +80,39 @@ function initScrollHideNavbar() {
     startPos = winScrollTop;
   });
 }
+
+function initTopBtn() {
+  var TopBtn = $('#PageTopBtn');
+  var BottomPos = -10;
+  TopBtn.hide();
+  $(window).scroll(function(e) {
+    $window = $(e.currentTarget);
+    WindowHeight = $window.height();
+    PageHeight = $(document).height();
+    footerHeight = $(".footer").height();
+    ScrollTop = $window.scrollTop();
+    MoveTopBtn = WindowHeight + ScrollTop + footerHeight - PageHeight;
+
+    if ($(this).scrollTop() > 100) {
+      TopBtn.fadeIn();
+    }
+    else {
+      TopBtn.fadeOut();
+    }
+
+    if(ScrollTop >= PageHeight - WindowHeight - footerHeight + BottomPos) {
+      TopBtn.css({ bottom: MoveTopBtn });
+    }
+    else {
+      TopBtn.css({ bottom: BottomPos });
+    }
+  });
+
+  TopBtn.click(function() {
+    $('body,html').animate({
+      scrollTop: 0
+    }, 300);
+    return false;
+  });
+}
+

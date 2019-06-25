@@ -1,0 +1,32 @@
+<%
+productModel;
+bookCaptionModel;
+tweetModels;
+
+var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
+%>
+<link href="/css/product_detail/1.css" rel="stylesheet">
+
+<div class="row pt-3 product-title">
+    <div class="col-12">
+        <h1>
+            <%= productModel.getProductName() %>
+        </h1>
+    </div>
+</div>
+
+<div class="row product-basic-info">
+    <div class="col-md-12 col-lg-3 text-align-center">
+        <div class="row">
+            <div class="col-12 product-img-area affiliate-html">
+                <%- productModel.affiliateHtml %>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12 col-lg-9">
+        <% if (!isInvalidProduct) { %>
+            <%- include('buzz_chart.ejs') %>
+        <% } %>
+    </div>
+</div>

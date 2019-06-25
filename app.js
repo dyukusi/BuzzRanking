@@ -48,7 +48,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use('/', require('./routes/index.js'));
+app.use('/product', require('./routes/product.js'));
 app.use('/ranking', require('./routes/ranking.js'));
+
 // app.use('/book', require('./routes/book.js'));
 // app.use('/dating', require('./routes/dating.js'));
 app.use('/auth', require('./routes/auth.js'));
@@ -56,20 +58,27 @@ app.use('/admin', require('./routes/admin.js'));
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404));
+  next(__.extend(createError(404), {
+    dispMessage: Const.ERROR_MESSAGE["404"],
+  }));
 });
 
 // error handler
 app.use(function (err, req, res, next) {
+  var status = err.status || 500;
+
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  console.log(err);
+  console.error(err);
 
   // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+  res.status(status);
+  res.render('error', {
+    status: status,
+    dispMessage: err.dispMessage || Const.ERROR_MESSAGE.DEFAULT,
+  });
 });
 
 module.exports = app;

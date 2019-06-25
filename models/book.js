@@ -1,380 +1,205 @@
 const appRoot = require('app-root-path');
-const con = require(appRoot + '/my_libs/db.js');
 const Q = require('q');
-const _ = require('underscore');
-const ModelBase = require(appRoot + '/models/base');
-const TABLE_NAME = 'book';
-const Util = require(appRoot + '/my_libs/util.js');
+const __ = require('underscore');
+const DBUtil = require(appRoot + '/my_libs/db_util.js');
+const Sequelize = require('sequelize');
+const sequelize = require(appRoot + '/db/sequelize_config');
 
-module.exports = class Book extends ModelBase {
-  constructor(product_id, product_type_id, isbn_code, title, title_kana, sub_title, sub_title_kana, series, series_kana, contents, author, author_kana, publisher, size, caption, item_url, affiliate_item_url, image_url_base, chirayomi_url, price, review_count, review_rate_average, genre_id, sale_date_str, sale_date, created_at) {
-    super();
-    this.product_id = product_id;
-    this.product_type_id = product_type_id;
-    this.isbn_code = isbn_code;
-    this.title = title;
-    this.title_kana = title_kana;
-    this.sub_title = sub_title;
-    this.sub_title_kana = sub_title_kana;
-    this.series = series;
-    this.series_kana = series_kana;
-    this.contents = contents;
-    this.author = author;
-    this.author_kana = author_kana;
-    this.publisher = publisher;
-    this.size = size;
-    this.caption = caption;
-    this.item_url = item_url;
-    this.affiliate_item_url = affiliate_item_url;
-    this.image_url_base = image_url_base;
-    this.chirayomi_url = chirayomi_url;
-    this.price = price;
-    this.review_count = review_count;
-    this.review_rate_average = review_rate_average;
-    this.genre_id = genre_id;
-    this.sale_date_str = sale_date_str;
-    this.sale_date = sale_date;
-    this.created_at = created_at;
-  }
-
-  getTitle() {
+class Book extends Sequelize.Model {
+  // ------------------- Instance Methods -------------------
+  getProductName() {
     return this.title;
   }
 
-  getProductId() {
-    return this.product_id;
-  }
-
-  getProductTypeId() {
-    return this.product_type_id;
-  }
-
-  getImageURLBase() {
-    return this.image_url_base;
-  }
-
-  getPrice() {
-    return this.price;
-  }
-
-  getAffiliateURL() {
-    return this.affiliate_item_url;
-  }
-
-  getSaleDateStr() {
-    return this.sale_date_str;
-  }
-
-  getISBNCode() {
-    return this.isbn_code;
-  }
-
-  // ------------------- static functions -------------------
-  static getTableName() {
-    return TABLE_NAME;
-  }
-
-  static getProductType() {
-    return 1;
-  }
-
-  static selectByProductTypeIdAndProductIds(productTypeId, productIds) {
-    var d = Q.defer();
-    var that = this;
-
-    con.query('SELECT * FROM book WHERE product_type_id = ? AND product_id IN (?)',
-      [
-        productTypeId,
-        productIds
-      ],
-      function (e, rows, fields) {
-        if (e) {
-          d.reject(e);
-          con.rollback(function () {
-            throw e;
-          });
-        }
-
-        var models = _.map(rows, function(row) {
-          return that.rowToModel(row);
-        });
-
-        d.resolve(models);
+  // ------------------- Class Methods -------------------
+  static selectByProductIds(productIds) {
+    return this.findAll({
+      where: {
+        productId: productIds,
       }
-    );
+    });
+  }
 
-    return d.promise;
+  static selectByProductTypeIds(productTypeIds, options) {
+    var where = {
+      productTypeId: productTypeIds,
+    };
+
+    if (options.excludeUndefinedReleaseDate) {
+      where['$ne'] = '9999-12-31';
+    }
+
+    return this.findAll({
+      where: where,
+    });
   }
 
   static selectByISBNCodes(isbnCodes) {
-    var d = Q.defer();
-    var that = this;
-
-    con.query('SELECT * FROM book WHERE isbn_code IN (?)',
-      [isbnCodes],
-      function (e, rows, fields) {
-        if (e) {
-          d.reject(e);
-          con.rollback(function () {
-            throw e;
-          });
-        }
-
-        var models = _.map(rows, function(row) {
-          return that.rowToModel(row);
-        });
-
-        d.resolve(models);
+    return this.findAll({
+      where: {
+        isbnCode: isbnCodes,
       }
-    );
-
-    return d.promise;
-  }
-
-  static insert(insertObjects) {
-    var d = Q.defer();
-
-    if (_.isEmpty(insertObjects)) {
-      return d.resolve();
-    }
-
-    con.beginTransaction(function (e) {
-      if (e) {
-        throw e;
-      }
-
-      con.query(
-        'INSERT INTO book (product_type_id, isbn_code, title, title_kana, sub_title, sub_title_kana, series, series_kana, contents, author, author_kana, publisher, size, caption, item_url, affiliate_item_url, image_url_base, chirayomi_url, price, review_count, review_rate_average, genre_id, sale_date_str, sale_date) VALUES ?',
-        [
-          _.map(insertObjects, function (item) {
-            return [
-              item.product_type_id,
-              item.isbn_code,
-              item.title,
-              item.title_kana,
-              item.sub_title,
-              item.sub_title_kana,
-              item.series,
-              item.series_kana,
-              item.contents,
-              item.author,
-              item.author_kana,
-              item.publisher,
-              item.size,
-              item.caption,
-              item.item_url,
-              item.affiliate_item_url,
-              item.image_url_base,
-              item.chirayomi_url,
-              item.price,
-              item.review_count,
-              item.review_rate_average,
-              item.genre_id,
-              item.sale_date_str,
-              item.sale_date,
-            ]
-          })],
-        function (e, results, fields) {
-          if (e) {
-            d.reject(e);
-            con.rollback(function () {
-              throw e;
-            });
-          }
-
-          con.commit(function (e) {
-            if (e) {
-              d.reject();
-              con.rollback(function () {
-                throw e;
-              });
-            }
-
-            d.resolve();
-          });
-        }
-      );
-
     });
-
-    return d.promise;
   }
 
+  static bulkInsert(insertObjects) {
+    return DBUtil.productBulkInsertUpdateOnDuplicate(Book, insertObjects);
+  }
+}
 
-  static replace(insertObjects) {
-    var d = Q.defer();
-
-    if (_.isEmpty(insertObjects)) {
-      return d.resolve();
+Book.init({
+    productId: {
+      type: Sequelize.INTEGER(10).UNSIGNED,
+      allowNull: false,
+      field: 'product_id',
+      primaryKey: true,
+    },
+    productTypeId: {
+      type: Sequelize.INTEGER(11),
+      allowNull: false,
+      field: 'product_type_id'
+    },
+    isbnCode: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      defaultValue: '',
+      field: 'isbn_code',
+      unique: true,
+    },
+    title: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      defaultValue: '',
+      field: 'title'
+    },
+    titleKana: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      defaultValue: '',
+      field: 'title_kana'
+    },
+    subTitle: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      field: 'sub_title'
+    },
+    subTitleKana: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      field: 'sub_title_kana'
+    },
+    series: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      defaultValue: '',
+      field: 'series'
+    },
+    seriesKana: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      defaultValue: '',
+      field: 'series_kana'
+    },
+    contents: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      field: 'contents'
+    },
+    author: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      defaultValue: '',
+      field: 'author'
+    },
+    authorKana: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      field: 'author_kana'
+    },
+    publisher: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      defaultValue: '',
+      field: 'publisher'
+    },
+    size: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      field: 'size'
+    },
+    caption: {
+      type: Sequelize.TEXT,
+      allowNull: false,
+      field: 'caption'
+    },
+    itemUrl: {
+      type: Sequelize.TEXT,
+      allowNull: false,
+      field: 'item_url'
+    },
+    affiliateItemUrl: {
+      type: Sequelize.TEXT,
+      allowNull: false,
+      field: 'affiliate_item_url'
+    },
+    imageUrlBase: {
+      type: Sequelize.TEXT,
+      allowNull: false,
+      field: 'image_url_base'
+    },
+    chirayomiUrl: {
+      type: Sequelize.TEXT,
+      allowNull: false,
+      field: 'chirayomi_url'
+    },
+    price: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: false,
+      field: 'price'
+    },
+    reviewCount: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: false,
+      field: 'review_count'
+    },
+    reviewRateAverage: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: false,
+      field: 'review_rate_average'
+    },
+    genreId: {
+      type: Sequelize.STRING(255),
+      allowNull: false,
+      defaultValue: '',
+      field: 'genre_id'
+    },
+    saleDateStr: {
+      type: Sequelize.STRING(30),
+      allowNull: true,
+      field: 'sale_date_str'
+    },
+    saleDate: {
+      type: Sequelize.DATEONLY,
+      allowNull: false,
+      field: 'sale_date'
+    },
+    updatedAt: {
+      type: Sequelize.DATE,
+      allowNull: false,
+      field: 'updated_at'
+    },
+    createdAt: {
+      type: Sequelize.DATE,
+      allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+      field: 'created_at'
     }
-
-
-    con.beginTransaction(function (e) {
-      if (e) {
-        throw e;
-      }
-
-      con.query(
-        'REPLACE book (product_id, product_type_id, isbn_code, title, title_kana, sub_title, sub_title_kana, series, series_kana, contents, author, author_kana, publisher, size, caption, item_url, affiliate_item_url, image_url_base, chirayomi_url, price, review_count, review_rate_average, genre_id, sale_date_str, sale_date) VALUES ?',
-        [
-          _.map(insertObjects, function (item) {
-            return [
-              item.product_id,
-              item.product_type_id,
-              item.isbn_code,
-              item.title,
-              item.title_kana,
-              item.sub_title,
-              item.sub_title_kana,
-              item.series,
-              item.series_kana,
-              item.contents,
-              item.author,
-              item.author_kana,
-              item.publisher,
-              item.size,
-              item.caption,
-              item.item_url,
-              item.affiliate_item_url,
-              item.image_url_base,
-              item.chirayomi_url,
-              item.price,
-              item.review_count,
-              item.review_rate_average,
-              item.genre_id,
-              item.sale_date_str,
-              item.sale_date,
-            ]
-          })],
-        function (e, results, fields) {
-          if (e) {
-            d.reject(e);
-            con.rollback(function () {
-              throw e;
-            });
-          }
-
-          con.commit(function (e) {
-            if (e) {
-              d.reject();
-              con.rollback(function () {
-                throw e;
-              });
-            }
-
-            d.resolve();
-          });
-        }
-      );
-
-    });
-
-    return d.promise;
+  }, {
+    freezeTableName: true,
+    underscored: true,
+    modelName: 'book',
+    sequelize
   }
+);
 
-  static selectByProductTypeId(productTypeId, options) {
-    var d = Q.defer();
-    var that = this;
-
-    var placeHolderParams = [productTypeId];
-    var sql = 'SELECT * FROM book WHERE product_type_id = ?';
-    //  sale_date > ? && sale_date < ?'
-
-    if (options.excludeUndefinedReleaseDate) {
-      sql += ' AND sale_date != \'9999-12-31\'';
-    }
-
-    if (options.since) {
-      sql += ' AND ? <= sale_date';
-      placeHolderParams.push(Util.convertDateObjectIntoMySqlDateObjectReadableString(options.since));
-    }
-
-    if (options.until) {
-      sql += ' AND sale_date <= ?';
-      placeHolderParams.push(Util.convertDateObjectIntoMySqlDateObjectReadableString(options.until));
-    }
-
-    con.query(sql,
-      placeHolderParams,
-      function (err, rows, fields) {
-        if (err) {
-          console.log(err);
-          console.log(sql);
-          console.log(placeHolderParams);
-          throw new Error(err);
-        }
-
-        var models = [];
-        _.each(rows, function(row) {
-          models.push(that.rowToModel(row));
-        });
-
-        d.resolve(models);
-      }
-    );
-
-    return d.promise;
-  }
-
-  static selectAllNewProducts(baseDate, rangeDays) {
-    var d = Q.defer();
-    var that = this;
-
-    var tempDate = new Date(baseDate);
-    var from = new Date(tempDate.setDate(tempDate.getDate() - rangeDays));
-
-    tempDate = new Date(baseDate);
-    var to = new Date(tempDate.setDate(tempDate.getDate() + rangeDays));
-
-    console.log("selecting target products... " + from + "  ~  " + to);
-
-    con.query(
-      'SELECT * FROM book WHERE sale_date > ? && sale_date < ? && sale_date != \'9999-12-31\'',
-      [
-        Util.convertDateObjectIntoMySqlDateObjectReadableString(from),
-        Util.convertDateObjectIntoMySqlDateObjectReadableString(to)
-      ],
-      function (err, rows, fields) {
-        var models = [];
-        _.each(rows, function(row) {
-          models.push(that.rowToModel(row));
-        });
-        d.resolve(models);
-      }
-    );
-
-    return d.promise;
-  }
-
-  static rowToModel(row) {
-    return new Book(
-      row['product_id'],
-      row['product_type_id'],
-      row['isbn_code'],
-      row['title'],
-      row['title_kana'],
-      row['sub_title'],
-      row['sub_title_kana'],
-      row['series'],
-      row['series_kana'],
-      row['contents'],
-      row['author'],
-      row['author_kana'],
-      row['publisher'],
-      row['size'],
-      row['caption'],
-      row['item_url'],
-      row['affiliate_item_url'],
-      row['image_url_base'],
-      row['chirayomi_url'],
-      row['price'],
-      row['review_count'],
-      row['review_rate_average'],
-      row['genre_id'],
-      row['sale_date_str'],
-      row['sale_date'],
-      row['created_at'],
-    );
-  }
-
-};
+module.exports = Book;

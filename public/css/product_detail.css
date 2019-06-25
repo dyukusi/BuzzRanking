@@ -1,0 +1,79 @@
+.twitter-tweet {
+  width: 100% !important;
+}
+
+.twitter-tweet-error {
+  display: none;
+}
+
+.tweet-reference-block {
+  text-align: center;
+}
+
+.product-basic-info {
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 1.3em;
+}
+
+.product-basic-info {
+  margin-top: 1rem;
+}
+
+/* smart device */
+@media (min-width: 0px) {
+  #content.container-fluid {
+    max-width: 100%;
+  }
+
+  .top-3-ranking-product-img {
+    max-height: 100px;
+    width: auto;
+  }
+}
+
+/* pc */
+@media (min-width: 992px) {
+  #content.container-fluid {
+    max-width: 60%;
+  }
+
+  .tweet-reference-block {
+    width: 75%;
+  }
+
+  .top-3-ranking-product-img {
+    max-height: 150px;
+    width: auto;
+  }
+
+  .top-3-ranking-area {
+    width: 60%;
+  }
+}
+
+#buzz-chart {
+  min-height: 250px;
+  width: auto;
+}
+
+.chart-desc {
+  padding: 0 1rem 0 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+}
+
+.invalid-product-description {
+  font-size: 0.8rem;
+}
+
+.product-description {
+  font-size: 0.8rem;
+}
+
+.top-3-ranking-row {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}

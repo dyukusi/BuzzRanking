@@ -1,33 +1,245 @@
+/* md */
+@media (min-width: 0px) {
+    #PageTopBtn {
+        font-size: 20px;
+    }
+
+    #PageTopBtn a {
+        width: 50px;
+        height: 50px;
+        padding: 8px 0;
+    }
+
+    #content.container-fluid {
+        max-width: 100%;
+    }
+}
+
+/* lg */
+@media (min-width: 992px) {
+    #PageTopBtn {
+        font-size: 25px; /*文字のサイズ*/
+    }
+
+    #PageTopBtn a {
+        width: 50px; /*ボタンの幅*/
+        height: 50px; /*ボタンの高さ*/
+        padding: 5px 0; /*文字の配置場所の調整*/
+    }
+
+    #content.container-fluid {
+        max-width: 45%;
+    }
+}
+
 .navbar {
-  background-color: #eb6f00; }
+    background-color: #eb6f00;
+}
 
 .buzzranking-logo {
-  width: 350px; }
+    width: 350px;
+}
 
 .container {
-  width: auto;
-  max-width: 680px;
-  padding: 0 15px; }
+    width: auto;
+    max-width: 680px;
+    padding: 0 15px;
+    margin-top: 25px;
+}
 
 html {
-  position: relative;
-  min-height: 100%; }
+    position: relative;
+    min-height: 100%;
+}
 
 .footer {
-  background-color: #6c757d1f;
-  position: absolute;
-  bottom: 0px;
-  width: 100%;
-  /* Set the fixed height of the footer here */
-  height: 1rem;
-  padding: 0px; }
+    background-color: #6c757d 1 f;
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    /* Set the fixed height of the footer here */
+    height: 1rem;
+    padding: 0px;
+}
 
 .copyright {
-  font-size: 0.8rem;
-  color: black;
-  text-align: center; }
+    font-size: 0.8rem;
+    color: black;
+    text-align: center;
+}
 
 .hide {
-  visibility: hidden; }
+    visibility: hidden;
+}
 
-/*# sourceMappingURL=common.css.map */
+.no-wrap {
+    display: inline-block;
+}
+
+.text-align-center {
+    text-align: center;
+}
+
+.text-align-left {
+    text-align: left;
+}
+
+#PageTopBtn {
+    z-index: 100;
+    position: fixed; /*ボタンの配置場所を固定*/
+    bottom: -10px; /*下からのボタンの配置場所を指定*/
+    right: 10px; /*右からのボタンの配置場所を指定*/
+}
+
+#PageTopBtn a {
+    display: block; /*配置の調整*/
+    text-decoration: none; /*文字の下線を消す*/
+    color: #fff; /*文字の色*/
+    background: #f5964b; /*ボタンの背景色*/
+    text-align: center; /*文字を中央に配置*/
+    border-radius: 50%; /*ボタンの角を少し丸くする*/
+    outline: none; /*クリックしたときの黒い枠を消す*/
+}
+
+#PageTopBtn a:hover {
+    text-decoration: none;
+    background: #e66600; /*マウスオーバー時の背景色*/
+}
+
+
+.page-footer {
+    background-color: #f5964b;
+}
+
+.footer-copyright {
+    color: white;
+    background-color: #eb6f00;
+}
+
+.about-icon {
+    cursor: pointer;
+    position: absolute;
+    font-size: 1.75rem;
+    font-weight: bold;
+    top: 0;
+    right: 0;
+}
+
+.about-icon i {
+    color: rgba(0,0,0,.5);
+}
+
+.about-icon i:hover {
+    color: black;
+}
+
+.about-icon-bottom {
+    top: initial;
+    bottom: 0;
+}
+
+h6 {
+    font-weight: bold;
+}
+
+.privacy-policy h6 {
+    position: relative;
+    display: inline-block;
+    padding: 0 55px;
+}
+
+.privacy-policy h6:before, .privacy-policy h6:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    display: inline-block;
+    width: 45px;
+    height: 2px;
+    border-top: solid 1px black;
+    border-bottom: solid 1px black;
+}
+
+.privacy-policy h6:before {
+    left:0;
+}
+.privacy-policy h6:after {
+    right: 0;
+}
+
+.footer-content-title {
+    /* offset-x | offset-y | blur-radius | color */
+    text-shadow: 1px 1px 5px #000;
+    color: white;
+    text-transform: initial !important;
+}
+
+.page-footer p {
+    font-size: 0.9rem;
+}
+
+.error-404-icon {
+    font-size: 10rem;
+    color: orangered;
+}
+
+.affiliate-html * {
+    width: 100%;
+}
+
+.common-border {
+    position: relative;
+    margin-top: 0.1em;
+    padding: 0.4em 0.2em;
+    border: solid 3px #ff8700;
+    border-radius: 8px;
+}
+
+.common-border .common-border-title {
+    position: absolute;
+    display: inline-block;
+    top: -13px;
+    left: 10px;
+    padding: 0 3px;
+    line-height: 1;
+    font-size: 1rem;
+    background: #FFF;
+    color: #ff8700;
+    font-weight: bold;
+}
+
+.common-border p {
+    margin: 0;
+    padding: 0;
+}
+
+.common-border .col-* {
+    padding: 0 !important;
+}
+
+.common-button {
+    bottom: 0px;
+    width: 100%;
+    padding: .2em 0;
+    cursor: pointer;
+    transition: .2s ease;
+
+    display: table;
+    font-size: 1.1em;
+    color: #ff8700;
+    background-color: rgba(255,255,255,0.1);
+    border: solid 3px #ff8700;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.common-button:hover {
+    color: white;
+    background-color: #ff5200;
+}
+
+.logo-text {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: bold;
+    font-family: "Arial Black", Gadget, sans-serif;
+}

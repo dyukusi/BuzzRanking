@@ -13,19 +13,18 @@ const async = require('async');
 
 const ReleaseControlModel = require(appRoot + '/models/release_control.js');
 
-if (!process.argv[2] || !process.argv[3]) {
-  throw new Error('pls specify args. ex.. node hoge.js 1 2019-04-28');
+if (!process.argv[2]) {
+  throw new Error('pls specify args. ex.. node hoge.js 2019-04-28');
 }
 
-var targetProductTypeId = Number(process.argv[2]);
-var targetDate = new Date(process.argv[3]);
+var targetDate = new Date(process.argv[2]);
 
 if (targetDate.toString() == 'Invalid Date') {
-  throw new Error('invalid date: ' + process.argv[3]);
+  throw new Error('invalid date: ' + process.argv[2]);
 }
 
-ReleaseControlModel.updateCurrentReleaseDate(targetProductTypeId, targetDate)
+ReleaseControlModel.insert(targetDate)
   .then(() => {
     con.end();
-    console.log("Finished! ProductTypeId:" + targetProductTypeId + " date:" +targetDate.toLocaleDateString());
+    console.log("Finished! date:" +targetDate.toLocaleDateString());
   });

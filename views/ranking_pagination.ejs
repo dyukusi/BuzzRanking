@@ -1,0 +1,30 @@
+<%
+var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
+%>
+
+<div class="pager">
+    <ul class="my-pagination">
+        <li class="pre">
+            <a href="/ranking/<%= productTypeBundleName %>?page=<%= targetPage - 1 %>" class="<%= targetPage <= 1 ? 'disabled-link' : '' %>">
+                <span>«</span>
+            </a>
+        </li>
+
+        <% __.each(__.range(1, pageMax + 1), page => { %>
+            <li>
+                <a href="/ranking/<%= productTypeBundleName %>?page=<%= page %>" class="<%= targetPage == page ? 'active' : '' %>">
+                    <span>
+                        <%= page %>
+                    </span>
+                </a>
+            </li>
+        <% }); %>
+
+        <li class="pre">
+            <a href="/ranking/<%= productTypeBundleName %>?page=<%= targetPage + 1 %>" class="<%= pageMax <= targetPage ? 'disabled-link' : '' %>">
+                <span>»</span>
+            </a>
+        </li>
+    </ul>
+</div>
+

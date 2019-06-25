@@ -2,12 +2,11 @@ const appRoot = require('app-root-path');
 const con = require(appRoot + '/my_libs/db.js');
 const Q = require('q');
 const _ = require('underscore');
-const ModelBase = require(appRoot + '/models/base');
+
 const TABLE_NAME = 'a8_program';
 
-module.exports = class A8Program extends ModelBase {
+module.exports = class A8Program {
   constructor(product_id, product_type_id, display_name, a8_program_id, program_name, ad_target_url, ad_html, parent_a8_program_local_id) {
-    super();
     this.product_id = product_id;
     this.product_type_id = product_type_id;
     this.a8_program_id = a8_program_id;
@@ -64,18 +63,18 @@ module.exports = class A8Program extends ModelBase {
     );
   }
 
-  static selectByProductTypeId(productTypeId, options) {
+  static selectByProductTypeIds(productTypeIds, options) {
     var d = Q.defer();
     var that = this;
 
-    var sql = 'SELECT * FROM a8_program WHERE product_type_id = ?';
+    var sql = 'SELECT * FROM a8_program WHERE product_type_id IN (?)';
 
     if (options.ignoreChildProgram) {
       sql += ' AND parent_a8_program_local_id IS NULL';
     }
 
     con.query(sql,
-      [productTypeId],
+      [productTypeIds],
       function (e, rows, fields) {
         if (e) {
           d.reject(e);
@@ -95,13 +94,12 @@ module.exports = class A8Program extends ModelBase {
     return d.promise;
   }
 
-  static selectByProductTypeIdAndProductIds(productTypeId, productIds) {
+  static selectByProductIds(productIds) {
     var d = Q.defer();
     var that = this;
 
-    con.query('SELECT * FROM a8_program WHERE product_type_id = ? AND product_id IN (?)',
+    con.query('SELECT * FROM a8_program WHERE product_id IN (?)',
       [
-        productTypeId,
         productIds
       ],
       function (e, rows, fields) {

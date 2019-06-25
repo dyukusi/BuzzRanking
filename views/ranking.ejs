@@ -1,18 +1,55 @@
 <%
-const INITIAL_DISPLAY_LIMIT_RANK = 10;
-const INITIAL_DISPLAY_TWEET_NUM = 3;
+const Ctype = Const.PRODUCT_TYPE_NAME_TO_ID_HASH;
+const Cbundle = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID;
+const INITIAL_DISPLAY_TWEET_NUM = 2;
 const PRODUCT_TYPE_ID_INTO_TEXT_HASH = {
-    1: {
-      titleTag: '【毎日更新】漫画・コミック新刊 流行ランキング【BuzzRanking】',
-      heading: '今<span>注目されている</span><span>漫画・コミック新刊</span>ランキング',
+    [Ctype.comic]: {
+        titleTag: '今ネットで話題の漫画・コミックランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている漫画・コミックをバズっている順に紹介！【毎日更新】',
     },
-    2: {
-      titleTag: '【毎日更新】出会い系・マッチングサービス 流行ランキング【BuzzRanking】',
-      heading: '今<span>注目されている</span><span>出会い系・マッチングサービス</span><span>ランキング</span>'
+    [Ctype.console_game]: {
+        titleTag: '今ネットで話題の据え置き型ゲームランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている据え置き型ゲームをバズっている順に紹介！【毎日更新】',
+    },
+    [Ctype.novel]: {
+        titleTag: '今ネットで話題の小説ランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている小説をバズっている順に紹介！【毎日更新】',
+    },
+    [Ctype.it]: {
+        titleTag: '今ネットで話題のIT・プログラミング本ランキング 【BuzzRanking】',
+        description: '今ネットで話題になっているIT・プログラミング本をバズっている順に紹介！【毎日更新】',
+    },
+    [Ctype.inn_reservation]: {
+        titleTag: '今ネットで話題の宿泊・旅行予約サービスランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている宿泊・旅行予約サービスをバズっている順に紹介！【毎日更新】',
+    },
+    [Ctype.portable_game]: {
+        titleTag: '今ネットで話題の携帯ゲームランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている携帯ゲームをバズっている順に紹介！【毎日更新】',
     },
 };
 
-var texts = PRODUCT_TYPE_ID_INTO_TEXT_HASH[productTypeId];
+const PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH = {
+    [Cbundle.all]: {
+        titleTag: '今ネットで話題の商品・サービス総合ランキング 【BuzzRanking】',
+        description: '今ネットで話題になっているものをバズっている順に紹介！【毎日更新】',
+    },
+    [Cbundle.book]: {
+        titleTag: '今ネットで話題の本・書籍ランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている本・書籍をバズっている順に紹介！【毎日更新】',
+    },
+    [Cbundle.game]: {
+        titleTag: '今ネットで話題のゲームランキング 【BuzzRanking】',
+        description: '今ネットで話題になっているゲームをバズっている順に紹介！【毎日更新】',
+    },
+    [Cbundle.inn]: {
+        titleTag: '今ネットで話題の宿泊・旅行予約サービス総合ランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている宿泊・旅行予約サービスをバズっている順に紹介！【毎日更新】',
+    },
+};
+
+var texts = targetProductTypeId ? PRODUCT_TYPE_ID_INTO_TEXT_HASH[targetProductTypeId] : PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH[productTypeBundleId];
+var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
 %>
 
 <!DOCTYPE html>
@@ -21,41 +58,43 @@ var texts = PRODUCT_TYPE_ID_INTO_TEXT_HASH[productTypeId];
       integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
       integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+<link href="/css/accordion.css" rel="stylesheet">
 <link href="/css/common.css" rel="stylesheet">
 <link href="/css/ranking.css" rel="stylesheet">
 
 <html>
 <head>
     <title><%- texts.titleTag %></title>
+
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <meta name=”description” content=”<%= texts.description %>”>
+
+<% if (1 < targetPage) { %>
+        <link rel=”prev” href=”https://www.buzzranking.net/ranking/<%= productTypeBundleName %>?page=<%= targetPage - 1 %>”>
+    <% }%>
+
+    <% if (targetPage < pageMax) { %>
+        <link rel=”next” href=”https://www.buzzranking.net/ranking/<%= productTypeBundleName %>?page=<%= targetPage + 1 %>”>
+    <% } %>
+
 </head>
 <body>
 
 <%- include(appRoot + '/views/header.ejs') %>
-<div class="container-fluid">
-    <div>
-        <h1><%- texts.heading %></h1>
-    </div>
 
-    <div class="row">
-        <div class="col-12">
-            <div class="text-align-right">
-                最終更新日 <span class="last-updated-at"><%= myUtil.convertDateObjectIntoJapaneseDateString(statModel.getRankingDate()) %></span>
-            </div>
-        </div>
-    </div>
+<div id="content" class="container-fluid">
+    <!--<div class="row">-->
+        <!--<div class="col-12">-->
+            <!--<div class="text-align-left">-->
+                <!--<span class="last-updated-at"><%= myUtil.convertDateObjectIntoJapaneseDateString(statModel.getRankingDateObj()) %></span>-->
+                <!--最終更新-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
 
-    <div class="row">
-        <div class="col-12">
-            <div class="text-align-right">
-                (<%= myUtil.convertDateObjectIntoJapaneseDateString(statModel.getStatSince()) %> ~ <%= myUtil.convertDateObjectIntoJapaneseDateString(statModel.getStatUntil()) %>集計)
-            </div>
-        </div>
-    </div>
-
-
-<% if (targetDate.getTime() < latestStatDate.getTime()) { %>
+    <% if (targetDateMoment < latestStatDateMoment) { %>
         <div class="row">
             <div class="col-12">
                 ※過去のランキングを表示しています。
@@ -66,80 +105,169 @@ var texts = PRODUCT_TYPE_ID_INTO_TEXT_HASH[productTypeId];
         </div>
     <% } %>
 
+    <% if (productTypeBundleId != Cbundle.all) { %>
+        <ul class="nav nav-tabs">
+            <li class="nav-item tab-item"><a href="/ranking/<%= productTypeBundleName %>"
+                                             class="nav-link <%= targetProductTypeId ? '' : 'active' %>">総合</a></li>
+            <%
+            __.each(Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId], productTypeId => {
+                var productTypeName = Const.PRODUCT_TYPE_ID_TO_NAME_HASH[productTypeId];
+                var productTypeJapaneseName = Const.PRODUCT_TYPE_ID_TO_JA_NAME_HASH[productTypeId];
+                var isTargetType = productTypeId == targetProductTypeId;
+            %>
+            <li class="nav-item tab-item"><a href="/ranking/<%= productTypeBundleName %>?type=<%= productTypeName %>"
+                                             class="nav-link <%= isTargetType ? 'active' : '' %>"><%= productTypeJapaneseName %></a>
+            </li>
+            <% }); %>
+        </ul>
+    <% } %>
+
     <%
     __.times(ranking.length, function(n) {
         var data = ranking[n];
-        var rank = data.statDataModel.getRank();
+        var rank = data.rank;
         var tweetModels = data.tweetModels;
-        var shouldInitialDisplay = rank <= INITIAL_DISPLAY_LIMIT_RANK;
+        var productModelName = data.productModel._modelOptions.name.singular;
+        var productInfoTemplatePath = 'product_info/' + productModelName + '.ejs';
     %>
 
-    <% if (n % 2 == 0) { %>
     <div class="row product-row-block">
-        <div class="col-md-12 col-lg-6">
-            <% } else { %>
-        </div>
-        <div class="col-md-12 col-lg-6">
-            <% } %>
+        <!--<div class="col-md-12 col-lg-6">-->
+        <div class="col-md-12">
+            <!--<div class="product-block shadow bg-white rounded"-->
+            <div class="product-block product-block-border"
+                 data-product-id="<%= data.statDataModel.productId %>">
+                <span class="product-block-border-title relative">
+                    <% if (rank <= 3) { %>
+                        <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
+                    <% } %>
+                    <%= rank %>位
+                    <span class="buzz-count-text">(<%= data.statDataModel.userCount %>Buzz)</span>
+                </span>
 
-            <div class="row shadow p-3 mb-5 bg-white rounded product-block">
-                <div class="col-4 product-col">
-                    <%-
-                    include(appRoot + '/views/product_col.ejs', {
-                    data: data,
-                    })
-                    %>
+                <div class="product-detail-icon">
+                    <a href="/product/detail/<%= data.productModel.productId %>" target="_blank" rel="nofollow">
+                        <i class="fas fa-file-contract"></i>
+                    </a>
+                </div>
+                <div class="row d-flex align-items-center product-block-header">
+                    <div class="col-12">
+                        <h2 class="product-title">
+                            <%= data.productModel.title %>
+                        </h2>
+                    </div>
                 </div>
 
-                <%
-                    var initialDisplayTweets = shouldInitialDisplay ? __.first(tweetModels, INITIAL_DISPLAY_TWEET_NUM) : [];
-                    var dataAttrStr = __.map(tweetModels, function (tweetModel) {
-                        return '["' + tweetModel.getScreenName() + '","' + tweetModel.getTweetId() + '"]';
-                    }).join(',');
-                %>
+                <div class="row">
+                    <div class="col-4 product-col">
+                        <div class="product-info-block">
 
-                <div class="col-8 tweet-references">
-                    <div class="twitter-reaction-loading">
-                        <span class="spinner-border text-primary" role="status" aria-hidden="true"></span>
-                    </div>
-
-                    <div class="grad-wrap">
-                        <button class="btn btn-lg text-shadow grad-trigger"
-                                type="button"
-                                data-read-more-tweet-ids="[<%= dataAttrStr %>]">
-                            <%= shouldInitialDisplay ? '続きを読む' : 'Twitterの反応を見る' %>
-                        </button>
-
-                        <div class="grad-item" data-grad-idx="<%= rank %>"
-                             data-is-first-render=<%= shouldInitialDisplay ? 'true' : 'false' %>>
-
-                            <% if (shouldInitialDisplay) { %>
-                                <% __.each(initialDisplayTweets, function(tweetModel) { %>
-                                    <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
-                                        <a href="https://twitter.com/<%= tweetModel.getScreenName() %>/status/<%= tweetModel.getTweetId() %>"></a>
-                                    </blockquote>
-                                <% }); %>
-                            <% } else { %>
-                                <img src="/img/mosaic_tweet_list.png" class="mosaic-tweet-list-img">
-                            <% } %>
+                            <%- include(productInfoTemplatePath, { data: data, }) %>
 
                         </div>
                     </div>
+
+                    <%
+                        var initialDisplayTweets = __.first(tweetModels, INITIAL_DISPLAY_TWEET_NUM);
+                        var dataAttrStr = __.map(tweetModels, function (tweetModel) {
+                            return '["' + tweetModel.screenName + '","' + tweetModel.tweetId + '"]';
+                        }).join(',');
+                    %>
+
+                    <div class="col-8">
+                        <div class="twitter-reaction-loading">
+                            <span class="spinner-border text-primary" role="status" aria-hidden="true"></span>
+                        </div>
+                        <div class="tweet-references">
+
+                            <div class="grad-wrap">
+                                <button class="btn grad-trigger"
+                                        type="button"
+                                        data-read-more-tweet-ids="[<%= dataAttrStr %>]"
+                                        data-is-open="false"
+                                        data-is-ever-opened="false"
+                                >
+                                    <div class="relative">
+                                        <p class="caption-btn-text">
+                                            続きを読む
+                                        </p>
+                                        <i class="fas fa-angle-down fa-lg accordion-icon"></i>
+                                    </div>
+                                </button>
+
+                                <div class="grad-item" data-grad-idx="<%= rank %>"
+                                     data-is-first-render='true'>
+
+                                    <% if (data.bookCaptionModel) { %>
+                                        <div class="book-caption-accordion">
+                                            <div>
+                                                <span class="btn read-book-caption-button">
+                                                    <div class="relative">
+                                                        <p class="caption-btn-text">あらすじ</p>
+                                                        <i class="fas fa-angle-down fa-lg accordion-icon"></i>
+                                                    </div>
+                                                </span>
+                                                <div class="book-caption">
+                                                    <%= data.bookCaptionModel.caption; %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% } %>
+
+                                    <div class="twitter-reaction-area">
+                                        <% __.each(initialDisplayTweets, function(tweetModel) { %>
+                                            <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
+                                                <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
+                                            </blockquote>
+
+                                            <% if (isAdmin) { %>
+                                                <button class="btn btn-danger remove-tweet-button"
+                                                        data-tweet-id="<%= tweetModel.tweetId %>">
+                                                    (Admin)このツイートを無効化する
+                                                </button>
+                                            <% } %>
+                                        <% }); %>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <% if (isAdmin) { %>
+                    <div class="row">
+                        <div class="col-12">
+                            <p>Admin用ツール</p>
+                            <button type="button" class="btn btn-danger add-to-invalid-table">
+                                invalid_productテーブルに追加
+                            </button>
+                        </div>
+                    </div>
+                <% } %>
             </div>
 
-            <% if (n % 2 == 0 && n != ranking.length - 1) {
-            } else { %>
         </div>
     </div>
-    <% }}); %>
 
+    <% }); %>
+
+    <% if (targetPage == pageMax) { %>
+    <div class="threshold-buzz-count-description">
+        ※ Buzzが<%= Const.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT %>未満の商品はランキングには表示されません
+    </div>
+    <% } %>
 </div>
 
-<br><br>
+<%- include('ranking_pagination.ejs') %>
+
 <%- include(appRoot + '/views/footer.ejs') %>
+
+<% if (isAdmin) { %>
+    <div id="is-admin-dummy-div" style="display: none;"></div>
+<% } %>
 
 </body>
 </html>
 
-<script src="/js/compressed/book_ranking.min.js" type="text/javascript"></script>
+<script src="/js/compressed/ranking.min.js" type="text/javascript"></script>

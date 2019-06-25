@@ -20,7 +20,6 @@
     margin-top: 10px;
     margin-right: auto;
     margin-left: auto;
-    max-width: 90%;
 }
 
 /* md */
@@ -45,6 +44,11 @@
 
     .rank-num {
         font-size: 10vw;
+    }
+
+    .rank-crown-img {
+        height: 3rem;
+        width: auto;
     }
 }
 
@@ -71,18 +75,14 @@
     .rank-num {
         font-size: 4vw;
     }
+
+    .rank-crown-img {
+        height: 4rem;
+        width: auto;
+    }
 }
 
 /*--------------------*/
-h1 {
-    width: fit-content;
-    text-align: center;
-    margin: auto;
-    position: relative;
-    font-size: 1.35em;
-    padding-top: 1vw;
-}
-
 .sitename {
     margin: 15px 0 15px;
 }
@@ -95,12 +95,6 @@ h1 {
 i {
     font-size: 1.3em;
     color: inherit;
-}
-
-h1:first-letter {
-    font-size: 2.5em;
-    font-weight: bold;
-    color: red;
 }
 
 span {
@@ -119,7 +113,6 @@ span {
 
 .best-3-rank-num {
     color: red;
-
     text-shadow: 1px 1px 0 orangered,
     -1px -1px 0 orangered,
     -1px 1px 0 orangered,
@@ -142,25 +135,26 @@ span {
     font-weight: bold;
 }
 
-.rank-crown-img {
-    position: relative;
-    /*margin: 0px;*/
-    height: 100%;
-    width: 100%;
-    max-width: 120px;
+/*.rank-crown-img {*/
+/*position: relative;*/
+/*!*margin: 0px;*!*/
+/*height: 100%;*/
+/*width: 100%;*/
+/*max-width: 120px;*/
 
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: auto;
-}
+/*top: 0;*/
+/*left: 0;*/
+/*right: 0;*/
+/*bottom: 0;*/
+/*margin: auto;*/
+/*}*/
 
 .lum-lightbox {
     z-index: 4;
 }
 
 .twitter-reaction-loading {
+    z-index: 1000;
     position: absolute;
     height: 100%;
     width: 100%;
@@ -171,14 +165,6 @@ span {
     align-items: center;
 }
 
-.book-caption {
-    text-align: left;
-    background-color: rgba(0, 0, 0, 0.5);
-    margin-top: 1rem;
-    font-family: serif;
-    padding: 1rem;
-}
-
 .score-row {
     font-weight: bold;
     padding: 5px;
@@ -186,16 +172,12 @@ span {
 }
 
 .product-block {
-    position: sticky;
-    top: 2vw;
-
-    margin-left: -5px !important;
-    margin-right: -5px !important;
-    padding: 5px !important;
+    top: 1rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
 }
 
 .product-info {
-    /*position: sticky;*/
     top: 2vw;
     text-align: center;
 }
@@ -204,19 +186,16 @@ span {
     display: inline-block;
     background-position: center center;
     background-repeat: no-repeat;
-    /*width: 100%;*/
-    /*height: 200px;*/
     background-size: contain;
-
 }
 
 .product-title {
-    margin-top: 0.5vw;
-    margin-bottom: 0px;
+    width: 80%;
+    margin-bottom: 0.5rem;
     position: relative;
-    font-family: serif;
+    /*font-family: serif;*/
     font-weight: bold;
-    font-size: 0.9em;
+    font-size: 1.0em;
 }
 
 .sale-date {
@@ -230,7 +209,7 @@ span {
     z-index: -1;
     content: '';
     width: 100%;
-    height: 10px;
+    height: 0.5rem;
     /*background-color: #E4F9E9;*/
     background-color: #ffc85c;
 }
@@ -255,18 +234,29 @@ span {
 .tweet-references {
     padding: 0px !important;
     overflow-x: hidden;
-    height: auto;
+    height: 0px;
 }
 
 .twitter-tweet {
     width: 100% !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    max-width: initial !important;
+    margin-top: 0px !important;
+    margin-bottom: 2px !important;
     min-width: initial !important;
-    backgrounf: #fff;
-    margin-top: 1px !important;
-    margin-bottom: 1px !important;
+    /*border-radius: 0 !important;*/
+    /*box-shadow: none !important;*/
+    /*max-width: initial !important;*/
+
+    /*backgrounf: #fff;*/
+    /*margin-top: 1px !important;*/
+    /*margin-bottom: 1px !important;*/
+}
+
+.twitter-tweet-error {
+    margin: 0px;
+}
+
+.sample-tweet {
+    width: 100%;
 }
 
 .book-title {
@@ -286,34 +276,35 @@ span {
 /* ------------------ readmore -------------------------- */
 .mosaic-tweet-list-img {
     width: 100%;
-    height: 100%;
 }
 
 .product-row-block {
-    margin-bottom: -15px;
+    /*margin-bottom: -15px;*/
 }
 
 .product-col {
-    padding: 5px !important;
+    padding-right: 5px !important;
 }
 
 .grad-trigger {
     visibility: hidden;
     z-index: 2;
     position: absolute;
-    bottom: 10px;
+    bottom: 0px;
     width: 100%;
-    margin: auto;
-    padding: .5em 0;
-    border-radius: 2px;
-    background-color: #ff8700;
-    color: white;
-    font-size: 1.1em;
-    text-align: center;
+    padding: .2em 0;
     cursor: pointer;
     transition: .2s ease;
-    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
+
+    display: table;
+    font-size: 1.1em;
+    color: #ff8700;
+    background-color: rgba(255,255,255,0.1);
+    border: solid 3px #ff8700;
+    border-radius: 8px;
+    font-weight: bold;
 }
+
 
 .read-more-adjust {
     bottom: initial;
@@ -322,10 +313,11 @@ span {
 .grad-trigger:hover {
     color: white;
     background-color: #ff5200;
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
 }
 
 .grad-wrap {
+    /*display: none;*/
+    visibility: hidden;
     height: 100%;
     overflow: hidden;
     position: relative;
@@ -336,9 +328,11 @@ span {
 }
 
 .grad-item {
-    height: 0px;
+    height: 100%;
     position: relative;
     overflow: hidden;
+    padding-left: 2%;
+    padding-right: 2%;
 }
 
 .grad-item.is-hide {
@@ -357,7 +351,7 @@ span {
     left: 0;
     content: "";
     width: 100%;
-    height: 110px; /*グラデーションで隠す高さ*/
+    height: 4rem; /*グラデーションで隠す高さ*/
     background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.9) 50%, #fff 100%);
     background: linear-gradient(top, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.9) 50%, #fff 100%);
 }
@@ -381,11 +375,11 @@ span {
 .text-shadow {
     text-shadow: black 2px 0px, black -2px 0px,
     black 0px -2px, black 0px 2px,
-    black 2px 2px,  black -2px 2px,
+    black 2px 2px, black -2px 2px,
     black 2px -2px, black -2px -2px,
-    black 1px 2px,  black -1px 2px,
+    black 1px 2px, black -1px 2px,
     black 1px -2px, black -1px -2px,
-    black 2px 1px,  black -2px 1px,
+    black 2px 1px, black -2px 1px,
     black 2px -1px, black -2px -1px;
 }
 
@@ -394,6 +388,382 @@ span {
     font-size: 1.2em;
 }
 
-.text-align-right {
+.text-align-left {
     text-align: left;
+}
+
+.af-link-rakuten-logo {
+}
+
+.af-link-button {
+    border: 1px solid lightgray;
+    padding: 5%;
+    margin: 3%;
+}
+
+.af-link-button:hover {
+    box-shadow: initial;
+    background-color: #dadada;
+}
+
+.buy-link-area {
+    position: relative;
+    margin-top: 1.2em;
+    padding: 0.1em 0.1em;
+    border: solid 3px #ff8700;
+    border-radius: 8px;
+    max-width: 200px;
+}
+
+.buy-link-area .buy-link-area-title {
+    position: absolute;
+    display: inline-block;
+    top: -13px;
+    left: 10px;
+    padding: 0 3px;
+    line-height: 1;
+    font-size: 1rem;
+    background: #FFF;
+    color: #ff8700;
+    font-weight: bold;
+}
+
+.buy-link-area p {
+    margin: 0;
+    padding: 0;
+}
+
+.product-info-block {
+    top: 1rem;
+    text-align: center;
+}
+
+.product-block-header {
+    text-align: center;
+}
+
+.read-book-caption-button {
+    width: 100%;
+    padding:  0.1rem;
+    transition: .2s ease;
+
+    font-size: 1.1em;
+    color: #ff8700;
+    background-color: rgba(255,255,255,0.1);
+    border: solid 3px #ff8700;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.read-book-caption-button:hover {
+    color: white;
+    background-color: #ff5200;
+}
+
+.book-caption-row {
+    margin-top: 0.5rem;
+}
+
+.book-caption-area {
+    display: none;
+    position: relative;
+    margin-top: 0.8em;
+    padding: 0.1em 0.1em;
+    border: solid 3px gray;
+    border-radius: 4px;
+}
+
+.book-caption-area .book-caption-area-title {
+    position: absolute;
+    display: inline-block;
+    top: -13px;
+    left: 10px;
+    padding: 0 3px;
+    line-height: 1;
+    font-size: 1rem;
+    background: #FFF;
+    color: gray;
+    font-weight: bold;
+}
+
+.book-caption-area p {
+    margin: 0;
+    padding: 0;
+}
+
+.product-info-heading {
+    position: relative;
+    text-align: center;
+    font-weight: bold;
+}
+
+.product-info-heading span {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    margin: 0 2.5em;
+    padding: 0 1em;
+    background-color: #fff;
+    text-align: left;
+}
+
+.product-info-heading::before {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    content: '';
+    display: block;
+    width: 100%;
+    height: 1px;
+    background-color: #ccc;
+}
+
+.twitter-reaction-area {
+    /*height: 0px;*/
+    min-height: 200px;
+}
+
+.book-caption {
+    font-family: "游明朝", YuMincho, "ヒラギノ明朝 ProN W3", "Hiragino Mincho ProN", "HG明朝E", "ＭＳ Ｐ明朝", "ＭＳ 明朝", serif;
+    position: relative;
+    padding: 0.25em 0.25em 0 0.25em;
+}
+.book-caption:before,.book-caption:after{
+    content:'';
+    width: 20px;
+    height: 30px;
+    position: absolute;
+    display: inline-block;
+}
+.book-caption:before{
+    border-left: solid 1px #5767bf;
+    border-top: solid 1px #5767bf;
+    top:0;
+    left: 0;
+}
+.book-caption:after{
+    border-right: solid 1px #5767bf;
+    border-bottom: solid 1px #5767bf;
+    bottom:0;
+    right: 0;
+}
+.book-caption p {
+    margin: 0;
+    padding: 0;
+}
+
+.accordion-icon {
+    width: 100%;
+    text-align: right;
+    padding-right: 0.5rem;
+}
+
+.read-more-text {
+    width: 100%;
+    position: absolute;
+    text-align: center;
+}
+
+.relative {
+    position: relative;
+}
+
+.caption-btn-text {
+    width: 100%;
+    position: absolute;
+    text-align: center;
+}
+
+.stat-div {
+    color: white;
+    top: 50%;
+    left: 50%;
+    -ms-transform: translate(-50%,-50%);
+    -webkit-transform: translate(-50%,-50%);
+    transform: translate(-50%,-50%);
+    margin:0;
+    padding:0;
+    position: absolute;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.book-caption-accordion .closed {
+    width: 100%;
+}
+
+.tab-item {
+    /*font-weight: bold;*/
+}
+
+.tab-item a {
+    color: #ff8700;
+    font-size: 1rem;
+}
+
+.tab-item .nav-link.active {
+    font-weight: bold;
+    color: red;
+}
+
+.nav-tabs {
+    border-bottom: initial;
+}
+
+.product-detail-icon a {
+    z-index: 9999;
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    font-size: 1.5rem;
+    color: #f5964b;
+
+    /*height: 3rem;*/
+    /*width: 3rem;*/
+}
+
+.product-detail-icon a:hover {
+    color: #e66600;
+}
+
+.twitter-tweet-error {
+    display: none;
+}
+
+.crown-bg-icon {
+    color: yellow;
+    font-size: 3rem;
+
+}
+
+.product-block-border {
+    position: relative;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: solid 1px #dedede;
+    border-radius: 8px;
+}
+
+.product-block-border .product-block-border-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: black;
+    position: absolute;
+    display: inline-block;
+    top: -0.75rem;
+    left: 10px;
+    padding: 0 10px;
+    line-height: 1;
+    background: #FFF;
+
+}
+
+.product-block-border p {
+    margin: 0;
+    padding: 0;
+}
+
+
+.rank-crown-img {
+    height: 1.5rem;
+    width: auto;
+}
+
+.buzz-count-text {
+    font-size: 1rem;
+    font-weight: initial;
+    color: #9d9d9d;
+}
+
+.pager .my-pagination {
+    text-align: center;
+    padding: 0;
+}
+
+.pager .my-pagination li {
+    display: inline-block;
+    padding: 0;
+    background: transparent;
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    position: relative;
+    border-radius: 10px;
+}
+
+
+.pager .my-pagination li a{
+    vertical-align: middle;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    display:table;
+    color: #ff8700;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: bold;
+
+    border: solid 3px #ff8700;
+    border-radius: 10px;
+}
+
+.pager .my-pagination li a span{
+    display:table-cell;
+    vertical-align:middle;
+}
+
+.pager .my-pagination li a:hover,
+.pager .my-pagination li a.active{
+    color: white;
+    background: red;
+    border-radius: 10px;
+}
+
+.pager .my-pagination li a.active {
+    cursor: not-allowed;
+    text-decoration: none;
+    pointer-events: none;
+}
+
+@media only screen and (max-width: 767px){
+    .pager .my-pagination li{
+        display: none;
+    }
+
+    .pager .my-pagination li.pre,
+    .pager .my-pagination li.next{
+        display: inline-block;
+        width: 40%;
+        height: 50px;
+        text-align: center;
+    }
+
+    .pager .my-pagination li.pre a,
+    .pager .my-pagination li.next a{
+        width: 100%;
+        text-align: center;
+    }
+
+    .pager .my-pagination li.pre span::after{
+        content: "　前の10件へ";
+    }
+
+    .pager .my-pagination li.next span::before{
+        content: "次の10件へ　";
+    }
+}
+
+.disabled-link {
+    opacity: 0.5;
+    cursor: not-allowed;
+    text-decoration: none;
+    pointer-events: none;
+}
+
+.threshold-buzz-count-description {
+    text-align: center;
+    margin-bottom: 1rem;
 }

@@ -1,76 +1,66 @@
 const appRoot = require('app-root-path');
-const con = require(appRoot + '/my_libs/db.js');
-const Q = require('q');
-const _ = require('underscore');
-const ModelBase = require(appRoot + '/models/base');
-const TABLE_NAME = 'release_control';
+const __ = require('underscore');
+const Sequelize = require('sequelize');
+const sequelize = require(appRoot + '/db/sequelize_config');
 const Util = require(appRoot + '/my_libs/util.js');
+const Moment = require('moment');
+const Q = require('q');
 
-module.exports = class ReleaseControl extends ModelBase {
-  constructor(product_type_id, date) {
-    super();
-    this.product_type_id = product_type_id;
-    this.date = date;
+class ReleaseControl extends Sequelize.Model {
+  // ------------------- Instance Methods -------------------
+  getDateMoment() {
+    return new Moment(this.date);
   }
 
-  getProductId() {
-    return this.product_type_id;
+  // ------------------- Class Methods -------------------
+  static selectLatestReleaseDate() {
+    // var d = Q.defer();
+    //
+    // this.findAll({
+    //   order: [
+    //     ['date', 'DESC']
+    //   ],
+    //   limit: 1,
+    // }).then(models => {
+    //   return d.resolve(models[0]);
+    // });
+    //
+    // return d.promise;
+
+    return this.findOne({
+      order: [
+        ['date', 'DESC']
+      ],
+    });
   }
 
-  getDateObj() {
-    return new Date(this.date);
+  static insert(date) {
+    return this.create({
+      date: Util.convertDateObjectIntoMySqlReadableString(date),
+    });
   }
+}
 
-  // ------------------- static functions -------------------
-  static getTableName() {
-    return TABLE_NAME;
+ReleaseControl.init({
+    date: {
+      type: Sequelize.DATEONLY,
+      allowNull: false,
+      field: 'date',
+      primaryKey: true,
+    },
+    createdAt: {
+      type: Sequelize.DATE,
+      allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+      field: 'created_at'
+    },
+  }, {
+    freezeTableName: true,
+    underscored: true,
+    modelName: 'release_control',
+    timestamps: false,
+    sequelize
   }
+);
 
-  static rowToModel(row) {
-    return new ReleaseControl(
-      row['id'],
-      row['date'],
-    );
-  }
-
-  static selectByProductTypeId(productTypeId) {
-    var d = Q.defer();
-    var that = this;
-
-    con.query('SELECT * FROM release_control WHERE product_type_id = ?',
-      [productTypeId],
-      function (e, rows, fields) {
-        if (e) {
-          d.reject(e);
-          con.rollback(function () {
-            throw e;
-          });
-        }
-
-        d.resolve(that.rowToModel(rows[0]));
-      }
-    );
-
-    return d.promise;
-  }
-
-  static updateCurrentReleaseDate(productTypeId, date) {
-    var d = Q.defer();
-
-    con.query(
-      'REPLACE release_control (product_type_id, date) VALUES (?)',
-      [[productTypeId, Util.convertDateObjectIntoMySqlDateObjectReadableString(date)]],
-      function (e, results, fields) {
-        if (e) {
-          d.reject(e);
-          con.rollback(function () {
-            throw new Error(e);
-          });
-        }
-        d.resolve();
-      }
-    );
-
-    return d.promise;
-  }
-};
+module.exports = ReleaseControl;
