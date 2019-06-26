@@ -18,7 +18,7 @@ const InvalidProduct = require(appRoot + '/models/invalid_product.js');
 const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 6;
 const WAITING_TIME_MSEC_PER_USING_TWITTER_API = 6500; // 6.5sec
 const ABNORMAL_THRESHOLD_USER_COUNT = 1000;
-const SEARCH_TARGET_NUM_PER_EXECUTION = 9999999;
+const SEARCH_TARGET_NUM_PER_EXECUTION = 10;
 const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
 ];
@@ -78,7 +78,7 @@ async function createTaskQueue() {
     InvalidProduct.findAll(),
   ]);
 
-  let targetSortedProductIds = _.first(results[0], SEARCH_TARGET_NUM_PER_EXECUTION);
+  let targetSortedProductIds = _.last(results[0], SEARCH_TARGET_NUM_PER_EXECUTION);
 
   let altSearchWordsHash = _.groupBy(results[1], altSearchWordModel => {
     return altSearchWordModel.productId;
