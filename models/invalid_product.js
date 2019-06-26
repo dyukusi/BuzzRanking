@@ -19,8 +19,11 @@ class InvalidProduct extends Sequelize.Model {
     });
   }
 
-  static insert(productId) {
-    return this.create()
+  static insert(productId, status) {
+    return this.create({
+      productId: productId,
+      status: status,
+    });
   }
 }
 

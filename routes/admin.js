@@ -22,15 +22,10 @@ router.get('/', isAdmin, function(req, res, next) {
 router.post('/add_product_into_invalid_product_table', isAdmin, function (req, res, next) {
   var q = req.query;
 
-  InvalidProductModel.insert(q.productId)
-    .then(() => {
+  InvalidProductModel.insert(q.productId, 0)
+    .then((model) => {
       res.send({
         result: true,
-      });
-    })
-    .fail(() => {
-      res.send({
-        result: false,
       });
     });
 });
@@ -38,15 +33,10 @@ router.post('/add_product_into_invalid_product_table', isAdmin, function (req, r
 router.post('/enable_is_invalid_tweet_flag', isAdmin, function (req, res, next) {
   var q = req.query;
 
-  TweetModel.enableIsInvalidByTweetId(q.tweetId)
-    .then(() => {
+  TweetModel.updateIsInvalid(q.tweetId, true)
+    .then((model) => {
       res.send({
         result: true,
-      });
-    })
-    .fail(() => {
-      res.send({
-        result: false,
       });
     });
 });

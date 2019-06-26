@@ -11,22 +11,7 @@ class Tweet extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
 
   // ------------------- Class Methods -------------------
-  // static selectByRange(sinceStr, untilStr) {
-  //   var sinceMoment = new Moment(sinceStr);
-  //   var untilMoment = new Moment(untilStr);
-  //
-  //   return this.findAll({
-  //     where: {
-  //       tweetedAt: {
-  //         [Op.gte]: sinceMoment.format(),
-  //         [Op.lt]: untilMoment.format(),
-  //       },
-  //       isInvalid: 0,
-  //     },
-  //   });
-  // }
-
-  static selectByProductIds(productIds, options) {
+    static selectByProductIds(productIds, options) {
     options = options || {};
 
     var where = {
