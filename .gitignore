@@ -8,3 +8,4 @@ ignore_files/*
 .DS_Store
 trend_ranking.dump
 trend_ranking_table_data.dump
+log/*

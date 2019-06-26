@@ -10,6 +10,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var passport = require('passport');
 var session = require('express-session');
+var rfs = require("rotating-file-stream");
 
 var redirectToHTTPS = require('express-http-to-https').redirectToHTTPS
 
@@ -25,6 +26,13 @@ global.Q = require('q');
 
 var app = express();
 
+var accessLogStream = rfs('access.log', {
+  size:'10MB',
+  interval: '10d',
+  compress: 'gzip',
+  path: './log/',
+});
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -34,7 +42,18 @@ app.use(express.static('public'));
 // Don't redirect if the hostname is `localhost:port` or the route is `/insecure`
 app.use(redirectToHTTPS([/localhost:(\d{4})/], [/\/health/], 301));
 
-app.use(logger('dev'));
+app.use(logger('short', {
+  stream: accessLogStream,
+  skip: (req, res) => {
+    var url = req.url;
+    if(url.indexOf('?') > 0) url = url.substr(0,url.indexOf('?'));
+    if(url.match(/(health|jpg)$/ig)) {
+      return true;
+    }
+    return false;
+  },
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
