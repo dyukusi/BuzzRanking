@@ -59,7 +59,7 @@ async function main() {
   taskQueue = await createTaskQueue();
 
   console.log("New product num: " + _.filter(_.values(productIdToPriorityHash), priority => {
-    return priority == 0;
+    return priority == -1;
   }).length);
 
   while (taskQueue.length) {
