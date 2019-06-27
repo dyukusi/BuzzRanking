@@ -15,8 +15,7 @@ passport.deserializeUser((user, done) => {
 passport.use(new GoogleStrategy({
     clientID: Config.google_oauth_api.client_id,
     clientSecret: Config.google_oauth_api.client_secret,
-    // FIXME: Enable to switch local & production environment.
-    callbackURL: 'http://localhost:3000/auth/google/callback',
+    callbackURL: Config.google_oauth_api.callback_url,
   },
   function (request, accessToken, refreshToken, profile, done) {
     return done(null, profile);
