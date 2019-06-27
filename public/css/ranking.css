@@ -434,6 +434,9 @@ span {
 }
 
 .product-info-block {
+    /*transform: translate3d(0, 0, 0);*/
+    position: -webkit-sticky;
+    position: sticky;
     top: 1rem;
     text-align: center;
 }
@@ -611,15 +614,12 @@ span {
 }
 
 .product-detail-icon a {
-    z-index: 9999;
+    z-index: 500;
     position: absolute;
     top: 0.25rem;
     right: 0.25rem;
     font-size: 1.5rem;
     color: #f5964b;
-
-    /*height: 3rem;*/
-    /*width: 3rem;*/
 }
 
 .product-detail-icon a:hover {

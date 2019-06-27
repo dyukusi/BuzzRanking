@@ -5,8 +5,8 @@ const Liminous = require('luminous-lightbox').Luminous;
 const request = require('request');
 const MyUtil = require('./util.js')
 const Accordion = require('accordion').Accordion;
-const Stickybits = require('stickybits');
 const Lazysizes = require('lazysizes');
+const isMobileDevice = 'ontouchstart' in window;
 
 var isFirstTwitterWigetsLoad = true;
 
@@ -26,20 +26,15 @@ $(() => {
   initReadMoreButtons();
   initImageZoom();
   initAdminFunctions();
-
   initReadCaptionButton();
-  initSticky();
 
   // initGradElementsHeight();
-  //
-  // TODO : fix scroll bar diff glitch
-  initAutoTweetsDivCloser();
-});
 
-function initSticky() {
-  new Stickybits('.product-block', {stickyBitStickyOffset: 20});
-  new Stickybits('.product-info-block', {stickyBitStickyOffset: 20});
-}
+  // NOTE: this function doesn't work with touch scroll
+  if (!isMobileDevice) {
+    initAutoTweetsDivCloser();
+  }
+});
 
 function initReadCaptionButton() {
   var acOptions = {

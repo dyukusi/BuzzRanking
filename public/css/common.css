@@ -1,35 +1,21 @@
-/* md */
-@media (min-width: 0px) {
-    #PageTopBtn {
-        font-size: 20px;
-    }
-
-    #PageTopBtn a {
-        width: 50px;
-        height: 50px;
-        padding: 8px 0;
-    }
-
-    #content.container-fluid {
-        max-width: 100%;
-    }
+#PageTopBtn {
+    z-index: 800;
+    position: fixed;
 }
 
-/* lg */
-@media (min-width: 992px) {
-    #PageTopBtn {
-        font-size: 25px; /*文字のサイズ*/
-    }
+#PageTopBtn a {
+    display: block;
+    text-decoration: none;
+    color: white;
+    background: #f5964b;
+    text-align: center;
+    border-radius: 50%;
+    outline: none;
+}
 
-    #PageTopBtn a {
-        width: 50px; /*ボタンの幅*/
-        height: 50px; /*ボタンの高さ*/
-        padding: 5px 0; /*文字の配置場所の調整*/
-    }
-
-    #content.container-fluid {
-        max-width: 45%;
-    }
+#PageTopBtn a:hover {
+    text-decoration: none;
+    background: #e66600;
 }
 
 .navbar {
@@ -83,29 +69,6 @@ html {
 .text-align-left {
     text-align: left;
 }
-
-#PageTopBtn {
-    z-index: 100;
-    position: fixed; /*ボタンの配置場所を固定*/
-    bottom: -10px; /*下からのボタンの配置場所を指定*/
-    right: 10px; /*右からのボタンの配置場所を指定*/
-}
-
-#PageTopBtn a {
-    display: block; /*配置の調整*/
-    text-decoration: none; /*文字の下線を消す*/
-    color: #fff; /*文字の色*/
-    background: #f5964b; /*ボタンの背景色*/
-    text-align: center; /*文字を中央に配置*/
-    border-radius: 50%; /*ボタンの角を少し丸くする*/
-    outline: none; /*クリックしたときの黒い枠を消す*/
-}
-
-#PageTopBtn a:hover {
-    text-decoration: none;
-    background: #e66600; /*マウスオーバー時の背景色*/
-}
-
 
 .page-footer {
     background-color: #f5964b;
@@ -242,4 +205,44 @@ h6 {
     font-size: 2.5rem;
     font-weight: bold;
     font-family: "Arial Black", Gadget, sans-serif;
+}
+
+/* smart device */
+@media (min-width: 0px) {
+    #PageTopBtn {
+        font-size: 60px;
+        bottom: 30px;
+        right: 30px;
+    }
+
+    #PageTopBtn a {
+        opacity: 0.5;
+        width: 100px;
+        height: 100px;
+        padding: 10px 0;
+    }
+
+    #content.container-fluid {
+        max-width: 100%;
+    }
+}
+
+/* PC */
+@media (min-width: 992px) {
+    #PageTopBtn {
+        font-size: 25px;
+        bottom: 10px;
+        right: 20px;
+    }
+
+    #PageTopBtn a {
+        opacity: 1;
+        width: 50px;
+        height: 50px;
+        padding: 5px 0;
+    }
+
+    #content.container-fluid {
+        max-width: 45%;
+    }
 }
