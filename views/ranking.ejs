@@ -156,6 +156,11 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
                     <div class="col-12 d-flex align-items-center justify-content-center">
                         <h2 class="product-title">
                             <%= data.productModel.title %>
+
+                            <% if (isAdmin && productIdToIsNewProductHash[data.productModel.productId]) { %>
+                                （！新商品！)
+                            <% } %>
+
                         </h2>
                     </div>
                 </div>

@@ -6,6 +6,7 @@ const Book = require(appRoot + '/models/book');
 const Game = require(appRoot + '/models/game');
 const _ = require('underscore');
 const memoryCache = require('memory-cache');
+const sequelize = require(appRoot + '/db/sequelize_config');
 
 const Stat = require(appRoot + '/models/stat.js');
 const StatData = require(appRoot + '/models/stat_data.js');
@@ -267,4 +268,20 @@ exports.buildRankingByDateMoment = async function (targetDateMoment) {
   memoryCache.put(rankingCacheKey, result);
 
   return result;
+}
+
+exports.getProductIdToIsNewProductHash = async function (statId) {
+  let statDataModels = (await sequelize.query(
+    sprintf(
+      "SELECT * FROM stat_data WHERE product_id IN (SELECT product_id FROM (SELECT product_id, count(*) AS count FROM stat_data WHERE is_invalid = 0 GROUP BY product_id) AS hoge WHERE hoge.count = 1) AND stat_id = %d;",
+      statId
+    )
+  ))[0];
+
+  var productIdToIsNewProductHash = {};
+  _.each(statDataModels, statDataModel => {
+    productIdToIsNewProductHash[statDataModel.product_id] = true;
+  });
+
+  return productIdToIsNewProductHash;
 }

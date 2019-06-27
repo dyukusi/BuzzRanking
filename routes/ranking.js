@@ -71,6 +71,13 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     };
   }
 
+  var productIdToIsNewProductHash = null;
+
+  // for displaying new product mark
+  if (isAdmin) {
+    productIdToIsNewProductHash = await Util.getProductIdToIsNewProductHash(statModel.id);
+  }
+
   return res.render('ranking', {
     isAdmin: isAdmin,
     targetDateMoment: dateMoment,
@@ -81,6 +88,9 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     statModel: statModel,
     productTypeBundleId: productTypeBundleId,
     targetProductTypeId: targetProductTypeId,
+
+    // for admin
+    productIdToIsNewProductHash: productIdToIsNewProductHash,
   });
 }
 

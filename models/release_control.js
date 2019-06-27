@@ -34,6 +34,17 @@ class ReleaseControl extends Sequelize.Model {
     });
   }
 
+  static async selectLastReleaseDate() {
+    var releaseControlModels = await this.findAll({
+      order: [
+        ['date', 'DESC']
+      ],
+      limit: 2,
+    });
+
+    return releaseControlModels[1];
+  }
+
   static insert(date) {
     return this.create({
       date: Util.convertDateObjectIntoMySqlReadableString(date),
