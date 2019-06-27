@@ -38,12 +38,13 @@ let taskQueue = [];
 let productIdToPriorityHash = {};
 
 process.on('uncaughtException', (err) => {
-  throw new Error(err);
-  // fs.writeSync(1, `Caught exception: ${err}\n`);
+  console.log('uncaughtException ' + err);
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, p) => {
   console.log('Unhandled Rejection at:', p, 'reason:', reason);
+  process.exit(1);
 });
 
 main()
