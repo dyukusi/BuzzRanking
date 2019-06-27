@@ -13,6 +13,7 @@ const Twitter = require('twitter');
 const con = require(appRoot + '/my_libs/db.js');
 const async = require('async');
 const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
+const sprintf = require('sprintf-js').sprintf;
 
 const Tweet = require(appRoot + '/models/tweet.js');
 const InvalidProduct = require(appRoot + '/models/invalid_product.js');
@@ -27,6 +28,7 @@ var rankingMoment = moment(process.argv[2]);
 var tweetSinceMoment = moment(rankingMoment).subtract(7, 'days');
 var tweetUntilMoment = moment(rankingMoment);
 
+
 if (!process.argv[2]) {
   throw new Error('pls specify args. node create_ranking.js RankingDate');
 }
@@ -40,51 +42,53 @@ main()
     console.log("Finish!");
   });
 
+
 async function main() {
-  var results = await Promise.all([
-    Tweet.findAll({
+  let productIdAndTweetCountRows = (await sequelize.query(
+    sprintf(
+      "SELECT product_id, count(*) AS count FROM tweet WHERE '%s' <= tweeted_at AND tweeted_at <= '%s' GROUP BY product_id ORDER BY count DESC;",
+      tweetSinceMoment.format(),
+      tweetUntilMoment.format()
+    )
+  ))[0];
+
+  var insertObjectBasesForStatData = _.chain(productIdAndTweetCountRows)
+    .filter(row => {
+
+      // less than 30 means never over 30 user count
+      return CONST.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT <= row.count;
+    })
+    .map(row => {
+      return {
+        statId: null, // this will be set in createRanking function
+        productId: row.product_id,
+        tweetCount: row.count,
+        userCount: null, // this will be set after
+        isInvalid: 0,
+      };
+    })
+    .value();
+
+  for (var i = 0; i < insertObjectBasesForStatData.length; i++) {
+    var data = insertObjectBasesForStatData[i];
+
+    var tweetModels = await Tweet.findAll({
       where: {
+        productId: data.productId,
         tweetedAt: {
           [Op.gte]: tweetSinceMoment.format(),
           [Op.lt]: tweetUntilMoment.format(),
         },
         isInvalid: 0,
       },
-    }),
-    InvalidProduct.findAll(),
-  ]);
+    });
 
-  var tweetModels = results[0];
-  var invalidProductModels = results[1];
-
-  var tweetModelsHash = _.groupBy(tweetModels, m => {
-    return m.productId;
-  });
-
-  var invalidProductModelHash = _.indexBy(invalidProductModels, m => {
-    return m.productId;
-  });
-
-  var insertObjectBasesForStatData = [];
-
-  _.each(tweetModelsHash, (tweetModels, productId) => {
-    if (invalidProductModelHash[productId]) return;
-
-    var tweetCount = tweetModels.length;
     var userCount = _.chain(tweetModels).groupBy(tweetModel => {
       return tweetModel.userId;
     }).keys().value().length;
 
-    if (userCount < CONST.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT) return;
-
-    insertObjectBasesForStatData.push({
-      statId: null, // this will be set in createRanking function
-      productId: productId,
-      tweetCount: tweetCount,
-      userCount: userCount,
-      isInvalid: 0,
-    });
-  });
+    data.userCount = userCount;
+  }
 
   await Stat.createRankingData(rankingMoment, tweetSinceMoment, tweetUntilMoment, insertObjectBasesForStatData);
 
