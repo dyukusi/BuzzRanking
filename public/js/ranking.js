@@ -7,6 +7,7 @@ const MyUtil = require('./util.js')
 const Accordion = require('accordion').Accordion;
 const Lazysizes = require('lazysizes');
 const isMobileDevice = 'ontouchstart' in window;
+const isAdmin = !!$('#is-admin-dummy-div')[0];
 
 var isFirstTwitterWigetsLoad = true;
 
@@ -17,10 +18,6 @@ var ADD_TWEETS_NUM_PER_READ_MORE = 5;
 var gradEleTempHeightHash = {};
 var updatedGradElements = [];
 
-$(window).on('load', function () {
-  // initGradElementsHeight();
-});
-
 $(() => {
   initEmbeddedTweets();
   initReadMoreButtons();
@@ -28,10 +25,8 @@ $(() => {
   initAdminFunctions();
   initReadCaptionButton();
 
-  // initGradElementsHeight();
-
   // NOTE: this function doesn't work with touch scroll
-  if (!isMobileDevice) {
+  if (!isMobileDevice && !isAdmin) {
     initAutoTweetsDivCloser();
   }
 });
@@ -227,7 +222,10 @@ function initEmbeddedTweets() {
           visibility: 'visible',
         });
 
-        initGradElementsHeight();
+        if (!isAdmin) {
+          initGradElementsHeight();
+        }
+
         $('.twitter-reaction-loading').remove();
         $('.grad-wrap').css('visibility', 'visible');
         $('.tweet-references').css('height', '100%');
@@ -361,8 +359,4 @@ function afterLoadTweets(tweetReferenceAreaDiv) {
   });
 
   updatedGradElements = [];
-}
-
-function isAdmin() {
-  return !!$('#is-admin-dummy-div')[0];
 }
