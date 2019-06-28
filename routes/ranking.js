@@ -28,7 +28,7 @@ module.exports = router;
 
 async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateMoment, page, req, res, next) {
   var productTypeIds = targetProductTypeId ? [targetProductTypeId] : Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
-  var targetRankingHTMLCacheKey = 'html_ranking_' + productTypeIds.join('_') + '_' + dateMoment.format() + '_p' + page;
+  var targetRankingHTMLCacheKey = 'html_ranking_' + (targetProductTypeId || 'bundle_' + productTypeBundleId) + '_' + dateMoment.format() + '_p' + page;
   var targetRankingHTMLCache = memoryCache.get(targetRankingHTMLCacheKey);
   var isAdmin = myUtil.isAdminByReq(req);
   var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
