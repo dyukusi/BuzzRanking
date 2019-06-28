@@ -48,7 +48,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
 
   console.log("cache miss: " + targetRankingHTMLCacheKey);
   var [statModel, ranking] = await Util.buildRanking(productTypeIds, dateMoment);
-  var pageMax = Math.ceil(ranking.length / PRODUCT_NUM_PER_PAGE);
+  var pageMax = Math.ceil(ranking.length / PRODUCT_NUM_PER_PAGE) || 1;
 
   if (pageMax < page) {
     return next({
