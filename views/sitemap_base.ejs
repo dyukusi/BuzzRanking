@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <!-- 各ランキングトップページ -->
+    <% _.each(_.keys(CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID), bundleName => { %>
+        <url>
+            <loc>https://www.buzzranking.net/ranking/<%= bundleName %></loc>
+            <changefreq>daily</changefreq>
+            <priority>1.0</priority>
+        </url>
+    <% }); %>
+
+    <!-- indexページ -->
+    <url>
+        <loc>https://www.buzzranking.net/</loc>
+        <priority>0.8</priority>
+    </url>
+
+    <!-- 商品個別詳細ページ -->
+    <% _.each(productDataset, productData => { %>
+        <url>
+            <loc>https://www.buzzranking.net/product/detail/<%= productData.productId %></loc>
+            <priority><%= productData.priority %></priority>
+        </url>
+    <% }); %>
+</urlset>
