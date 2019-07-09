@@ -22,10 +22,12 @@ const SEARCH_TARGET_NUM_PER_EXECUTION = 10;
 const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
 ];
+const DAYS_EXPIRE_TWEET = 7;
+const HOURS_EXPIRE_TWEET = DAYS_EXPIRE_TWEET * 24;
 
 let TWITTER_SEARCH_OPTION_BY_PRODUCT_TYPE_ID = {
   1: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
-  2: '-filter:links source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+  // 2: '-filter:links source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
   3: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
   4: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
   5: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
@@ -111,8 +113,10 @@ async function createTaskQueue() {
       return;
     }
 
-    let altSearchWords = altSearchWordsHash[productModel.productId];
-    let searchWords = altSearchWords ? altSearchWords : [productModel.getProductName()];
+    let altSearchWords = _.map(altSearchWordsHash[productModel.productId], model => {
+      return model.searchWord;
+    });
+    let searchWords = !_.isEmpty(altSearchWords) ? altSearchWords : [productModel.getProductName()];
 
     _.each(searchWords, searchWord => {
       taskQueue.push(createTask(productModel.productTypeId, productModel.productId, searchWord));
@@ -123,15 +127,16 @@ async function createTaskQueue() {
 }
 
 function calcPriority(row) {
-  let userCount = row.user_count;
-  let hoursSinceLastUpdated = (new Date() - new Date(row.created_at)) / (1000 * 60 * 60);
+  // let buzz = row.buzz;
+  let buzz = row.user_count;
+  let hoursSinceLastUpdated = (new Moment() - new Moment(row.created_at)) / (1000 * 60 * 60);
 
   // いくら評価値が高くても最低x時間は次の更新までのインターバルをおくための閾値
   if (hoursSinceLastUpdated <= PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE) {
     return 0;
   }
 
-  let priority = (userCount * hoursSinceLastUpdated) + 1;
+  let priority = (buzz * hoursSinceLastUpdated) + 1;
   row.priority = priority;
 
   return priority;
@@ -142,12 +147,12 @@ function calcPriority(row) {
   // let slope = rawSlope <= 45 ? 45 : rawSlope;
   // let hoursSinceLastUpdated = (new Date() - new Date(row.created_at)) / (1000 * 60 * 60);
   // ↓
-  // tweet_count_logのuser_countの分布的に単純にuser_countを傾きとして計算して十分に見えるので複雑な計算はカット
+  // 単純にbuzzを傾きとして計算して十分に見えるので複雑な計算はこれで何か問題が起きない限り却下. 案自体は残しておく
 }
 
 async function getProductIdArraySortedByTweetSearchPriority() {
   // 全プロダクトの最新のログをセレクトするクエリ
-  let latestTweetCountLogRowsPromise = sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.user_count, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date WHERE TweetCountLogA.product_id NOT IN (SELECT product_id FROM invalid_product);');
+  let latestTweetCountLogRowsPromise = sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.user_count, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date WHERE TweetCountLogA.product_id NOT IN (SELECT product_id FROM invalid_product);');
 
   let newProductIdsPromises = _.map(CONST.PRODUCT_TABLE_NAMES, tableName => {
     return sequelize.query('SELECT product_id FROM ' + tableName + ' WHERE product_id NOT IN (SELECT product_id FROM tweet_count_log) AND product_id NOT IN (SELECT product_id FROM invalid_product)');
@@ -283,7 +288,7 @@ async function collectTweets(task) {
     task.product_id,
     {
       since: oneWeekAgo.format(),
-      until: nowMoment.format(),
+      // until: nowMoment.format(),
     }
   );
 
@@ -291,10 +296,13 @@ async function collectTweets(task) {
     return tweetModel.userId
   }).keys().value().length;
 
+  let buzz = calcBuzzByTweetModels(inRangeTweetModels, nowMoment);
+
   let tweetCountLogModel = await TweetCountLog.create({
     productId: task.product_id,
     tweetCount: inRangeTweetModels.length,
     userCount: userCount,
+    buzz: buzz,
   });
 
   console.log('TweetCountLog inserted');
@@ -304,4 +312,27 @@ async function collectTweets(task) {
 function isMaybeInvalidProduct(productName) {
   if (productName.length <= 3) return true;
   return false;
+}
+
+function calcBuzzByTweetModels(tweetModels, baseMoment) {
+  var totalBuzz = 0;
+
+  var targetTweetModels = _.chain(tweetModels)
+    .sortBy(tweetModel => {
+      return -1 * new Moment(tweetModel.tweetedAt).unix();
+    })
+    .uniq(tweetModel => {
+      return tweetModel.screenName;
+    })
+    .value();
+
+  _.each(targetTweetModels, tweetModel => {
+    var compareMoment = new Moment(tweetModel.tweetedAt);
+    var diffHours = Math.floor((baseMoment - compareMoment) / (60 * 60 * 1000));
+    var buzz = (1 / HOURS_EXPIRE_TWEET) * Math.max(HOURS_EXPIRE_TWEET - diffHours, 0);
+
+    totalBuzz += buzz;
+  });
+
+  return Math.floor(totalBuzz);
 }

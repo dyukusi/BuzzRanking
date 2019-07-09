@@ -18,6 +18,7 @@ var sqls = [
   "INSERT IGNORE INTO block_twitter_user (screen_name) SELECT DISTINCT screen_name FROM tweet WHERE name LIKE '%イオン%'",
   "INSERT IGNORE INTO block_twitter_user (screen_name) SELECT DISTINCT screen_name FROM tweet WHERE name LIKE '%タワーレコード%'",
   "INSERT IGNORE INTO block_twitter_user (screen_name) SELECT DISTINCT screen_name FROM tweet WHERE name LIKE '%集英社%'",
+  "INSERT IGNORE INTO block_twitter_user (screen_name) SELECT DISTINCT screen_name FROM tweet WHERE name LIKE '%公式%'",
 ];
 
 Q.allSettled(_.map(sqls, sql => {

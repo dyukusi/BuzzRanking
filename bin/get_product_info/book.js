@@ -10,8 +10,11 @@ const Util = require(appRoot + '/my_libs/util.js');
 const async = require('async');
 const con = require(appRoot + '/my_libs/db.js');
 const CONST = require(appRoot + '/my_libs/const.js');
+const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 
 const BookModel = require(appRoot + '/models/book');
+const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 
 var FETCH_PRODUCT_DATA_DAYS_AGO_FROM_NOW = 365;
 var C = CONST.PRODUCT_TYPE_NAME_TO_ID_HASH;
@@ -55,71 +58,53 @@ console.log('product since ' + thresholdDate.toLocaleString());
 initQueue();
 main();
 
-function main() {
-  setTimeout(function () {
-    var task = queue.pop();
+async function main() {
+  await sleep(1000);
 
-    if (!task) {
-      console.log('task not found');
-      console.log('Finished!')
-      con.end();
-      return;
-    } else {
-      console.log('Processing... ' + task.genreId + ' ' + task.page);
+  var task = queue.pop();
 
-      async.waterfall([
-          (callback) => {
-            getRakutenBookJSON(task.genreId, task.page)
-              .then(json => {
-                callback(null, json);
-              });
-          },
-          (json, callback) => {
-            console.log('Page ' + json['page'] + '/' + json['pageCount']);
+  if (!task) {
+    console.log('task not found');
+    console.log('Finished!')
+    con.end();
+    return;
+  } else {
+    console.log('Processing... ' + task.genreId + ' ' + task.page);
 
-            var insertObjects = _.map(json['Items'], item => {
-              return itemIntoInsertObjectBase(item, task.productTypeId);
-            });
+    var json = await getRakutenBookJSON(task.genreId, task.page);
 
-            var shouldSearchNextPage = task.page < json['pageCount'];
-            _.each(insertObjects, obj => {
-              var saleDate = new Date(obj.saleDate);
-              if (saleDate < thresholdDate) {
-                shouldSearchNextPage = false;
-              }
-            });
+    console.log('Page ' + json['page'] + '/' + json['pageCount']);
 
-            BookModel.bulkInsert(insertObjects)
-              .then(models => {
-                callback(null, shouldSearchNextPage);
-              })
-              .fail(e => {
-                console.log(e);
-              });
-          },
-        ],
-        (err, shouldSearchNextPage) => {
-          if (err) {
-            console.log(err);
-            queue.push(task);
-          }
+    var insertObjects = _.map(json['Items'], item => {
+      return itemIntoInsertObjectBase(item, task.productTypeId);
+    });
 
-          if (shouldSearchNextPage) {
-            var newTask = _.clone(task);
-            newTask.page++;
+    _.each(insertObjects, obj => {
+      var saleDate = new Date(obj.saleDate);
+      if (saleDate < thresholdDate) {
+        shouldSearchNextPage = false;
+      }
+    });
 
-            queue.push(newTask);
-          } else {
-            console.log('next page isnt required to search');
-          }
+    var bookModels = await BookModel.bulkInsert(insertObjects);
 
-          main();
-        }
-      );
+    for (var i = 0; i < bookModels.length; i++) {
+      var bookModel = bookModels[i];
+      await BatchUtil.insertAltWordIfNeedForNewBook(bookModel.productId, bookModel.title);
     }
 
-  }, 1000);
+    var shouldSearchNextPage = task.page < json['pageCount'];
+    if (shouldSearchNextPage) {
+      var newTask = _.clone(task);
+      newTask.page++;
 
+      queue.push(newTask);
+    } else {
+      console.log('next page isnt required to search');
+    }
+
+    main();
+  }
 }
 
 function initQueue() {

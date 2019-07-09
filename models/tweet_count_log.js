@@ -13,6 +13,7 @@ class TweetCountLog extends Sequelize.Model {
       }
     });
   }
+
   // ------------------- Class Methods -------------------
 }
 
@@ -31,6 +32,11 @@ TweetCountLog.init({
       type: Sequelize.INTEGER(11),
       allowNull: false,
       field: 'user_count'
+    },
+    buzz: {
+      type: Sequelize.INTEGER(11),
+      allowNull: false,
+      field: 'buzz'
     },
     createdAt: {
       type: Sequelize.DATE,

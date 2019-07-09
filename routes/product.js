@@ -6,6 +6,7 @@ const BookCaption = require(appRoot + '/models/book_caption');
 const TweetCountLog = require(appRoot + '/models/tweet_count_log');
 const InvalidProduct = require(appRoot + '/models/invalid_product.js');
 const ReleaseControl = require(appRoot + '/models/release_control.js');
+const BlockTwitterUser = require(appRoot + '/models/block_twitter_user');
 const Moment = require('moment');
 const memoryCache = require('memory-cache');
 
@@ -13,19 +14,29 @@ router.get('/detail/:product_id', function (req, res, next) {
   var productId = req.params.product_id;
 
   (async () => {
-    // var [statModel, ranking] = ;
-
-    var [productModels, bookCaptionModels, tweetModels, tweetCountLogModels, invalidProductModels, top3RankingData] = await Promise.all([
+    var [productModels, bookCaptionModels, tweetModels, tweetCountLogModels, invalidProductModels, blockTwitterUserModels] = await Promise.all([
       await Util.selectProductModelsByProductIds([productId]),
       await BookCaption.selectByProductIds([productId]),
       await Tweet.selectByProductIds([productId]),
       await TweetCountLog.selectByProductId(productId),
       await InvalidProduct.selectByProductIds([productId]),
+      await BlockTwitterUser.findAll({}),
     ]);
 
     var targetProductModel = productModels[0];
     var targetBookCaption = bookCaptionModels[0];
-    var tweetModelsForDisplay = await Util.sortAndExcludeTweetsForListingTweets(tweetModels);
+    var screenNameToBlockTwitterUserModelHash = __.indexBy(blockTwitterUserModels, m => {
+      return m.screenName;
+    });
+
+    var tweetDataArray = Util.buildTweetDataArray(tweetModels, {
+      excludeUnnecessaryDataForDisplay: true,
+      prioritizeFirstAppearUserTweet: true,
+      deprioritizeBlockedUser: true,
+      screenNameToBlockTwitterUserModelHash: screenNameToBlockTwitterUserModelHash,
+      deprioritizeContainsSpecificWordsInText: true,
+    });
+
     var isInvalidProduct = !!invalidProductModels[0];
 
     var sortedTweetCountLogModels = __.sortBy(tweetCountLogModels, m => {
@@ -37,7 +48,7 @@ router.get('/detail/:product_id', function (req, res, next) {
     res.render('product_detail', {
       productModel: targetProductModel,
       bookCaptionModel: targetBookCaption,
-      tweetModels: tweetModelsForDisplay,
+      tweetDataArray: tweetDataArray,
       tweetCountLogModels: sortedTweetCountLogModels,
       isInvalidProduct: isInvalidProduct,
       top3RankingData: top3RankingData,

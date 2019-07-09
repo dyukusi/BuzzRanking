@@ -6,6 +6,7 @@ const Util = require(appRoot + '/my_libs/util.js');
 const Moment = require('moment');
 
 const PRODUCT_NUM_PER_PAGE = 20;
+const DISABLE_HTML_CACHE = true;
 
 router.get('/:product_type_bundle_name', function (req, res, next) {
   var queryParam = req.query || {};
@@ -20,7 +21,8 @@ router.get('/:product_type_bundle_name', function (req, res, next) {
 
   ReleaseControl.selectLatestReleaseDate()
     .then(releaseControlModel => {
-      renderRankingPage(productTypeBundleId, productTypeId, releaseControlModel.getDateMoment(), page, req, res, next);
+      var targetDateMoment = queryParam['date'] ? new Moment(queryParam['date']) : releaseControlModel.getDateMoment();
+      renderRankingPage(productTypeBundleId, productTypeId, targetDateMoment, page, req, res, next);
     });
 });
 
@@ -63,7 +65,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
   var slicedRankings = ranking.slice(start, end);
 
   // should not cache if admin
-  if (!isAdmin) {
+  if (!isAdmin && !DISABLE_HTML_CACHE) {
     res.sendResponse = res.send;
     res.send = (body) => {
       memoryCache.put(targetRankingHTMLCacheKey, body, 60 * 60 * 24 * 1000);

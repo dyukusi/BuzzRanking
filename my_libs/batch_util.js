@@ -9,6 +9,7 @@ const Q = require('q');
 const Util = require(appRoot + '/my_libs/util.js');
 const Twitter = require('twitter');
 const sprintf = require('sprintf-js').sprintf;
+const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 const A8ProgramModel = require(appRoot + '/models/a8_program');
 const BookModel = require(appRoot + '/models/book');
 const GameModel = require(appRoot + '/models/game');
@@ -79,4 +80,23 @@ exports.selectProductModels = (productTypeIds) => {
   });
 
   return d.promise;
+}
+
+exports.insertAltWordIfNeedForNewBook = async (productId, title) => {
+  if (!title.match(/[\(\（]\d+[\)\）]/)) return;
+  var twitterAltSearchWordModels = await TwitterAlternativeSearchWord.findAll({
+    where: {
+      productId: productId,
+    },
+  });
+
+  if (_.isEmpty(twitterAltSearchWordModels)) return;
+
+  var trimmedTitle = title.replace(/[\(\（]\d+[\)\）]/g, '').trim();
+  var twitterAltSearchWordModel = await TwitterAlternativeSearchWord.create({
+    productId: productId,
+    searchWord: trimmedTitle,
+  });
+
+  return;
 }

@@ -7,6 +7,7 @@ const Game = require(appRoot + '/models/game');
 const _ = require('underscore');
 const memoryCache = require('memory-cache');
 const sequelize = require(appRoot + '/db/sequelize_config');
+const FastLevenShtein = require('fast-levenshtein');
 
 const Stat = require(appRoot + '/models/stat.js');
 const StatData = require(appRoot + '/models/stat_data.js');
@@ -15,7 +16,7 @@ const Tweet = require(appRoot + '/models/tweet');
 const BlockTwitterUser = require(appRoot + '/models/block_twitter_user');
 const BookCaption = require(appRoot + '/models/book_caption.js');
 
-exports.convertJapaneseDateStrIntoMysqlDate = function (japaneseDateStr) {
+function convertJapaneseDateStrIntoMysqlDate(japaneseDateStr) {
   var after = japaneseDateStr.replace('年', '-').replace('月', '-').replace('日', '');
   var pattern = /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/g;
 
@@ -23,14 +24,14 @@ exports.convertJapaneseDateStrIntoMysqlDate = function (japaneseDateStr) {
 };
 
 // XXXX年XX月XX日　XX:XX
-exports.convertDateObjectIntoJapaneseDateString = function (date) {
+function convertDateObjectIntoJapaneseDateString(date) {
   return sprintf(
     '%s年%s月%s日',
     date.getFullYear(), date.getMonth() + 1, date.getDate()
   );
 };
 
-exports.convertDateObjectIntoMySqlReadableString = function (date) {
+function convertDateObjectIntoMySqlReadableString(date) {
   const y = date.getFullYear();
   const m = date.getMonth() + 1
   const d = date.getDate();
@@ -41,24 +42,24 @@ exports.convertDateObjectIntoMySqlReadableString = function (date) {
   return y + '-' + m + '-' + d + ' ' + hour + ':' + min + ':' + sec;
 }
 
-exports.generateStatRangeJapaneseString = function (baseDate) {
+function generateStatRangeJapaneseString(baseDate) {
   var tempDate = new Date(baseDate);
   var oneWeekAgo = new Date(tempDate.setDate(tempDate.getDate() - 7));
 
   return sprintf(
     '%s ~ %s',
-    this.convertDateObjectIntoJapaneseDateString(oneWeekAgo),
-    this.convertDateObjectIntoJapaneseDateString(baseDate)
+    convertDateObjectIntoJapaneseDateString(oneWeekAgo),
+    convertDateObjectIntoJapaneseDateString(baseDate)
   );
 };
 
-exports.isAdminByReq = function (req) {
+function isAdminByReq(req) {
   var email = req.user ? req.user.email : null;
   return email == Config.admin_gmail_address;
 }
 
 // middle wares
-exports.htmlCache = function (cacheDurationSec) {
+function htmlCache(cacheDurationSec) {
   return (req, res, next) => {
     let key = '__express__' + req.originalUrl || req.url
     let cachedBody = mcache.get(key)
@@ -76,7 +77,7 @@ exports.htmlCache = function (cacheDurationSec) {
   };
 }
 
-exports.selectProductModelsByProductIds = function (productIds) {
+function selectProductModelsByProductIds(productIds) {
   var d = Q.defer();
 
   Q.allSettled([
@@ -99,42 +100,12 @@ exports.selectProductModelsByProductIds = function (productIds) {
   return d.promise;
 }
 
-exports.sortAndExcludeTweetsForListingTweets = async function (tweetModels) {
-  var blockTwitterUserModels = await BlockTwitterUser.findAll();
-  var blockTwitterUserHash = _.indexBy(blockTwitterUserModels, m => {
-    return m.screenName;
-  });
-
-  // exclude same tweets
-  var excludedTweetModels = _.uniq(tweetModels, m => {
-    return m.retweetTargetId || m.tweetId;
-  });
-
-  var isExcluded = function (tweet) {
-    if (blockTwitterUserHash[tweet.screenName]) return true;
-    return false;
-  };
-
-  return excludedTweetModels.sort(function (a, b) {
-    // excluded tweet
-    if (isExcluded(a) && !isExcluded(b)) return 1;
-    if (!isExcluded(a) && isExcluded(b)) return -1;
-
-    // RT
-    // if (a.retweetTargetId && !b.retweetTargetId) return 1;
-    // if (!a.retweetTargetId && b.retweetTargetId) return -1;
-
-    // favourited count
-    return b.favouriteCount - a.favouriteCount;
-  });
-}
-
-exports.buildRanking = async function (targetProductTypeIds, targetDateMoment) {
+async function buildRanking(targetProductTypeIds, targetDateMoment) {
   var isTargetProductTypeHash = __.indexBy(targetProductTypeIds, productTypeId => {
     return productTypeId;
   });
 
-  var [statModel, ranking] = await this.buildRankingByDateMoment(targetDateMoment);
+  var [statModel, ranking] = await buildRankingByDateMoment(targetDateMoment);
   var filteredRanking = __.filter(ranking, data => {
     return !!isTargetProductTypeHash[data.productModel.productTypeId];
   });
@@ -153,27 +124,7 @@ exports.buildRanking = async function (targetProductTypeIds, targetDateMoment) {
   return [statModel, filteredRanking];
 }
 
-function sortTweet(tweets, excludeScreenNameHash) {
-  var isExcluded = function (tweet) {
-    if (excludeScreenNameHash[tweet.screenName]) return true;
-    return false;
-  };
-
-  return tweets.sort(function (a, b) {
-    // excluded tweet
-    if (isExcluded(a) && !isExcluded(b)) return 1;
-    if (!isExcluded(a) && isExcluded(b)) return -1;
-
-    // RT
-    if (a.retweetTargetId && !b.retweetTargetId) return 1;
-    if (!a.retweetTargetId && b.retweetTargetId) return -1;
-
-    // favourited count
-    return b.favouriteCount - a.favouriteCount;
-  });
-}
-
-exports.buildRankingByDateMoment = async function (targetDateMoment) {
+async function buildRankingByDateMoment(targetDateMoment) {
   var rankingCacheKey = 'ranking_' + targetDateMoment.format();
   var rankingCache = memoryCache.get(rankingCacheKey);
   if (rankingCache) {
@@ -200,7 +151,7 @@ exports.buildRankingByDateMoment = async function (targetDateMoment) {
   });
 
   var [productModels, tweetModels, bookCaptionModels, blockTwitterUserModels] = await Promise.all([
-    exports.selectProductModelsByProductIds(productIds),
+    selectProductModelsByProductIds(productIds),
     Tweet.selectByProductIds(productIds, {
       // excludeRetweet: true,
       excludeInvalidTweets: true,
@@ -215,7 +166,7 @@ exports.buildRankingByDateMoment = async function (targetDateMoment) {
     return m.productId;
   });
 
-  var productIdToTweetsHash = __.groupBy(tweetModels, m => {
+  var productIdToTweetModelsHash = __.groupBy(tweetModels, m => {
     return m.productId;
   });
 
@@ -227,37 +178,31 @@ exports.buildRankingByDateMoment = async function (targetDateMoment) {
     return m.screenName;
   });
 
-  // sort and remove duplicated tweets
-  __.each(productIdToTweetsHash, function (tweets, productId) {
-    var sortedTweets = sortTweet(tweets, screenNameToBlockTwitterUserModelHash);
-
-    // exclude duplicate tweets
-    var distinctTweets = [];
-    var alreadyHasHash = {};
-    __.each(sortedTweets, tweetModel => {
-      var tweetId = tweetModel.retweetTargetId || tweetModel.tweetId;
-      if (alreadyHasHash[tweetId]) {
-        return;
-      }
-
-      alreadyHasHash[tweetId] = true;
-      distinctTweets.push(tweetModel);
+  var productIdToTweetDataArray = {};
+  __.each(productIdToTweetModelsHash, function (tweetModels, productId) {
+    var tweetDataArray = buildTweetDataArray(tweetModels, {
+      excludeUnnecessaryDataForDisplay: true,
+      prioritizeFirstAppearUserTweet: true,
+      deprioritizeBlockedUser: true,
+      screenNameToBlockTwitterUserModelHash: screenNameToBlockTwitterUserModelHash,
+      deprioritizeContainsSpecificWordsInText: true,
     });
 
-    productIdToTweetsHash[productId] = distinctTweets;
+    console.log(productId);
+    productIdToTweetDataArray[productId] = tweetDataArray;
   });
 
   var ranking = __.chain(sortedRankingDataModels)
     .map(statDataModel => {
       var productId = statDataModel.productId;
       var productModel = productIdToProductModelHash[productId];
-      var tweetModels = __.first(productIdToTweetsHash[productId], 100);
+      var tweetDataArray = __.first(productIdToTweetDataArray[productId], 100);
       var bookCaptionModel = productIdToBookCaptionModelHash[productId];
 
       return {
         productModel: productModel,
         statDataModel: statDataModel,
-        tweetModels: tweetModels,
+        tweetDataArray: tweetDataArray,
         bookCaptionModel: bookCaptionModel,
       };
     })
@@ -270,7 +215,7 @@ exports.buildRankingByDateMoment = async function (targetDateMoment) {
   return result;
 }
 
-exports.getProductIdToIsNewProductHash = async function (statId) {
+async function getProductIdToIsNewProductHash(statId) {
   let statDataModels = (await sequelize.query(
     sprintf(
       "SELECT * FROM stat_data WHERE product_id IN (SELECT product_id FROM (SELECT product_id, count(*) AS count FROM stat_data WHERE is_invalid = 0 GROUP BY product_id) AS hoge WHERE hoge.count = 1) AND stat_id = %d;",
@@ -285,3 +230,176 @@ exports.getProductIdToIsNewProductHash = async function (statId) {
 
   return productIdToIsNewProductHash;
 }
+
+function calcNormalizedLevenshteinDistance(strA, strB) {
+  if (!strA || !strB) return 1.0;
+
+  var maxStrLength = Math.max(strA.length, strB.length);
+  var distance = FastLevenShtein.get(strA, strB);
+
+  return distance / maxStrLength;
+}
+
+function buildTweetDataArray(tweetModels, options) {
+  options = options || {};
+
+  var tweetDataArray = _.map(tweetModels, m => {
+    var text = m.text;
+
+    var trimedText;
+    trimedText = text.replace(/(https:\/\/t\.co\/[a-zA-Z0-9]+|https:\/\/t\.…|…)/g, '');
+    trimedText = trimedText.slice(0, Const.STR_LENGTH_FOR_CALC_LSD);
+
+    return {
+      tweetModel: m,
+      trimedText: trimedText,
+      similarTweetData: undefined,
+      parentTweetData: undefined,
+    };
+  });
+
+  // detect practically same tweets
+  var tweetIdToParentTweetDataHash = {};
+  _.each(tweetDataArray, tweetData => {
+    var tweetModel = tweetData.tweetModel;
+    var tweetId = tweetModel.retweetTargetId || tweetModel.tweetId;
+    var parentTweetData = tweetIdToParentTweetDataHash[tweetId];
+
+    if (!parentTweetData) {
+      tweetIdToParentTweetDataHash[tweetId] = tweetData;
+      return;
+    }
+
+    tweetData.parentTweetData = parentTweetData;
+  });
+
+  // this should be done before detecting similar tweet process which so high calc complexity
+  if (options.excludeUnnecessaryDataForDisplay) {
+    tweetDataArray = _.filter(tweetDataArray, data => {
+      return !data.parentTweetData;
+    });
+  }
+
+  // detect similar tweets
+  // NOTE: too high calc complexity O(n^2). need fix
+  _.each(tweetDataArray, baseTweetData => {
+    baseTweetData.tweetIdToNLSDHash = baseTweetData.tweetIdToNLSDHash || {};
+    if (baseTweetData.similarTweetData) return;
+
+    _.each(tweetDataArray, compareTweetData => {
+      if (baseTweetData.tweetModel.tweetId == compareTweetData.tweetModel.tweetId) return;
+      if (baseTweetData.tweetIdToNLSDHash[compareTweetData.tweetModel.tweetId]) return;
+
+      var NLSD = calcNormalizedLevenshteinDistance(baseTweetData.trimedText, compareTweetData.trimedText);
+
+      compareTweetData.tweetIdToNLSDHash = compareTweetData.tweetIdToNLSDHash || {};
+      compareTweetData.tweetIdToNLSDHash[baseTweetData.tweetModel.tweetId] = NLSD;
+
+      if (NLSD < 0.5) {
+        compareTweetData.similarTweetData = baseTweetData;
+      }
+    });
+  });
+
+  // sorting
+  tweetDataArray = tweetDataArray.sort(function (a, b) {
+    var tweetModelA = a.tweetModel;
+    var tweetModelB = b.tweetModel;
+
+    // RT
+    // if (tweetModelA.retweetTargetId && !tweetModelB.retweetTargetId) return 1;
+    // if (!tweetModelA.retweetTargetId && tweetModelB.retweetTargetId) return -1;
+
+    // favourited count
+    return tweetModelB.favouriteCount - tweetModelA.favouriteCount;
+  });
+
+  if (options.excludeUnnecessaryDataForDisplay) {
+    tweetDataArray = _.filter(tweetDataArray, data => {
+      return !data.parentTweetData && !data.similarTweetData;
+    });
+  }
+
+  if (options.prioritizeFirstAppearUserTweet) {
+    var isAlreadyAppearedHash = {};
+    var firstAppeared = [];
+    var alreadyAppeared = [];
+
+    _.each(tweetDataArray, tweetData => {
+      var userId = tweetData.tweetModel.userId;
+
+      if (!isAlreadyAppearedHash[userId]) {
+        isAlreadyAppearedHash[userId] = true;
+        firstAppeared.push(tweetData);
+      } else {
+        alreadyAppeared.push(tweetData);
+      }
+    });
+
+    tweetDataArray = _.flatten([firstAppeared, alreadyAppeared]);
+  }
+
+  if (options.deprioritizeBlockedUser) {
+    if (!options.screenNameToBlockTwitterUserModelHash) {
+      throw new Error('need screenNameToBlockTwitterUserModelHash to use deprioritizeBlockedUser option');
+    }
+
+    var isExcluded = function (tweetModel) {
+      if (options.screenNameToBlockTwitterUserModelHash[tweetModel.screenName]) return true;
+
+      var matchResult = tweetModel.text.match(/RT @([a-zA-Z0-9_]+): /);
+      if (matchResult && options.screenNameToBlockTwitterUserModelHash[matchResult[1]]) {
+        return true;
+      }
+
+      return false;
+    };
+
+    var blockedTweetDataArray = [];
+    var nonBlockedTweetDataArray = [];
+    _.each(tweetDataArray, tweetData => {
+      if (isExcluded(tweetData.tweetModel)) {
+        blockedTweetDataArray.push(tweetData);
+      } else {
+        nonBlockedTweetDataArray.push(tweetData);
+      }
+    });
+
+    tweetDataArray = _.flatten([nonBlockedTweetDataArray, blockedTweetDataArray]);
+  }
+
+  if (options.deprioritizeContainsSpecificWordsInText) {
+    var blockedTweetDataArray = [];
+    var nonBlockedTweetDataArray = [];
+    _.each(tweetDataArray, tweetData => {
+      var isNonBlocked = _.every(Const.DEPRIORITIZE_WORDS_IN_TWEET_TEXT, word => {
+        return tweetData.tweetModel.text.indexOf(word) == -1 ? true : false;
+      });
+
+      if (isNonBlocked) {
+        nonBlockedTweetDataArray.push(tweetData);
+      } else {
+        blockedTweetDataArray.push(tweetData);
+      }
+    });
+
+    tweetDataArray = _.flatten([nonBlockedTweetDataArray, blockedTweetDataArray]);
+  }
+
+  return tweetDataArray;
+}
+
+module.exports = {
+  convertJapaneseDateStrIntoMysqlDate: convertJapaneseDateStrIntoMysqlDate,
+  convertDateObjectIntoJapaneseDateString: convertDateObjectIntoJapaneseDateString,
+  convertDateObjectIntoMySqlReadableString: convertDateObjectIntoMySqlReadableString,
+  generateStatRangeJapaneseString: generateStatRangeJapaneseString,
+  isAdminByReq: isAdminByReq,
+  htmlCache: htmlCache,
+  selectProductModelsByProductIds: selectProductModelsByProductIds,
+  buildRanking: buildRanking,
+  buildRankingByDateMoment: buildRankingByDateMoment,
+  getProductIdToIsNewProductHash: getProductIdToIsNewProductHash,
+  calcNormalizedLevenshtein: calcNormalizedLevenshteinDistance,
+  buildTweetDataArray: buildTweetDataArray,
+};

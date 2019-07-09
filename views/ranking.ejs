@@ -99,10 +99,7 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
     <% if (targetDateMoment < latestStatDateMoment) { %>
         <div class="row">
             <div class="col-12">
-                ※過去のランキングを表示しています。
-                <a href="/book">
-                    <span>最新のランキング(<%= myUtil.convertDateObjectIntoJapaneseDateString(latestStatDate) %>)はこちら</span>
-                </a>
+                ※
             </div>
         </div>
     <% } %>
@@ -128,7 +125,6 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
     __.times(ranking.length, function(n) {
         var data = ranking[n];
         var rank = data.rank;
-        var tweetModels = data.tweetModels;
         var productModelName = data.productModel._modelOptions.name.singular;
         var productInfoTemplatePath = 'product_info/' + productModelName + '.ejs';
     %>
@@ -175,9 +171,9 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
                     </div>
 
                     <%
-                        var initialDisplayTweets = __.first(tweetModels, INITIAL_DISPLAY_TWEET_NUM);
-                        var dataAttrStr = __.map(tweetModels, function (tweetModel) {
-                            return '["' + tweetModel.screenName + '","' + tweetModel.tweetId + '"]';
+                        var initialDisplayTweetData = __.first(data.tweetDataArray, INITIAL_DISPLAY_TWEET_NUM);
+                        var dataAttrStr = __.map(data.tweetDataArray, function (tweetData) {
+                            return '["' + tweetData.tweetModel.screenName + '","' + tweetData.tweetModel.tweetId + '"]';
                         }).join(',');
                     %>
 
@@ -222,7 +218,11 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
                                     <% } %>
 
                                     <div class="twitter-reaction-area">
-                                        <% __.each(initialDisplayTweets, function(tweetModel) { %>
+                                        <%
+                                        __.each(initialDisplayTweetData, function(tweetData) {
+                                        var tweetModel = tweetData.tweetModel;
+
+                                        %>
                                             <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
                                                 <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
                                             </blockquote>

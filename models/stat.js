@@ -2,7 +2,6 @@ const appRoot = require('app-root-path');
 const __ = require('underscore');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
-const Util = require(appRoot + '/my_libs/util.js');
 const StatData = require(appRoot + '/models/stat_data');
 const Moment = require('moment');
 

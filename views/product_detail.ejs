@@ -1,8 +1,9 @@
 <%
-var dataTweets = __.map(tweetModels, function (tweetModel) {
+var dataTweets = __.map(tweetDataArray, function (tweetData) {
+    var tweetModel = tweetData.tweetModel;
     return '["' + tweetModel.screenName + '","' + tweetModel.tweetId + '"]';
 }).join(',');
-var initialDisplayTweets = __.first(tweetModels, 100);
+var initialDisplayTweetDataArray = __.first(tweetDataArray, 100);
 
 var dataChartLabels = __.map(tweetCountLogModels, function (m) {
     return;
@@ -64,7 +65,8 @@ var fontAwesomeClassName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS[pr
         <div class="row mx-auto tweet-reference-block">
             <div class="col-12">
                 <%
-                __.each(initialDisplayTweets, function(tweetModel) {
+                __.each(initialDisplayTweetDataArray, function(tweetData) {
+                  var tweetModel = tweetData.tweetModel;
                 %>
                     <div class="row">
                         <div class="col-12">
