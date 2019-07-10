@@ -94,7 +94,7 @@ exports.insertAltWordIfNeedForNewBook = async (productId, title) => {
     },
   });
 
-  if (_.isEmpty(twitterAltSearchWordModels)) return;
+  if (!_.isEmpty(twitterAltSearchWordModels)) return;
 
   var trimmedTitle = title.replace(/[\(\（]\d+[\)\）]/g, '').trim();
   var twitterAltSearchWordModel = await TwitterAlternativeSearchWord.create({

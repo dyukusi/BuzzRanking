@@ -115,10 +115,9 @@ async function createTaskQueue() {
       return model.searchWord;
     });
     let searchWords = !_.isEmpty(altSearchWords) ? altSearchWords : [productModel.getProductName()];
+    let joinedSearchWord = searchWords.join(" OR ");
 
-    _.each(searchWords, searchWord => {
-      taskQueue.push(createTask(productModel.productTypeId, productModel.productId, searchWord));
-    });
+    taskQueue.push(createTask(productModel.productTypeId, productModel.productId, joinedSearchWord));
   });
 
   return taskQueue;
@@ -189,7 +188,6 @@ async function getProductIdArraySortedByTweetSearchPriority() {
 
 function createTask(productTypeId, productId, searchWord) {
   let searchQueryBase = _.contains(STRICT_WORD_SEARCH_PRODUCT_TYPES, productTypeId) ? '"%s" %s' : '%s %s';
-
   return {
     api_param: {
       q: sprintf(
@@ -260,7 +258,7 @@ async function collectTweets(task) {
   let totalUserCount = tempUserCountHash[task.product_id];
   if (ABNORMAL_THRESHOLD_USER_COUNT <= totalUserCount) {
     console.log("too much user count. maybe this is invalid product. added to invalid product");
-    InvalidProduct.create({
+    await InvalidProduct.create({
       productId: task.product_id,
       status: 1,
     });
