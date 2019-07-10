@@ -9,10 +9,14 @@ const Q = require('q');
 const Util = require(appRoot + '/my_libs/util.js');
 const Twitter = require('twitter');
 const sprintf = require('sprintf-js').sprintf;
+const Moment = require('moment');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 const A8ProgramModel = require(appRoot + '/models/a8_program');
 const BookModel = require(appRoot + '/models/book');
 const GameModel = require(appRoot + '/models/game');
+
+const DAYS_EXPIRE_TWEET = 7;
+const HOURS_EXPIRE_TWEET = DAYS_EXPIRE_TWEET * 24;
 
 var twitterAPIKeyParams = {
   consumer_key: Config.twitter_api.consumer_key,
@@ -99,4 +103,27 @@ exports.insertAltWordIfNeedForNewBook = async (productId, title) => {
   });
 
   return;
+}
+
+exports.calcBuzzByTweetModels = function (tweetModels, baseMoment) {
+  var totalBuzz = 0;
+
+  var targetTweetModels = _.chain(tweetModels)
+    .sortBy(tweetModel => {
+      return -1 * new Moment(tweetModel.tweetedAt).unix();
+    })
+    .uniq(tweetModel => {
+      return tweetModel.screenName;
+    })
+    .value();
+
+  _.each(targetTweetModels, tweetModel => {
+    var compareMoment = new Moment(tweetModel.tweetedAt);
+    var diffHours = Math.floor((baseMoment - compareMoment) / (60 * 60 * 1000));
+    var buzz = (1 / HOURS_EXPIRE_TWEET) * Math.max(HOURS_EXPIRE_TWEET - diffHours, 0);
+
+    totalBuzz += buzz;
+  });
+
+  return Math.floor(totalBuzz);
 }

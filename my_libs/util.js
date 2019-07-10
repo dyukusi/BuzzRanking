@@ -8,6 +8,7 @@ const _ = require('underscore');
 const memoryCache = require('memory-cache');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const FastLevenShtein = require('fast-levenshtein');
+const Moment = require('moment');
 
 const Stat = require(appRoot + '/models/stat.js');
 const StatData = require(appRoot + '/models/stat_data.js');
@@ -139,7 +140,7 @@ async function buildRankingByDateMoment(targetDateMoment) {
   var sortedRankingDataModels = (() => {
     return __.chain(statDataModels)
       .sortBy(m => {
-        return -1 * m.userCount; // desc
+        return -1 * m.buzz; // desc
       })
       .filter(m => {
         return !invalidProductModelsHash[m.productId];

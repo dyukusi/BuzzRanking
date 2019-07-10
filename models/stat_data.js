@@ -41,6 +41,12 @@ StatData.init({
       defaultValue: '0',
       field: 'user_count'
     },
+    buzz: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: true,
+      defaultValue: '0',
+      field: 'buzz'
+    },
     isInvalid: {
       type: Sequelize.INTEGER(1),
       allowNull: false,

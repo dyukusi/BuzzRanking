@@ -64,6 +64,7 @@ async function main() {
         productId: row.product_id,
         tweetCount: row.count,
         userCount: null, // this will be set after
+        buzz: null, // this will be set after
         isInvalid: 0,
       };
     })
@@ -87,7 +88,10 @@ async function main() {
       return tweetModel.userId;
     }).keys().value().length;
 
+    var buzz = BatchUtil.calcBuzzByTweetModels(tweetModels, tweetUntilMoment);
+
     data.userCount = userCount;
+    data.buzz = buzz;
   }
 
   await Stat.createRankingData(rankingMoment, tweetSinceMoment, tweetUntilMoment, insertObjectBasesForStatData);

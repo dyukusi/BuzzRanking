@@ -22,8 +22,6 @@ const SEARCH_TARGET_NUM_PER_EXECUTION = 10;
 const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
 ];
-const DAYS_EXPIRE_TWEET = 7;
-const HOURS_EXPIRE_TWEET = DAYS_EXPIRE_TWEET * 24;
 
 let TWITTER_SEARCH_OPTION_BY_PRODUCT_TYPE_ID = {
   1: 'source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
@@ -296,7 +294,7 @@ async function collectTweets(task) {
     return tweetModel.userId
   }).keys().value().length;
 
-  let buzz = calcBuzzByTweetModels(inRangeTweetModels, nowMoment);
+  let buzz = BatchUtil.calcBuzzByTweetModels(inRangeTweetModels, nowMoment);
 
   let tweetCountLogModel = await TweetCountLog.create({
     productId: task.product_id,
@@ -312,27 +310,4 @@ async function collectTweets(task) {
 function isMaybeInvalidProduct(productName) {
   if (productName.length <= 3) return true;
   return false;
-}
-
-function calcBuzzByTweetModels(tweetModels, baseMoment) {
-  var totalBuzz = 0;
-
-  var targetTweetModels = _.chain(tweetModels)
-    .sortBy(tweetModel => {
-      return -1 * new Moment(tweetModel.tweetedAt).unix();
-    })
-    .uniq(tweetModel => {
-      return tweetModel.screenName;
-    })
-    .value();
-
-  _.each(targetTweetModels, tweetModel => {
-    var compareMoment = new Moment(tweetModel.tweetedAt);
-    var diffHours = Math.floor((baseMoment - compareMoment) / (60 * 60 * 1000));
-    var buzz = (1 / HOURS_EXPIRE_TWEET) * Math.max(HOURS_EXPIRE_TWEET - diffHours, 0);
-
-    totalBuzz += buzz;
-  });
-
-  return Math.floor(totalBuzz);
 }
