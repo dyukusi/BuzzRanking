@@ -188,7 +188,6 @@ async function buildRankingByDateMoment(targetDateMoment) {
       deprioritizeContainsSpecificWordsInText: true,
     });
 
-    console.log(productId);
     productIdToTweetDataArray[productId] = tweetDataArray;
   });
 

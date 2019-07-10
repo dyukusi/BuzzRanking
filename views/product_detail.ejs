@@ -1,25 +1,14 @@
 <%
-var dataTweets = __.map(tweetDataArray, function (tweetData) {
-    var tweetModel = tweetData.tweetModel;
-    return '["' + tweetModel.screenName + '","' + tweetModel.tweetId + '"]';
-}).join(',');
 var initialDisplayTweetDataArray = __.first(tweetDataArray, 100);
 
-var dataChartLabels = __.map(tweetCountLogModels, function (m) {
-    return;
-}).join(',');
-
 var dataChartPlots = __.map(tweetCountLogModels, function (m) {
-    return '["' + m.createdAt + '",' + m.userCount + ']';
+    return '["' + m.createdAt + '",' + m.buzz + ']';
 }).join(',');
 
 var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
 var productModelName = productModel._modelOptions.name.singular;
 var productDetailTemplatePath = 'product_detail/' + productModelName + '.ejs';
-var productTypeName = Const.PRODUCT_TYPE_ID_TO_NAME_HASH[productModel.productTypeId];
-var productTypeJPName = Const.PRODUCT_TYPE_ID_TO_JA_NAME_HASH[productModel.productTypeId];
-var fontAwesomeClassName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS[productTypeBundleId];
 %>
 
 <!DOCTYPE html>

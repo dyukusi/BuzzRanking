@@ -13,7 +13,7 @@ $(() => {
 function initChart() {
   var tweetCountLogData = $('#buzz-chart').data('chart-plots');
 
-  if (!tweetCountLogData) return;
+  if (_.isEmpty(tweetCountLogData)) return;
 
   var plots = _.map(tweetCountLogData, (data) => {
     var [createdAt, userCount] = data;
