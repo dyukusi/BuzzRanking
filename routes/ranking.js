@@ -73,6 +73,15 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     });
   }
 
+  // only display new products if Admin
+  if (isAdmin) {
+    var productIdToIsNewProductHash = await Util.getProductIdToIsNewProductHash(statModel.id);
+
+    ranking = __.filter(ranking, data => {
+      return productIdToIsNewProductHash(data.productModel.productId);
+    });
+  }
+
   // slice for pagination
   var start = (page - 1) * PRODUCT_NUM_PER_PAGE;
   var end = start + PRODUCT_NUM_PER_PAGE;
@@ -85,13 +94,6 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
       memoryCache.put(targetRankingHTMLCacheKey, body, 60 * 60 * 24 * 1000);
       res.sendResponse(body);
     };
-  }
-
-  var productIdToIsNewProductHash = null;
-
-  // for displaying new product mark
-  if (isAdmin) {
-    productIdToIsNewProductHash = await Util.getProductIdToIsNewProductHash(statModel.id);
   }
 
   return res.render('ranking', {
