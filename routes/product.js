@@ -9,6 +9,8 @@ const ReleaseControl = require(appRoot + '/models/release_control.js');
 const BlockTwitterUser = require(appRoot + '/models/block_twitter_user');
 const Moment = require('moment');
 const memoryCache = require('memory-cache');
+const sequelize = require(appRoot + '/db/sequelize_config');
+const PRODUCT_NUM_PER_PAGE = 100;
 
 router.get('/detail/:product_id', function (req, res, next) {
   var productId = req.params.product_id;
@@ -78,6 +80,68 @@ async function getTop3RankingData(productTypeId) {
   memoryCache.put(top3RankingCacheKey, top3Ranking);
 
   return top3Ranking;
+}
+
+router.get('/list', async function (req, res, next) {
+  var queryParam = req.query || {};
+  var targetPage = Number(queryParam['page']) || 1;
+  var buildProductBasicInfosOptions = {
+    productTypeId: Number(queryParam['product_type_id']) || null,
+    searchWord: queryParam['search_word'] || null,
+  };
+
+  var productBasicInfos = await buildProductBasicInfos(buildProductBasicInfosOptions);
+  var detectedProductCount = productBasicInfos.length;
+  var pageMax = Math.ceil(productBasicInfos.length / PRODUCT_NUM_PER_PAGE) || 1;
+  var start = (targetPage - 1) * PRODUCT_NUM_PER_PAGE;
+  var end = start + PRODUCT_NUM_PER_PAGE;
+  var targetProductBasicInfos = productBasicInfos.slice(start, end);
+
+  res.render('product_list', {
+    targetPage: targetPage,
+    pageMax: pageMax,
+    productBasicInfos: targetProductBasicInfos,
+    detectedProductCount: detectedProductCount,
+    options: buildProductBasicInfosOptions,
+  });
+});
+
+async function buildProductBasicInfos(options = {}) {
+  var baseSQL = "SELECT product_id, product_type_id, title FROM %s WHERE true";
+  var replacements = {};
+
+  if (options.productTypeId) {
+    baseSQL += " AND product_type_id = :productTypeId";
+    replacements.productTypeId = options.productTypeId;
+  }
+
+  if (options.searchWord) {
+    baseSQL += " AND MATCH(title) AGAINST(:searchWord);";
+    replacements.searchWord = options.searchWord;
+  }
+
+  var selectAllProductBasicInfoPromises = __.map(Const.PRODUCT_TABLE_NAMES, tableName => {
+    return sequelize.query(
+      sprintf(baseSQL, tableName),
+      {
+        replacements: replacements,
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+  });
+
+  var results = await Promise.all(selectAllProductBasicInfoPromises);
+  var productBasicInfos = __.chain(results)
+    .flatten()
+    .map(row => {
+      return {productId: row.product_id, productTypeId: row.product_type_id, title: row.title,};
+    })
+    .sortBy(data => {
+      return data.productId;
+    })
+    .value();
+
+  return productBasicInfos;
 }
 
 module.exports = router;

@@ -5,7 +5,7 @@ const Moment = require('moment');
 
 var tempYear = 0;
 
-$(() => {
+$(function() {
   initChart();
   initEmbeddedTweets();
 });

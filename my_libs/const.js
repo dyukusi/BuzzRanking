@@ -28,6 +28,7 @@ const CONST = {
     'DEFAULT': '内部エラーが発生しました',
     '404': 'お探しのページを見つけることができませんでした',
     'PAGE_EXCEEDED': '存在しないページ番号が指定されています',
+    'IN_PREPARING_RANKING': '最新のランキングを生成中です。<br>数分後に再度アクセスしてください。',
   },
 
   THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT: 30,

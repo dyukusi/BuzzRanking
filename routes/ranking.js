@@ -4,11 +4,28 @@ const memoryCache = require('memory-cache');
 const ReleaseControl = require(appRoot + '/models/release_control.js');
 const Util = require(appRoot + '/my_libs/util.js');
 const Moment = require('moment');
+const Poller = require(appRoot + '/my_libs/poller.js');
 
 const PRODUCT_NUM_PER_PAGE = 20;
 const DISABLE_HTML_CACHE = true;
 
-router.get('/:product_type_bundle_name', function (req, res, next) {
+// this build latest Ranking object every 3 seconds if need
+var buildLatestRankingPoller = new Poller(3000);
+buildLatestRankingPoller.onPoll(async () => {
+  var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
+  var targetMoment = latestReleaseControlModel.getDateMoment();
+
+  if (!Util.isCachedRanking(targetMoment)) {
+    console.log("building latest ranking object... " + targetMoment.format());
+    var ranking = await Util.buildRankingByDateMoment(targetMoment)
+    console.log("Ranking object was successfully built!!! :) " + targetMoment.format());
+  }
+
+  buildLatestRankingPoller.poll();
+});
+buildLatestRankingPoller.poll();
+
+router.get('/:product_type_bundle_name', async function (req, res, next) {
   var queryParam = req.query || {};
   var page = Number(queryParam['page']) || 1;
   var productTypeBundleName = req.params.product_type_bundle_name;
@@ -19,14 +36,21 @@ router.get('/:product_type_bundle_name', function (req, res, next) {
     return next(productTypeBundleName + ' is not defined');
   }
 
-  ReleaseControl.selectLatestReleaseDate()
-    .then(releaseControlModel => {
-      var targetDateMoment = queryParam['date'] ? new Moment(queryParam['date']) : releaseControlModel.getDateMoment();
-      renderRankingPage(productTypeBundleId, productTypeId, targetDateMoment, page, req, res, next);
-    });
-});
+  var releaseControlModel = await ReleaseControl.selectLatestReleaseDate();
+  var targetMoment = queryParam['date'] ? new Moment(queryParam['date']) : releaseControlModel.getDateMoment();
 
-module.exports = router;
+  if (Util.isCachedRanking(targetMoment)) {
+    await renderRankingPage(productTypeBundleId, productTypeId, targetMoment, page, req, res, next);
+  } else {
+    // need wait for building ranking obj by buildLatestRankingPoller or admin
+    var statusCode = 503; // maintenance code
+    res.status(statusCode);
+    res.render('error', {
+      status: 503,
+      dispMessage: Const.ERROR_MESSAGE.IN_PREPARING_RANKING,
+    });
+  }
+});
 
 async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateMoment, page, req, res, next) {
   var productTypeIds = targetProductTypeId ? [targetProductTypeId] : Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
@@ -96,3 +120,4 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
   });
 }
 
+module.exports = router;

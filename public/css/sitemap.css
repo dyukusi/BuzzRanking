@@ -1,0 +1,34 @@
+.sitemap {
+    font-size: 2rem;
+    text-align: center;
+    padding: 1rem 1rem;
+}
+
+ul.sitemap_list {
+    padding:0.5em;
+    list-style-type:none;
+}
+ul.sitemap_list li {
+    position:relative;
+    padding: 0em 0.3em 0.3em 1.3em;
+}
+ul.sitemap_list li::before {
+    position: absolute;
+    content: '';
+    display: block;
+    top: 0.5em;
+    left: 0;
+    width: 6px;
+    height: 6px;
+    border-right: 3px solid #ff5200;
+    border-bottom: 3px solid #ff5200;
+    transform: rotate(-45deg);
+}
+
+.parent {
+    font-size: 1.5rem;
+    font-weight: bold;
+
+    padding-bottom: .5em;
+    border-bottom: 1px solid #ccc;
+}

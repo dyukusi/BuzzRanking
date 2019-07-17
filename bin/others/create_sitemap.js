@@ -9,9 +9,9 @@ const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const sprintf = require('sprintf-js').sprintf;
 const PRIORITY_OF = {
-  POPULAR: 0.9,
-  NORMAL: 0.8,
-  INVALID: 0.7,
+  POPULAR: 0.8,
+  NORMAL: 0.3,
+  INVALID: 0.1,
 };
 
 main()

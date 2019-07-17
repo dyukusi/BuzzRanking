@@ -1,18 +1,33 @@
 <%
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
+
+var generateURL = (page) => {
+    var url = sprintf(
+            "/ranking/%s?page=%d",
+            productTypeBundleName,
+            page
+    );
+
+    if (targetProductTypeId) {
+        var productTypeName = Const.PRODUCT_TYPE_ID_TO_NAME_HASH[targetProductTypeId];
+        url += sprintf("&type=%s", productTypeName);
+    }
+
+    return url;
+};
 %>
 
-<div class="pager">
+<div class="pager pt-3">
     <ul class="my-pagination">
         <li class="pre">
-            <a href="/ranking/<%= productTypeBundleName %>?page=<%= targetPage - 1 %>" class="<%= targetPage <= 1 ? 'disabled-link' : '' %>">
+            <a href=<%= generateURL(targetPage - 1) %> class="<%= targetPage <= 1 ? 'disabled-link' : '' %>">
                 <span>«</span>
             </a>
         </li>
 
         <% __.each(__.range(1, pageMax + 1), page => { %>
             <li>
-                <a href="/ranking/<%= productTypeBundleName %>?page=<%= page %>" class="<%= targetPage == page ? 'active' : '' %>">
+                <a href=<%= generateURL(page) %> class="<%= targetPage == page ? 'active' : '' %>">
                     <span>
                         <%= page %>
                     </span>
@@ -21,10 +36,9 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
         <% }); %>
 
         <li class="next">
-            <a href="/ranking/<%= productTypeBundleName %>?page=<%= targetPage + 1 %>" class="<%= pageMax <= targetPage ? 'disabled-link' : '' %>">
+            <a href=<%= generateURL(targetPage + 1) %> class="<%= pageMax <= targetPage ? 'disabled-link' : '' %>">
                 <span>»</span>
             </a>
         </li>
     </ul>
 </div>
-

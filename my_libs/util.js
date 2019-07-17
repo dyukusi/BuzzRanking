@@ -125,8 +125,17 @@ async function buildRanking(targetProductTypeIds, targetDateMoment) {
   return [statModel, filteredRanking];
 }
 
+function getRankingCacheKeyByMoment(moment) {
+  return 'ranking_' + moment.format();
+}
+
+function isCachedRanking(targetDateMoment) {
+  var rankingCacheKey = getRankingCacheKeyByMoment(targetDateMoment);
+  return !!memoryCache.get(rankingCacheKey);
+}
+
 async function buildRankingByDateMoment(targetDateMoment) {
-  var rankingCacheKey = 'ranking_' + targetDateMoment.format();
+  var rankingCacheKey = getRankingCacheKeyByMoment(targetDateMoment);
   var rankingCache = memoryCache.get(rankingCacheKey);
   if (rankingCache) {
     return rankingCache;
@@ -180,7 +189,10 @@ async function buildRankingByDateMoment(targetDateMoment) {
   });
 
   var productIdToTweetDataArray = {};
-  __.each(productIdToTweetModelsHash, function (tweetModels, productId) {
+  var productIds = __.keys(productIdToTweetModelsHash);
+  for (var i = 0; i < productIds.length; i++) {
+    var productId = productIds[i];
+    var tweetModels = productIdToTweetModelsHash[productId];
     var tweetDataArray = buildTweetDataArray(tweetModels, {
       excludeUnnecessaryDataForDisplay: true,
       prioritizeFirstAppearUserTweet: true,
@@ -189,8 +201,11 @@ async function buildRankingByDateMoment(targetDateMoment) {
       deprioritizeContainsSpecificWordsInText: true,
     });
 
+    // NOTE: this loop is way too heavy and blocking process for long time so put sleep to open calc resource
+    await sleep(20);
+
     productIdToTweetDataArray[productId] = tweetDataArray;
-  });
+  }
 
   var ranking = __.chain(sortedRankingDataModels)
     .map(statDataModel => {
@@ -402,4 +417,5 @@ module.exports = {
   getProductIdToIsNewProductHash: getProductIdToIsNewProductHash,
   calcNormalizedLevenshtein: calcNormalizedLevenshteinDistance,
   buildTweetDataArray: buildTweetDataArray,
+  isCachedRanking: isCachedRanking,
 };

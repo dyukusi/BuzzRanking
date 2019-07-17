@@ -18,7 +18,7 @@ var ADD_TWEETS_NUM_PER_READ_MORE = 5;
 var gradEleTempHeightHash = {};
 var updatedGradElements = [];
 
-$(() => {
+$(function() {
   initEmbeddedTweets();
   initReadMoreButtons();
   initImageZoom();
@@ -182,10 +182,14 @@ function adjustTwitterReactionAreaHeightForInit(area, isAutoClose) {
   if (isAutoClose) {
     var adjustPositionY = window.scrollY - (area.height() - productInfoAreaHeight) + 27;
     disableStickyHeaderTemporarily = true;
-    scrollTo(window.scrollX, adjustPositionY + bookCaptionHeight);
-  }
 
-  console.log(bookCaptionHeight);
+    // NOTE: chrome's scrollTo needs delay to work properly
+    setTimeout(function() {
+      scrollTo(window.scrollX, adjustPositionY + bookCaptionHeight);
+      area.css('height', productInfoAreaHeight);
+    }, 1);
+    return;
+  }
 
   area.css('height', productInfoAreaHeight);
 }

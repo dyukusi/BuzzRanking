@@ -73,12 +73,14 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
 
     <meta name=”description” content=”<%= texts.description %>”>
 
-<% if (1 < targetPage) { %>
-        <link rel=”prev” href=”https://www.buzzranking.net/ranking/<%= productTypeBundleName %>?page=<%= targetPage - 1 %>”>
-    <% }%>
+    <% if (1 < targetPage) { %>
+        <link rel=”prev”
+              href=”https://www.buzzranking.net/ranking/<%= productTypeBundleName %>?page=<%= targetPage - 1 %>”>
+    <% } %>
 
     <% if (targetPage < pageMax) { %>
-        <link rel=”next” href=”https://www.buzzranking.net/ranking/<%= productTypeBundleName %>?page=<%= targetPage + 1 %>”>
+        <link rel=”next”
+              href=”https://www.buzzranking.net/ranking/<%= productTypeBundleName %>?page=<%= targetPage + 1 %>”>
     <% } %>
 
 </head>
@@ -88,12 +90,12 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
 
 <div id="content" class="container-fluid">
     <!--<div class="row">-->
-        <!--<div class="col-12">-->
-            <!--<div class="text-align-left">-->
-                <!--<span class="last-updated-at"><%= myUtil.convertDateObjectIntoJapaneseDateString(statModel.getRankingDateObj()) %></span>-->
-                <!--最終更新-->
-            <!--</div>-->
-        <!--</div>-->
+    <!--<div class="col-12">-->
+    <!--<div class="text-align-left">-->
+    <!--<span class="last-updated-at"><%= myUtil.convertDateObjectIntoJapaneseDateString(statModel.getRankingDateObj()) %></span>-->
+    <!--最終更新-->
+    <!--</div>-->
+    <!--</div>-->
     <!--</div>-->
 
     <% if (targetDateMoment < latestStatDateMoment) { %>
@@ -220,19 +222,18 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
                                     <div class="twitter-reaction-area">
                                         <%
                                         __.each(initialDisplayTweetData, function(tweetData) {
-                                        var tweetModel = tweetData.tweetModel;
-
+                                            var tweetModel = tweetData.tweetModel;
                                         %>
-                                            <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
-                                                <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
-                                            </blockquote>
+                                        <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
+                                            <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
+                                        </blockquote>
 
-                                            <% if (isAdmin) { %>
-                                                <button class="btn btn-danger remove-tweet-button"
-                                                        data-tweet-id="<%= tweetModel.tweetId %>">
-                                                    (Admin)このツイートを無効化する
-                                                </button>
-                                            <% } %>
+                                        <% if (isAdmin) { %>
+                                            <button class="btn btn-danger remove-tweet-button"
+                                                    data-tweet-id="<%= tweetModel.tweetId %>">
+                                                (Admin)このツイートを無効化する
+                                            </button>
+                                        <% } %>
                                         <% }); %>
                                     </div>
 
@@ -260,17 +261,17 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
     <% }); %>
 
     <% if (!ranking.length) { %>
-    <div class="row">
-        <div class="col-12 text-align-center p-5">
-            該当カテゴリでランキング内の商品はありません
+        <div class="row">
+            <div class="col-12 text-align-center p-5">
+                該当カテゴリでランキング内の商品はありません
+            </div>
         </div>
-    </div>
     <% } %>
 
     <% if (targetPage == pageMax) { %>
-    <div class="threshold-buzz-count-description">
-        ※ Buzzが<%= Const.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT %>未満の商品・サービスはランキングには表示されません
-    </div>
+        <div class="threshold-buzz-count-description">
+            ※ Buzzが<%= Const.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT %>未満の商品・サービスはランキングには表示されません
+        </div>
     <% } %>
 </div>
 

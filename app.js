@@ -11,6 +11,7 @@ var logger = require('morgan');
 var passport = require('passport');
 var session = require('express-session');
 var rfs = require("rotating-file-stream");
+// var UAParser = require('ua-parser-js');
 
 var redirectToHTTPS = require('express-http-to-https').redirectToHTTPS
 
@@ -23,6 +24,7 @@ global.async = require('async');
 global.myUtil = require(appRoot + '/my_libs/util.js');
 global.Const = require(appRoot + '/my_libs/const.js');
 global.Q = require('q');
+global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 
 var app = express();
 
@@ -66,12 +68,20 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// exclude InternetExplorer
+// app.use((req, res, next) => {
+//   var ua = UAParser(req.headers['user-agent']);
+//   if (ua.browser == 'IE' || ua.browser == 'IEMobile') {
+//     res.render('error', {
+//       status: null,
+//       dispMessage: Const.ERROR_MESSAGE.IE,
+//     });
+//   }
+// });
+
 app.use('/', require('./routes/index.js'));
 app.use('/product', require('./routes/product.js'));
 app.use('/ranking', require('./routes/ranking.js'));
-
-// app.use('/book', require('./routes/book.js'));
-// app.use('/dating', require('./routes/dating.js'));
 app.use('/auth', require('./routes/auth.js'));
 app.use('/admin', require('./routes/admin.js'));
 

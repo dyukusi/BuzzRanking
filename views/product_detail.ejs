@@ -24,39 +24,38 @@ var productDetailTemplatePath = 'product_detail/' + productModelName + '.ejs';
     <%- include(appRoot + '/views/google_analytics.ejs') %>
 
     <title>
-        <%= productModel.title %> のネットの反応【BuzzRanking】
+        <%= productModel.title %>のネットの反応【BuzzRanking】
     </title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
 
-    <meta name=”description” content=”<%= productModel.title %>のネットの反応や人気度推移を紹介！【毎日更新】”>
+    <meta name=”description” content="<%= productModel.title %>のネットの反応や話題度推移を紹介！【BuzzRanking】">
 </head>
 <body>
 
 <%- include('header.ejs') %>
 
 <div id="content" class="container-fluid">
-
-    <%- include('product_detail/top_3_ranking_ad.ejs') %>
-
     <%- include(productDetailTemplatePath, { dataChartPlots: dataChartPlots, }) %>
 
     <% if (!isInvalidProduct) { %>
-        <div class="row">
-            <div class="col-12 text-align-center">
-                <h2>
-                    <span class="no-wrap"><%= productModel.title + (productModel.subTitle ? ' ' + productModel.subTitle : '') %></span><span
-                            class="no-wrap">に関連するツイート</span>
-                </h2>
-            </div>
-        </div>
 
-        <div class="row mx-auto tweet-reference-block">
-            <div class="col-12">
-                <%
-                __.each(initialDisplayTweetDataArray, function(tweetData) {
-                  var tweetModel = tweetData.tweetModel;
-                %>
+        <% if (!!tweetDataArray.length) { %>
+            <div class="row">
+                <div class="col-12 text-align-center">
+                    <h2>
+                        <span class="no-wrap"><%= productModel.title + (productModel.subTitle ? ' ' + productModel.subTitle : '') %></span><span
+                                class="no-wrap">のネットの反応</span>
+                    </h2>
+                </div>
+            </div>
+
+            <div class="row mx-auto tweet-reference-block">
+                <div class="col-12">
+                    <%
+                    __.each(initialDisplayTweetDataArray, function(tweetData) {
+                        var tweetModel = tweetData.tweetModel;
+                    %>
                     <div class="row">
                         <div class="col-12">
                             <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
@@ -64,11 +63,15 @@ var productDetailTemplatePath = 'product_detail/' + productModelName + '.ejs';
                             </blockquote>
                         </div>
                     </div>
-                <% }); %>
+                    <% }); %>
+                </div>
             </div>
+        <% } %>
+
+        <div class="pt-3">
+            <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
         </div>
 
-        <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
     <% } else { %>
         <div class="row">
             <div class="col-12 invalid-product-description">

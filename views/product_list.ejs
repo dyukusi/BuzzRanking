@@ -1,0 +1,162 @@
+<%
+var baseURL = (() => {
+    var base = "/product/list?page=%d";
+
+    if (options.productTypeId) {
+        base += "&product_type_id=" + options.productTypeId;
+    }
+
+    if (options.searchWord) {
+        base += "&search_word=" + options.searchWord;
+    }
+
+    return base;
+})();
+%>
+
+<!DOCTYPE html>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+      integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+<link href="/css/common.css" rel="stylesheet">
+<link href="/css/product_list.css" rel="stylesheet">
+
+<html>
+<head>
+    <%- include(appRoot + '/views/google_analytics.ejs') %>
+
+    <title>サイトマップ【BuzzRanking】</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name=”description”
+          content=”今ネットでバズっている本や漫画、小説、ゲームなどの商品や、宿泊・旅行予約などのWebサービスを話題性の高い順に毎日ランキング形式で紹介するBuzzRankingの取り扱い商品一覧”>
+
+    <% if (1 < targetPage) { %>
+        <link rel=”prev” href=<%= sprintf(baseURL, targetPage - 1) %>>
+    <% } %>
+
+    <% if (targetPage < pageMax) { %>
+        <link rel=”prev” href=<%= sprintf(baseURL, targetPage + 1) %>>
+    <% } %>
+
+</head>
+<body>
+
+<%- include(appRoot + '/views/header.ejs') %>
+
+
+<div id="content" class="container-fluid p-3">
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="form-group">
+                <label class="control-label">商品名</label>
+                <input id="search-word-input" class="form-control" type="text" placeholder="検索したい商品名を入力" value=<%= options.searchWord %>>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="control-label">分類</label>
+                <select id="product-type-select-input" class="form-control">
+                    <option value="0" <%- options.productTypeId ? null : 'selected' %>>全て</option>
+
+                    <% __.each(Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID, (productTypeBundleId, productTypeBundleName) => { %>
+                        <% if (productTypeBundleName == 'all') return; %>
+
+                        <optgroup label=<%= Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] %>>
+                            <% __.each(Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId], productTypeId => { %>
+                                <option value=<%= productTypeId %> <%- productTypeId == options.productTypeId ? 'selected' : null %>>
+                                    <%= Const.PRODUCT_TYPE_ID_TO_JA_NAME_HASH[productTypeId] %>
+                                </option>
+                            <% }); %>
+                        </optgroup>
+                    <% }); %>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="row text-align-right pb-3">
+        <div class="col-md-12">
+            <button id="search-button" class="page-link text-dark d-inline-block">検索</button>
+        </div>
+    </div>
+
+    <div class="text-align-right">
+        <%= detectedProductCount %> 件の商品・サービスが見つかりました
+    </div>
+
+    <table class="table product-table">
+        <tr class="table-header">
+            <th>ID</th>
+            <th>分類</th>
+            <th>商品名</th>
+        </tr>
+
+        <% __.each(productBasicInfos, data => { %>
+            <tr>
+                <td>
+                    <span>
+                        <%= data.productId %>
+                    </span>
+                </td>
+                <td>
+                    <span>
+                        <%= Const.PRODUCT_TYPE_ID_TO_JA_NAME_HASH[data.productTypeId] %>
+                    </span>
+                </td>
+                <td>
+                    <a href="/product/detail/<%= data.productId %>">
+                        <%= data.title %>
+                    </a>
+                </td>
+            </tr>
+        <% }); %>
+    </table>
+</div>
+
+<div class="pager">
+    <ul class="my-pagination">
+        <li class="pre">
+            <% if (1 < targetPage) { %>
+                <a href=<%= sprintf(baseURL, targetPage - 1) %>>
+                    <span>«</span>
+                </a>
+            <% } else { %>
+                <a class="disabled-link">
+                    <span>«</span>
+                </a>
+            <% } %>
+        </li>
+
+        <% __.each(__.range(1, pageMax + 1), page => { %>
+            <li>
+                <a href=<%= sprintf(baseURL, page) %> class="<%= targetPage == page ? 'active' : '' %>">
+                    <span>
+                        <%= page %>
+                    </span>
+                </a>
+            </li>
+        <% }); %>
+
+        <li class="next">
+            <% if (targetPage < pageMax) { %>
+                <a href=<%= sprintf(baseURL, targetPage + 1) %>>
+                    <span>»</span>
+                </a>
+            <% } else { %>
+                <a class="disabled-link">
+                    <span>»</span>
+                </a>
+            <% } %>
+
+        </li>
+    </ul>
+</div>
+
+<%- include(appRoot + '/views/footer.ejs') %>
+
+</body>
+</html>
+
+<script src="/js/compressed/product_list.min.js" type="text/javascript"></script>

@@ -31,8 +31,11 @@ router.get('/', function (req, res, next) {
   //   });
   //
 
-  res.render('index', {
-  });
+  res.render('index', {});
+});
+
+router.get('/sitemap', function (req, res, next) {
+  res.render('sitemap', {});
 });
 
 router.get('/health', function (req, res, next) {

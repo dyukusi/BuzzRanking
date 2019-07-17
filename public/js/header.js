@@ -5,7 +5,7 @@ require('bootstrap');
 disableStickyHeaderTemporarily = false;
 var remainingCountOfDisableScrollEvent = 0;
 
-$(() => {
+$(function() {
   if (location.pathname.match('book')) {
     $('#nav-book-ranking').addClass("active");
     // $('#nav-book-ranking a i').remove();
@@ -53,6 +53,7 @@ function initScrollHideNavbar() {
     var aboutIcon = $('#nav-about a');
     var navHeight = navEle.outerHeight(true);
     var buzzrankingLogoHeight = $('.navbar-brand').outerHeight();
+    var commonNavRowHeight = $('.common-nav').outerHeight();
     winScrollTop = $(this).scrollTop();
 
     if (winScrollTop > navHeight) {
@@ -68,7 +69,9 @@ function initScrollHideNavbar() {
       // up
       else {
         $('#header').removeClass('hide');
-        navEle.css('top', -1 * buzzrankingLogoHeight + 'px');
+
+        var adjustedHeight = isNavBarCollapsed() ? buzzrankingLogoHeight : buzzrankingLogoHeight + commonNavRowHeight;
+        navEle.css('top', -1 * adjustedHeight + 'px');
       }
     } else {
       navEle.removeClass('fixed-top');
@@ -123,7 +126,7 @@ function initTopBtn() {
       scrollTop: 0
     }, scrollTimeMsec);
 
-    setTimeout(() => {
+    setTimeout(function() {
       var navEle = $('nav');
       var buzzrankingLogoHeight = $('.navbar-brand').outerHeight();
 
@@ -134,3 +137,8 @@ function initTopBtn() {
     return false;
   });
 }
+
+function isNavBarCollapsed() {
+  return window.innerWidth < 992;
+}
+

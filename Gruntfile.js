@@ -21,6 +21,10 @@ module.exports = function(grunt) {
         dest : 'public/js/compressed/ranking.min.js',
       },
 
+      product_list : {
+        src : ['public/js/product_list.js', 'public/js/header.js'],
+        dest : 'public/js/compressed/product_list.min.js',
+      },
     },
 
     sass: {
@@ -34,7 +38,7 @@ module.exports = function(grunt) {
     watch: {
       header : {
         files : ['public/js/header.js'],
-        tasks : ['browserify:header', 'browserify:index', 'browserify:ranking', 'browserify:product_detail'],
+        tasks : ['browserify:header', 'browserify:index', 'browserify:ranking', 'browserify:product_detail', 'browserify:product_list'],
       },
 
       index : {
@@ -50,6 +54,11 @@ module.exports = function(grunt) {
       ranking : {
         files : ['public/js/ranking.js'],
         tasks : ['browserify:ranking'],
+      },
+
+      product_list : {
+        files : ['public/js/product_list.js'],
+        tasks : ['browserify:product_list'],
       },
 
       // css: {

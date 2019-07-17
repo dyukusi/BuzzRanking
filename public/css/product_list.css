@@ -1,0 +1,11 @@
+.product-table span{
+    white-space: nowrap;
+}
+
+.table-header {
+    /*text-align: center;*/
+}
+
+#search-button {
+    width: 100%;
+}
