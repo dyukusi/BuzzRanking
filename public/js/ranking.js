@@ -42,7 +42,7 @@ function initReadCaptionButton() {
     },
   };
 
-  _.each(document.querySelectorAll('.book-caption-accordion'), ac => {
+  _.each(document.querySelectorAll('.book-caption-accordion'), function(ac) {
     new Accordion(ac, acOptions);
   });
 }
@@ -94,11 +94,11 @@ function initAdminFunctions() {
 }
 
 function initGradElementsHeight() {
-  var twitterReactionAreas = _.map(document.querySelectorAll('.twitter-reaction-area'), e => {
+  var twitterReactionAreas = _.map(document.querySelectorAll('.twitter-reaction-area'), function(e) {
     return $(e);
   });
 
-  _.each(twitterReactionAreas, area => {
+  _.each(twitterReactionAreas, function(area) {
     adjustTwitterReactionAreaHeightForInit(area, false);
   });
 }
@@ -216,7 +216,7 @@ function initEmbeddedTweets() {
     twttr.events.bind('loaded', function (event) {
       if (isFirstTwitterWigetsLoad) {
         // hide medias
-        _.each(event.widgets, w => {
+        _.each(event.widgets, function(w) {
           var shadowRoot = w.shadowRoot;
           controlEmbeddedTweetMedia(shadowRoot, 'hide');
         });
@@ -248,7 +248,7 @@ function initEmbeddedTweets() {
         })
         .value();
 
-      _.each(updatedGradElements, gradEle => {
+      _.each(updatedGradElements, function(gradEle) {
         afterLoadTweets(gradEle);
       });
 
@@ -331,7 +331,6 @@ function controlEmbeddedTweetMedia(shadowRoot, command) {
   }
 }
 
-
 function afterLoadTweets(tweetReferenceAreaDiv) {
   var readMoreButtonEle = tweetReferenceAreaDiv.parents('.grad-wrap').find('.grad-trigger');
   var addHeight = tweetReferenceAreaDiv.prop('scrollHeight');
@@ -357,7 +356,7 @@ function afterLoadTweets(tweetReferenceAreaDiv) {
   });
 
   // show hidden media cards
-  _.each(tweetsListDiv.children(), c => {
+  _.each(tweetsListDiv.children(), function(c) {
     var shadowRoot = c.shadowRoot;
     controlEmbeddedTweetMedia(shadowRoot, 'show');
   });

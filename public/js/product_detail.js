@@ -15,7 +15,7 @@ function initChart() {
 
   if (_.isEmpty(tweetCountLogData)) return;
 
-  var plots = _.map(tweetCountLogData, (data) => {
+  var plots = _.map(tweetCountLogData, function (data) {
     var [createdAt, userCount] = data;
     var createdAtMoment = new Moment(createdAt);
     return {
@@ -60,7 +60,7 @@ function initChart() {
           type: 'linear',
           position: 'bottom',
           ticks: {
-            callback: unixTimeSec => {
+            callback: function (unixTimeSec) {
               var moment = new Moment(unixTimeSec * 1000);
               var shouldAppendYearStr = false;
               var isFirst = moment.unix() == firstMoment.unix();
@@ -96,8 +96,8 @@ function initChart() {
 
       tooltips: {
         callbacks: {
-          title: (tooltipItem, data) => { return ''; },
-          label: (tooltipItem, data) => {
+          title: function (tooltipItem, data) { return ''; },
+          label: function (tooltipItem, data) {
             var msec = tooltipItem.xLabel * 1000;
             var userCount = tooltipItem.yLabel;
             return '(' + new Moment(msec).format('YYYY年MM月DD日 HH:mm:ss') + ', ' + userCount + 'Buzz)';
