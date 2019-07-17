@@ -1,7 +1,7 @@
 $ = jQuery = require('jquery');
 const _ = require('underscore');
 const sprintf = require('sprintf-js').sprintf;
-const Liminous = require('luminous-lightbox').Luminous;
+// const Liminous = require('luminous-lightbox').Luminous;
 const request = require('request');
 const MyUtil = require('./util.js')
 const Accordion = require('accordion').Accordion;
@@ -21,7 +21,7 @@ var updatedGradElements = [];
 $(function() {
   initEmbeddedTweets();
   initReadMoreButtons();
-  initImageZoom();
+  // initImageZoom();
   initAdminFunctions();
   initReadCaptionButton();
 
@@ -103,11 +103,11 @@ function initGradElementsHeight() {
   });
 }
 
-function initImageZoom() {
-  _.each(document.querySelectorAll('.zoomable-image'), function (e) {
-    new Liminous(e, {});
-  });
-}
+// function initImageZoom() {
+//   _.each(document.querySelectorAll('.zoomable-image'), function (e) {
+//     new Liminous(e, {});
+//   });
+// }
 
 function initAutoTweetsDivCloser() {
   $(window).scroll(function () {

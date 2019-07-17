@@ -46,7 +46,7 @@ main()
 async function main() {
   let productIdAndTweetCountRows = (await sequelize.query(
     sprintf(
-      "SELECT product_id, count(*) AS count FROM tweet WHERE '%s' <= tweeted_at AND tweeted_at <= '%s' GROUP BY product_id ORDER BY count DESC;",
+      "SELECT product_id, count(*) AS count FROM tweet WHERE product_id NOT IN (SELECT product_id FROM invalid_product) AND '%s' <= tweeted_at AND tweeted_at <= '%s' GROUP BY product_id ORDER BY count DESC;",
       tweetSinceMoment.format(),
       tweetUntilMoment.format()
     )

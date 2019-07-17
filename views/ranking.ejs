@@ -1,7 +1,7 @@
 <%
 const Ctype = Const.PRODUCT_TYPE_NAME_TO_ID_HASH;
 const Cbundle = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID;
-const INITIAL_DISPLAY_TWEET_NUM = 2;
+const INITIAL_DISPLAY_TWEET_NUM = 3;
 const PRODUCT_TYPE_ID_INTO_TEXT_HASH = {
     [Ctype.comic]: {
         titleTag: '今ネットで話題の漫画・コミックランキング 【BuzzRanking】',
@@ -146,14 +146,16 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
                 </span>
 
                 <div class="product-detail-icon">
-                    <a href="/product/detail/<%= data.productModel.productId %>" target="_blank" rel="nofollow">
+                    <a href="/product/detail/<%= data.productModel.productId %>" target="_blank">
                         <i class="fas fa-file-contract"></i>
                     </a>
                 </div>
                 <div class="row d-flex align-items-center product-block-header">
                     <div class="col-12 d-flex align-items-center justify-content-center">
                         <h2 class="product-title">
-                            <%= data.productModel.title %>
+                            <a href="/product/detail/<%= data.productModel.productId %>" target="_blank">
+                                <%= data.productModel.title %>
+                            </a>
 
                             <% if (isAdmin && productIdToIsNewProductHash[data.productModel.productId]) { %>
                                 （！新商品！)

@@ -204,7 +204,7 @@ span {
     z-index: -1;
     content: '';
     width: 100%;
-    height: 0.5rem;
+    height: 0.4rem;
     /*background-color: #E4F9E9;*/
     background-color: #ffc85c;
 }
