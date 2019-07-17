@@ -39,17 +39,7 @@ router.get('/:product_type_bundle_name', async function (req, res, next) {
   var releaseControlModel = await ReleaseControl.selectLatestReleaseDate();
   var targetMoment = queryParam['date'] ? new Moment(queryParam['date']) : releaseControlModel.getDateMoment();
 
-  if (Util.isCachedRanking(targetMoment)) {
-    await renderRankingPage(productTypeBundleId, productTypeId, targetMoment, page, req, res, next);
-  } else {
-    // need wait for building ranking obj by buildLatestRankingPoller or admin
-    var statusCode = 503; // maintenance code
-    res.status(statusCode);
-    res.render('error', {
-      status: 503,
-      dispMessage: Const.ERROR_MESSAGE.IN_PREPARING_RANKING,
-    });
-  }
+  await renderRankingPage(productTypeBundleId, productTypeId, targetMoment, page, req, res, next);
 });
 
 async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateMoment, page, req, res, next) {

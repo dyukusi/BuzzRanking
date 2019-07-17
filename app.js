@@ -11,6 +11,7 @@ var logger = require('morgan');
 var passport = require('passport');
 var session = require('express-session');
 var rfs = require("rotating-file-stream");
+var ReleaseControl = require(appRoot + '/models/release_control.js');
 // var UAParser = require('ua-parser-js');
 
 var redirectToHTTPS = require('express-http-to-https').redirectToHTTPS
@@ -68,16 +69,25 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// exclude InternetExplorer
-// app.use((req, res, next) => {
-//   var ua = UAParser(req.headers['user-agent']);
-//   if (ua.browser == 'IE' || ua.browser == 'IEMobile') {
-//     res.render('error', {
-//       status: null,
-//       dispMessage: Const.ERROR_MESSAGE.IE,
-//     });
-//   }
-// });
+// check cached ranking
+app.use((req, res, next) => {
+  (async () => {
+    var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
+    var targetMoment = latestReleaseControlModel.getDateMoment();
+
+    if (myUtil.isCachedRanking(targetMoment)) {
+      next();
+    } else {
+      // need wait for building ranking obj by buildLatestRankingPoller or admin
+      var statusCode = 503; // maintenance code
+      res.status(statusCode);
+      res.render('error', {
+        status: 503,
+        dispMessage: Const.ERROR_MESSAGE.IN_PREPARING_RANKING,
+      });
+    }
+  })();
+});
 
 app.use('/', require('./routes/index.js'));
 app.use('/product', require('./routes/product.js'));
