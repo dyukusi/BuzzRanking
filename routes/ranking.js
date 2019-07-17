@@ -7,7 +7,7 @@ const Moment = require('moment');
 const Poller = require(appRoot + '/my_libs/poller.js');
 
 const PRODUCT_NUM_PER_PAGE = 20;
-const DISABLE_HTML_CACHE = true;
+const DISABLE_HTML_CACHE = false;
 
 // this build latest Ranking object every 3 seconds if need
 var buildLatestRankingPoller = new Poller(3000);
