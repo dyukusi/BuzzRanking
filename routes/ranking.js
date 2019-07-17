@@ -78,7 +78,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     var productIdToIsNewProductHash = await Util.getProductIdToIsNewProductHash(statModel.id);
 
     ranking = __.filter(ranking, data => {
-      return productIdToIsNewProductHash(data.productModel.productId);
+      return productIdToIsNewProductHash[data.productModel.productId];
     });
   }
 
