@@ -88,6 +88,7 @@ exports.selectProductModels = (productTypeIds) => {
 
 exports.insertAltWordIfNeedForNewBook = async (productId, title) => {
   if (!title.match(/[\(\（]\d+[\)\）]/)) return;
+  if (!productId || !title) return;
   var twitterAltSearchWordModels = await TwitterAlternativeSearchWord.findAll({
     where: {
       productId: productId,
