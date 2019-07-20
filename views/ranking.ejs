@@ -89,14 +89,14 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
 <%- include(appRoot + '/views/header.ejs') %>
 
 <div id="content" class="container-fluid">
-    <!--<div class="row">-->
-    <!--<div class="col-12">-->
-    <!--<div class="text-align-left">-->
-    <!--<span class="last-updated-at"><%= myUtil.convertDateObjectIntoJapaneseDateString(statModel.getRankingDateObj()) %></span>-->
-    <!--最終更新-->
-    <!--</div>-->
-    <!--</div>-->
-    <!--</div>-->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-align-left">
+                <span class="last-updated-at"><%= latestStatDateMoment.locale('ja').format("YYYY年MMMDo") %></span>
+                最終更新
+            </div>
+        </div>
+    </div>
 
     <% if (targetDateMoment < latestStatDateMoment) { %>
         <div class="row">

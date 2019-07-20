@@ -7,7 +7,7 @@ const Moment = require('moment');
 const Poller = require(appRoot + '/my_libs/poller.js');
 
 const PRODUCT_NUM_PER_PAGE = 20;
-const DISABLE_HTML_CACHE = false;
+const DISABLE_HTML_CACHE = true;
 
 // this build latest Ranking object every 3 seconds if need
 var buildLatestRankingPoller = new Poller(3000);
@@ -64,14 +64,6 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
 
   console.log("cache miss: " + targetRankingHTMLCacheKey);
   var [statModel, ranking] = await Util.buildRanking(productTypeIds, dateMoment);
-  var pageMax = Math.ceil(ranking.length / PRODUCT_NUM_PER_PAGE) || 1;
-
-  if (pageMax < page) {
-    return next({
-      message: 'Exceeded page limit. Page: ' + page + ' MaxPage: ' + pageMax,
-      dispMessage: Const.ERROR_MESSAGE.PAGE_EXCEEDED,
-    });
-  }
 
   // only display new products if Admin
   if (isAdmin) {
@@ -79,6 +71,15 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
 
     ranking = __.filter(ranking, data => {
       return productIdToIsNewProductHash[data.productModel.productId];
+    });
+  }
+
+  var pageMax = Math.ceil(ranking.length / PRODUCT_NUM_PER_PAGE) || 1;
+
+  if (pageMax < page) {
+    return next({
+      message: 'Exceeded page limit. Page: ' + page + ' MaxPage: ' + pageMax,
+      dispMessage: Const.ERROR_MESSAGE.PAGE_EXCEEDED,
     });
   }
 

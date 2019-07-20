@@ -37,6 +37,7 @@ const CONST = {
 
   DEPRIORITIZE_WORDS_IN_TWEET_TEXT: [
     '実況',
+    '今日買った漫画',
   ],
 };
 

@@ -590,24 +590,6 @@ span {
     width: 100%;
 }
 
-.tab-item {
-    /*font-weight: bold;*/
-}
-
-.tab-item a {
-    color: #ff8700;
-    font-size: 1rem;
-}
-
-.tab-item .nav-link.active {
-    font-weight: bold;
-    color: red;
-}
-
-.nav-tabs {
-    border-bottom: initial;
-}
-
 .product-detail-icon a {
     z-index: 500;
     position: absolute;

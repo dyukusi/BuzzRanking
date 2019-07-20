@@ -54,8 +54,6 @@ async function main() {
 
   var insertObjectBasesForStatData = _.chain(productIdAndTweetCountRows)
     .filter(row => {
-
-      // less than 30 means never over 30 user count
       return CONST.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT <= row.count;
     })
     .map(row => {

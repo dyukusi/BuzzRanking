@@ -9,6 +9,7 @@ var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
 var productModelName = productModel._modelOptions.name.singular;
 var productDetailTemplatePath = 'product_detail/' + productModelName + '.ejs';
+var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => { return m.searchWord; }).join(', ') || productModel.title;
 %>
 
 <!DOCTYPE html>
@@ -36,7 +37,7 @@ var productDetailTemplatePath = 'product_detail/' + productModelName + '.ejs';
 <%- include('header.ejs') %>
 
 <div id="content" class="container-fluid">
-    <%- include(productDetailTemplatePath, { dataChartPlots: dataChartPlots, }) %>
+    <%- include(productDetailTemplatePath, { dataChartPlots: dataChartPlots, twitterAltSearchWordsStr: twitterAltSearchWordsStr, }) %>
 
     <% if (!isInvalidProduct) { %>
 

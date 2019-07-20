@@ -6,7 +6,8 @@
             BuzzRanking
         </span>
     </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
 
@@ -60,3 +61,110 @@
 </nav>
 
 <p id="PageTopBtn"><a href="#wrap"><i class="fas fa-angle-double-up"></i></a></p>
+
+<!-- description about the service modal -->
+<div class="modal fade" id="desc-modal" tabindex="-1" role="dialog" aria-labelledby="desc-modal-label"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!--<h5 class="modal-title" id="desc-modal-label"></h5>-->
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <div role="tabpanel">
+
+                    <ul class="nav nav-tabs">
+                        <li class="nav-item tab-item">
+                            <a href="#faq-tab" class="nav-link active" aria-controls="uploadTab" role="tab" data-toggle="tab">FAQ</a>
+                        </li>
+                        <li class="nav-item tab-item">
+                            <a href="#privacy-policy-tab" class="nav-link" aria-controls="uploadTab" role="tab" data-toggle="tab">
+                                プライバシーポリシー
+                            </a>
+                        </li>
+                    </ul>
+
+                </div>
+
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="faq-tab">
+                        <h3 class="modal-item">
+                            Buzzとは？
+                        </h3>
+                        <p>
+                            当サービスで定義した独自の注目度の指標。<br>
+                            あるツイートAが、とあるプロダクトαに関連するツイートであるとき、このツイートがされた時点を1.0Buzzとして以降1時間毎に線形的に減少し1週間で0Buzzになります。<br>
+                            プロダクトαに関連するツイート全てに対してこれを計算し、その合計値がそのプロダクトαに対する注目度になります。<br>
+                            ただし同一ツイッターアカウントによる複数のツイートは、各プロダクトに対して最新の1ツイートまでに制限されます。<br>
+                            また、Botによるツイートは集計対象から除外されます。<br>
+                            <br>
+                            これにより最近多くの人に話題にされたプロダクトほど数値が高まるため、注目度の指標として用いています。<br>
+                            全てのランキングは、このBuzzを基に順位付けがされています。<br>
+                        </p>
+
+                        <h3 class="modal-item">
+                            どのようにプロダクトに関するツイートを集めている？
+                        </h3>
+                        <p>
+                            <a href="https://developer.twitter.com/content/developer-twitter/ja.html" target="_blank">
+                                Twitter API
+                            </a>
+                            を用いて、基本的にはプロダクト名でツイートの本文検索を行うことによって収集しています。<br>
+                            プロダクトによっては略名や別名などが多数存在するケースがあることを考慮し、多数のワードで収集されることもあります。<br>
+                            収集に用いられるワードに関しては、各プロダクトの詳細ページの検索ワード欄から確認することができます。<br>
+                        </p>
+
+                        <h3 class="modal-item">
+                            Buzz集計頻度がプロダクトによって違うのは何故？
+                        </h3>
+                        <p>
+                            BuzzRankingは、プロダクトに対するBuzzの集計スクリプトを常に裏で実行しています。<br>
+                            ただし数万を超える全プロダクトに対して平等に毎日Buzz集計を行うだけのリソースは無いため、各プロダクトに対してはそれぞれ集計の優先度が設定されています。<br>
+                            まだ過去に一度も集計されたことがないプロダクトは、最高の優先度が設定されます。<br>
+                            過去数時間以内に集計されたプロダクトは、最低の優先度が設定されます。<br>
+                            その他のプロダクトは、前回の集計で得られたBuzzが高ければ高いほど、かつ前回の集計から時間が経っていれば経っているほど高い優先度が設定されます。<br>
+                        </p>
+
+                        <h3 class="modal-item">
+                            お問い合わせや要望、苦情などはどこに連絡すればいい？
+                        </h3>
+                        <p>
+                            フッター(ページ最下部)の運営者情報欄に記載されているEmailや、BuzzRanking公式ツイッターアカウントまでDMをお送りください。<br>
+                            サービスの感想や提案などもお気軽にお聞かせください。<br>
+                        </p>
+                    </div>
+
+                    <!-- プライバシーポリシー -->
+                    <div role="tabpanel" class="tab-pane" id="privacy-policy-tab">
+                        <h3 class="modal-item">広告</h3>
+                        <p>
+                            当サービスでは、第三者配信の広告サービスを利用しています。
+                            このような広告配信事業者は、ユーザーの興味に応じた商品やサービスの広告を表示するため、当サービスや他サイトへのアクセスに関する情報 『Cookie』(氏名、住所、メール
+                            アドレス、電話番号は含まれません) を使用することがあります。
+                        </p>
+
+                        <h3 class="modal-item">アクセス解析</h3>
+                        <p>
+                            当サービスでは、Googleによるアクセス解析ツール「Googleアナリティクス」を利用しています。
+                            Googleアナリティクスはトラフィックデータの収集のためにCookieを使用しています。
+                            このトラフィックデータは匿名で収集されており、個人を特定するものではありません。
+                            この機能はCookieを無効にすることで収集を拒否することができます。
+                            規約の詳細に関しましては次のリンクをご参照ください。
+                            <a href="https://www.google.com/analytics/terms/jp.html">https://www.google.com/analytics/terms/jp.html</a>
+                        </p>
+
+                        <h3 class="modal-item">免責事項</h3>
+                        <p class="text-align-left">
+                            当サービスに掲載する情報に関しては正しいものを提供するよう務めておりますが、提供している情報、リンク先などにより、いかなる損失や損害などの被害が発生しても責任を追いかねますのでご了承ください。
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

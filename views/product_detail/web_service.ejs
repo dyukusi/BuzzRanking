@@ -25,6 +25,23 @@ var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_
     </div>
 
     <div class="col-md-12 col-lg-9">
+        <div class="row">
+            <div class="col-4 text-align-center">
+                カテゴリ
+            </div>
+            <div class="col-8">
+                <%= Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] %>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-4 text-align-center">
+                検索ワード
+            </div>
+            <div class="col-8">
+                <%= twitterAltSearchWordsStr %>
+            </div>
+        </div>
+
         <% if (!isInvalidProduct) { %>
             <%- include('buzz_chart.ejs') %>
         <% } %>

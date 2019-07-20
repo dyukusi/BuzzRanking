@@ -7,6 +7,7 @@ const TweetCountLog = require(appRoot + '/models/tweet_count_log');
 const InvalidProduct = require(appRoot + '/models/invalid_product.js');
 const ReleaseControl = require(appRoot + '/models/release_control.js');
 const BlockTwitterUser = require(appRoot + '/models/block_twitter_user');
+const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 const Moment = require('moment');
 const memoryCache = require('memory-cache');
 const sequelize = require(appRoot + '/db/sequelize_config');
@@ -16,13 +17,18 @@ router.get('/detail/:product_id', function (req, res, next) {
   var productId = req.params.product_id;
 
   (async () => {
-    var [productModels, bookCaptionModels, tweetModels, tweetCountLogModels, invalidProductModels, blockTwitterUserModels] = await Promise.all([
+    var [productModels, bookCaptionModels, tweetModels, tweetCountLogModels, invalidProductModels, blockTwitterUserModels, twitterAltSearchWordModels] = await Promise.all([
       await Util.selectProductModelsByProductIds([productId]),
       await BookCaption.selectByProductIds([productId]),
       await Tweet.selectByProductIds([productId]),
       await TweetCountLog.selectByProductId(productId),
       await InvalidProduct.selectByProductIds([productId]),
       await BlockTwitterUser.findAll({}),
+      await TwitterAlternativeSearchWord.findAll({
+        where: {
+          productId: productId,
+        },
+      })
     ]);
 
     var targetProductModel = productModels[0];
@@ -50,6 +56,7 @@ router.get('/detail/:product_id', function (req, res, next) {
     res.render('product_detail', {
       productModel: targetProductModel,
       bookCaptionModel: targetBookCaption,
+      twitterAltSearchModels: twitterAltSearchWordModels,
       tweetDataArray: tweetDataArray,
       tweetCountLogModels: sortedTweetCountLogModels,
       isInvalidProduct: isInvalidProduct,
