@@ -82,7 +82,6 @@ function selectProductModelsByProductIds(productIds) {
   var d = Q.defer();
 
   Q.allSettled([
-    A8ProgramModel.selectByProductIds(productIds),
     Book.selectByProductIds(productIds),
     Game.selectByProductIds(productIds),
     WebService.selectByProductIds(productIds),

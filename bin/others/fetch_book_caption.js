@@ -25,7 +25,7 @@ process.on('unhandledRejection', (reason, p) => {
 
 async.waterfall([
   (callback) => {
-    con.query('SELECT * FROM stat WHERE product_type_bundle_id = 1 ORDER BY ranking_date DESC',
+    con.query('SELECT * FROM stat ORDER BY ranking_date DESC',
       [],
       function (e, rows, fields) {
         if (e) {
@@ -41,11 +41,11 @@ async.waterfall([
     StatDataModel.selectByStatId(targetStatId)
       .then(statDataModels => {
         var productIds = _.map(statDataModels, m => {
-          return m.getProductId();
+          return m.productId;
         });
 
         var productIdIntoStatDataModelHash = _.indexBy(statDataModels, m => {
-          return m.getProductId();
+          return m.productId;
         });
 
         Util.selectProductModelsByProductIds(productIds)
@@ -54,10 +54,6 @@ async.waterfall([
               .filter(m => {
                 return m instanceof BookModel;
               })
-              .sortBy(m => {
-                return -1 * productIdIntoStatDataModelHash[m.getProductId()].getUserCount();
-              })
-              .first(300)
               .value();
 
             callback(null, bookModels);
@@ -76,7 +72,7 @@ async.waterfall([
         });
 
         var filteredBookModels = _.filter(bookModels, m => {
-          return !alreadyHasHash[m.getProductId()];
+          return !alreadyHasHash[m.productId];
         });
 
         callback(null, filteredBookModels);
@@ -85,7 +81,7 @@ async.waterfall([
   },
   (bookModels, callback) => {
     var isbnCodeIntoBookModelHash = _.indexBy(bookModels, m => {
-      return m.getISBNCode();
+      return m.isbnCode;
     });
     var isbnCodes = _.keys(isbnCodeIntoBookModelHash);
     console.log('Target num: ' + isbnCodes.length);
@@ -108,7 +104,7 @@ async.waterfall([
         });
 
         var insertObject = _.map(_.keys(isbnCodeIntoCaptionHash), isbnCode => {
-          var productId = isbnCodeIntoBookModelHash[isbnCode].getProductId();
+          var productId = isbnCodeIntoBookModelHash[isbnCode].productId;
           return [productId, isbnCodeIntoCaptionHash[isbnCode]];
         });
 
@@ -122,7 +118,12 @@ async.waterfall([
       return callback(null);
     }
 
-    BookCaptionModel.insert(insertObjects)
+    Promise.all(_.map(insertObjects, obj => {
+      return BookCaptionModel.create({
+        productId: obj[0],
+        caption: obj[1],
+      });
+    }))
       .then(() => {
         callback(null);
       });
@@ -134,6 +135,7 @@ async.waterfall([
   }
 
   console.log('complete!');
+  process.exit(0);
 });
 
 
