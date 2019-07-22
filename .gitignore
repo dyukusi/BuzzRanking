@@ -9,3 +9,4 @@ ignore_files/*
 trend_ranking.dump
 trend_ranking_table_data.dump
 log/*
+public/sitemap.xml
