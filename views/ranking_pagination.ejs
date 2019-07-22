@@ -13,8 +13,14 @@ var generateURL = (page) => {
         url += sprintf("&type=%s", productTypeName);
     }
 
+    if (isDateSpecified) {
+        var dateStr = targetDateMoment.format("YYYY-MM-DD");
+        url += sprintf("&date=%s", dateStr);
+    }
+
     return url;
 };
+
 %>
 
 <div class="pager pt-3">

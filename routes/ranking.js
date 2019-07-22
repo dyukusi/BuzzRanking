@@ -7,7 +7,7 @@ const Moment = require('moment');
 const Poller = require(appRoot + '/my_libs/poller.js');
 
 const PRODUCT_NUM_PER_PAGE = 20;
-const DISABLE_HTML_CACHE = true;
+const DISABLE_HTML_CACHE = false;
 
 // this build latest Ranking object every 3 seconds if need
 var buildLatestRankingPoller = new Poller(3000);
@@ -31,9 +31,15 @@ router.get('/:product_type_bundle_name', async function (req, res, next) {
   var productTypeBundleName = req.params.product_type_bundle_name;
   var productTypeId = Const.PRODUCT_TYPE_NAME_TO_ID_HASH[queryParam['type']] || null;
   var productTypeBundleId = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID[productTypeBundleName];
+  var isAdmin = myUtil.isAdminByReq(req);
 
   if (!productTypeBundleId) {
     return next(productTypeBundleName + ' is not defined');
+  }
+
+  // date function is only for admin
+  if (!!queryParam['date'] && !isAdmin) {
+    return res.redirect('/auth');
   }
 
   var releaseControlModel = await ReleaseControl.selectLatestReleaseDate();
@@ -43,6 +49,7 @@ router.get('/:product_type_bundle_name', async function (req, res, next) {
 });
 
 async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateMoment, page, req, res, next) {
+  var queryParam = req.query || {};
   var productTypeIds = targetProductTypeId ? [targetProductTypeId] : Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
   var targetRankingHTMLCacheKey = 'html_ranking_' + (targetProductTypeId || 'bundle_' + productTypeBundleId) + '_' + dateMoment.format() + '_p' + page;
   var targetRankingHTMLCache = memoryCache.get(targetRankingHTMLCacheKey);
@@ -107,6 +114,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     statModel: statModel,
     productTypeBundleId: productTypeBundleId,
     targetProductTypeId: targetProductTypeId,
+    isDateSpecified: !!queryParam['date'],
 
     // for admin
     productIdToIsNewProductHash: productIdToIsNewProductHash,

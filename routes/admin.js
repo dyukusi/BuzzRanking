@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 const InvalidProductModel = require(appRoot + '/models/invalid_product.js');
 const TweetModel = require(appRoot + '/models/tweet');
+const Moment = require('moment');
+const Util = require(appRoot + '/my_libs/util.js');
+const memoryCache = require('memory-cache');
 
 function isAdmin(req, res, next) {
   var email = req.user ? req.user.email : null;
@@ -16,7 +19,9 @@ function isAdmin(req, res, next) {
 }
 
 router.get('/', isAdmin, function(req, res, next) {
-  res.render('admin', {});
+  res.render('admin', {
+    memoryCache: memoryCache,
+  });
 });
 
 router.post('/add_product_into_invalid_product_table', isAdmin, function (req, res, next) {
@@ -39,6 +44,33 @@ router.post('/enable_is_invalid_tweet_flag', isAdmin, function (req, res, next) 
         result: true,
       });
     });
+});
+
+router.post('/build_ranking', isAdmin, function (req, res, next) {
+  var q = req.query;
+  var targetMoment = new Moment(q.date);
+
+  res.send({
+    result: true,
+  });
+
+  (async () => {
+    console.log("build ranking request received. Date: " + targetMoment.format());
+    var ranking = await Util.buildRankingByDateMoment(targetMoment)
+    console.log("build ranking completed! Date: " + targetMoment.format());
+  })();
+});
+
+router.post('/delete_cache', isAdmin, function (req, res, next) {
+  var q = req.query;
+  var key = q.key;
+
+  memoryCache.del(key);
+  console.log("delete cache. key: " + key);
+
+  res.send({
+    result: true,
+  });
 });
 
 module.exports = router;

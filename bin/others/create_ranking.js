@@ -92,6 +92,11 @@ async function main() {
     data.buzz = buzz;
   }
 
+  // cut buzz < 30
+  insertObjectBasesForStatData = __.filter(insertObjectBasesForStatData, data => {
+    return 30 <= data.buzz;
+  });
+
   await Stat.createRankingData(rankingMoment, tweetSinceMoment, tweetUntilMoment, insertObjectBasesForStatData);
 
   console.log("finish!");

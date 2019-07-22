@@ -140,6 +140,7 @@ async function buildRankingByDateMoment(targetDateMoment) {
     return rankingCache;
   }
 
+  console.log("building ranking... " + targetDateMoment.format("YYYY-MM-DD"));
   var statModel = await Stat.selectByRankingDate(targetDateMoment);
   var statDataModels = await StatData.selectByStatId(statModel.id);
   var invalidProductModelsHash = __.indexBy(await InvalidProduct.findAll(), m => {

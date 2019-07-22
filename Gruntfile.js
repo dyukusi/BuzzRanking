@@ -11,6 +11,11 @@ module.exports = function(grunt) {
         dest : 'public/js/compressed/index.min.js',
       },
 
+      control : {
+        src : ['public/js/control.js', 'public/js/header.js'],
+        dest : 'public/js/compressed/control.min.js',
+      },
+
       product_detail : {
         src : ['public/js/product_detail.js', 'public/js/header.js'],
         dest : 'public/js/compressed/product_detail.min.js',
@@ -38,12 +43,17 @@ module.exports = function(grunt) {
     watch: {
       header : {
         files : ['public/js/header.js'],
-        tasks : ['browserify:header', 'browserify:index', 'browserify:ranking', 'browserify:product_detail', 'browserify:product_list'],
+        tasks : ['browserify:header', 'browserify:index', 'browserify:ranking', 'browserify:product_detail', 'browserify:product_list', 'browserify:control'],
       },
 
       index : {
         files : ['public/js/index.js'],
         tasks : ['browserify:index'],
+      },
+
+      control : {
+        files : ['public/js/control.js'],
+        tasks : ['browserify:control'],
       },
 
       product_detail : {

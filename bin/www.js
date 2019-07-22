@@ -14,6 +14,7 @@ var http = require('http');
 
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
+console.log("PORT: " + port);
 
 /**
  * Create HTTP server.
@@ -44,6 +45,7 @@ function normalizePort(val) {
   if (port >= 0) {
     // port number
     return port;
+
   }
 
   return false;
