@@ -93,7 +93,7 @@ async function main() {
   }
 
   // cut buzz < 30
-  insertObjectBasesForStatData = __.filter(insertObjectBasesForStatData, data => {
+  insertObjectBasesForStatData = _.filter(insertObjectBasesForStatData, data => {
     return 30 <= data.buzz;
   });
 
