@@ -160,17 +160,24 @@ async function buildRankingByDateMoment(targetDateMoment) {
     return m.productId;
   });
 
+  console.log('select tweet model');
+  console.log('since: ' + statModel.statSince);
+  console.log('until: ' + statModel.statUntil);
+
   var [productModels, tweetModels, bookCaptionModels, blockTwitterUserModels] = await Promise.all([
     selectProductModelsByProductIds(productIds),
     Tweet.selectByProductIds(productIds, {
       // excludeRetweet: true,
       excludeInvalidTweets: true,
-      since: statModel.since,
-      until: statModel.until,
+      since: statModel.statSince,
+      until: statModel.statUntil,
     }),
     BookCaption.selectByProductIds(productIds),
     BlockTwitterUser.findAll(),
   ]);
+
+  console.log(tweetModels.length + ' tweets found');
+  console.log('remove duplicate retweets');
 
   var productIdToProductModelHash = __.indexBy(productModels, m => {
     return m.productId;
@@ -187,6 +194,8 @@ async function buildRankingByDateMoment(targetDateMoment) {
   var screenNameToBlockTwitterUserModelHash = __.indexBy(blockTwitterUserModels, m => {
     return m.screenName;
   });
+
+  console.log('building tweet data array...');
 
   var productIdToTweetDataArray = {};
   var productIds = __.keys(productIdToTweetModelsHash);
@@ -206,6 +215,9 @@ async function buildRankingByDateMoment(targetDateMoment) {
 
     productIdToTweetDataArray[productId] = tweetDataArray;
   }
+
+  console.log('building tweet data array process finished');
+  console.log('building final ranking object...');
 
   var ranking = __.chain(sortedRankingDataModels)
     .map(statDataModel => {

@@ -61,6 +61,7 @@
     "truncator": "^1.2.0",
     "twitter": "^1.7.1",
     "ua-parser-js": "^0.7.20",
-    "underscore": "^1.9.1"
+    "underscore": "^1.9.1",
+    "xmlhttprequest": "^1.8.0"
   }
 }
