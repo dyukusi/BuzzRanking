@@ -166,18 +166,20 @@ async function buildRankingByDateMoment(targetDateMoment) {
 
   var [productModels, tweetModels, bookCaptionModels, blockTwitterUserModels] = await Promise.all([
     selectProductModelsByProductIds(productIds),
+
+    // TODO: this takes more than 10secs
     Tweet.selectByProductIds(productIds, {
       // excludeRetweet: true,
       excludeInvalidTweets: true,
       since: statModel.statSince,
       until: statModel.statUntil,
     }),
+
     BookCaption.selectByProductIds(productIds),
     BlockTwitterUser.findAll(),
   ]);
 
   console.log(tweetModels.length + ' tweets found');
-  console.log('remove duplicate retweets');
 
   var productIdToProductModelHash = __.indexBy(productModels, m => {
     return m.productId;

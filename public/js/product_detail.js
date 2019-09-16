@@ -36,10 +36,11 @@ function initChart() {
       datasets: [{
         label: 'Buzz度推移',
         data: plots,
+        pointRadius: 2,
         backgroundColor: 'orange',
         fill: false,
         lineTension: 0,
-        borderWidth: 2,
+        borderWidth: 1,
         borderColor: 'red',
         // backgroundColor: [
         //   'rgba(255, 99, 132, 0.2)',

@@ -18,13 +18,13 @@ router.get('/detail/:product_id', function (req, res, next) {
 
   (async () => {
     var [productModels, bookCaptionModels, tweetModels, tweetCountLogModels, invalidProductModels, blockTwitterUserModels, twitterAltSearchWordModels] = await Promise.all([
-      await Util.selectProductModelsByProductIds([productId]),
-      await BookCaption.selectByProductIds([productId]),
-      await Tweet.selectByProductIds([productId]),
-      await TweetCountLog.selectByProductId(productId),
-      await InvalidProduct.selectByProductIds([productId]),
-      await BlockTwitterUser.findAll({}),
-      await TwitterAlternativeSearchWord.findAll({
+      Util.selectProductModelsByProductIds([productId]),
+      BookCaption.selectByProductIds([productId]),
+      Tweet.selectByProductIds([productId]),
+      TweetCountLog.selectByProductId(productId),
+      InvalidProduct.selectByProductIds([productId]),
+      BlockTwitterUser.findAll({}),
+      TwitterAlternativeSearchWord.findAll({
         where: {
           productId: productId,
         },
