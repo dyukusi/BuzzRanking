@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+const Config = require('config');
 const memoryCache = require('memory-cache');
 const ReleaseControl = require(appRoot + '/models/release_control.js');
 const Util = require(appRoot + '/my_libs/util.js');
@@ -40,6 +41,10 @@ router.get('/sitemap', function (req, res, next) {
 
 router.get('/health', function (req, res, next) {
   res.render('health', {});
+});
+
+router.get('/ads.txt', function (req, res, next) {
+  res.send(Config.google_adsense_ads_txt);
 });
 
 module.exports = router;
