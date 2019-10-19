@@ -5,9 +5,8 @@ const ReleaseControl = require(appRoot + '/models/release_control.js');
 const Util = require(appRoot + '/my_libs/util.js');
 const Moment = require('moment');
 const Poller = require(appRoot + '/my_libs/poller.js');
-
-const PRODUCT_NUM_PER_PAGE = 20;
-const DISABLE_HTML_CACHE = false;
+const Const = require(appRoot + '/my_libs/const.js');
+const DISABLE_HTML_CACHE = true;
 
 // this build latest Ranking object every 3 seconds if need
 var buildLatestRankingPoller = new Poller(3000);
@@ -81,7 +80,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     });
   }
 
-  var pageMax = Math.ceil(ranking.length / PRODUCT_NUM_PER_PAGE) || 1;
+  var pageMax = Math.ceil(ranking.length / Const.PRODUCT_NUM_PER_PAGE) || 1;
 
   if (pageMax < page) {
     return next({
@@ -91,8 +90,8 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
   }
 
   // slice for pagination
-  var start = (page - 1) * PRODUCT_NUM_PER_PAGE;
-  var end = start + PRODUCT_NUM_PER_PAGE;
+  var start = (page - 1) * Const.PRODUCT_NUM_PER_PAGE;
+  var end = start + Const.PRODUCT_NUM_PER_PAGE;
   var slicedRankings = ranking.slice(start, end);
 
   // should not cache if admin
@@ -115,6 +114,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     productTypeBundleId: productTypeBundleId,
     targetProductTypeId: targetProductTypeId,
     isDateSpecified: !!queryParam['date'],
+    rank1Buzz: ranking[0].statDataModel.buzz,
 
     // for admin
     productIdToIsNewProductHash: productIdToIsNewProductHash,

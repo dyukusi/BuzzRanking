@@ -11,7 +11,7 @@ const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternat
 const Moment = require('moment');
 const memoryCache = require('memory-cache');
 const sequelize = require(appRoot + '/db/sequelize_config');
-const PRODUCT_NUM_PER_PAGE = 100;
+const PRODUCT_NUM_PER_PAGE_IN_LISTING_PAGE = 100;
 
 router.get('/detail/:product_id', function (req, res, next) {
   var productId = req.params.product_id;
@@ -99,9 +99,9 @@ router.get('/list', async function (req, res, next) {
 
   var productBasicInfos = await buildProductBasicInfos(buildProductBasicInfosOptions);
   var detectedProductCount = productBasicInfos.length;
-  var pageMax = Math.ceil(productBasicInfos.length / PRODUCT_NUM_PER_PAGE) || 1;
-  var start = (targetPage - 1) * PRODUCT_NUM_PER_PAGE;
-  var end = start + PRODUCT_NUM_PER_PAGE;
+  var pageMax = Math.ceil(productBasicInfos.length / PRODUCT_NUM_PER_PAGE_IN_LISTING_PAGE) || 1;
+  var start = (targetPage - 1) * PRODUCT_NUM_PER_PAGE_IN_LISTING_PAGE;
+  var end = start + PRODUCT_NUM_PER_PAGE_IN_LISTING_PAGE;
   var targetProductBasicInfos = productBasicInfos.slice(start, end);
 
   res.render('product_list', {

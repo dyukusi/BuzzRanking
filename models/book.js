@@ -20,7 +20,7 @@ class Book extends Sequelize.Model {
     });
   }
 
-  static selectByProductTypeIds(productTypeIds, options) {
+  static selectByProductTypeIds(productTypeIds, options = {}) {
     var where = {
       productTypeId: productTypeIds,
     };

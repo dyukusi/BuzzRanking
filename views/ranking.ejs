@@ -27,6 +27,10 @@ const PRODUCT_TYPE_ID_INTO_TEXT_HASH = {
         titleTag: '今ネットで話題の携帯ゲームランキング 【BuzzRanking】',
         description: '今ネットで話題になっている携帯ゲームをバズっている順に紹介！【毎日更新】',
     },
+    [Ctype.dating_service]: {
+        titleTag: '今ネットで話題の出会い系・マッチングサービスランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている出会い系・マッチングサービスをバズっている順に紹介！【毎日更新】',
+    },
 };
 
 const PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH = {
@@ -46,10 +50,16 @@ const PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH = {
         titleTag: '今ネットで話題の宿泊・旅行予約サービス総合ランキング 【BuzzRanking】',
         description: '今ネットで話題になっている宿泊・旅行予約サービスをバズっている順に紹介！【毎日更新】',
     },
+    [Cbundle.dating]: {
+        titleTag: '今ネットで話題の出会い系・マッチングサービスランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている出会い系・マッチングサービスをバズっている順に紹介！【毎日更新】',
+    },
 };
 
 var texts = targetProductTypeId ? PRODUCT_TYPE_ID_INTO_TEXT_HASH[targetProductTypeId] : PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH[productTypeBundleId];
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
+var productTypeIds = Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
+var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, Const.EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS));
 %>
 
 <!DOCTYPE html>
@@ -64,8 +74,6 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
 
 <html>
 <head>
-    <%- include(appRoot + '/views/google_analytics.ejs') %>
-
     <title><%- texts.titleTag %></title>
 
     <meta name="viewport"
@@ -106,7 +114,7 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
         </div>
     <% } %>
 
-    <% if (productTypeBundleId != Cbundle.all) { %>
+    <% if (productTypeBundleId != Cbundle.all && 2 <= productTypeIds.length) { %>
         <ul class="nav nav-tabs">
             <li class="nav-item tab-item"><a href="/ranking/<%= productTypeBundleName %>"
                                              class="nav-link <%= targetProductTypeId ? '' : 'active' %>">総合</a></li>
@@ -129,6 +137,7 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
         var rank = data.rank;
         var productModelName = data.productModel._modelOptions.name.singular;
         var productInfoTemplatePath = 'product_info/' + productModelName + '.ejs';
+        var progressBarPercentage = ((data.statDataModel.buzz / rank1Buzz) * 100) || 0;
     %>
 
     <div class="row product-row-block">
@@ -137,23 +146,29 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
             <!--<div class="product-block shadow bg-white rounded"-->
             <div class="product-block product-block-border"
                  data-product-id="<%= data.statDataModel.productId %>">
+
                 <span class="product-block-border-title relative">
-                    <% if (rank <= 3) { %>
-                        <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
+                    <% if (data.statDataModel.buzz) { %>
+                        <span class="d-flex align-items-end">
+                            <% if (rank <= 3) { %>
+                                <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
+                            <% } %>
+                            <%= rank %>位
+                            <!--<span class="buzz-count-text">(<%= data.statDataModel.buzz %>Buzz)</span>-->
+                    </span>
                     <% } %>
-                    <%= rank %>位
-                    <span class="buzz-count-text">(<%= data.statDataModel.buzz %>Buzz)</span>
                 </span>
 
                 <div class="product-detail-icon">
-                    <a href="/product/detail/<%= data.productModel.productId %>" target="_blank">
+                    <a href="/product/detail/<%= data.productModel.productId %>">
                         <i class="fas fa-file-contract"></i>
                     </a>
                 </div>
+
                 <div class="row d-flex align-items-center product-block-header">
                     <div class="col-12 d-flex align-items-center justify-content-center">
                         <h2 class="product-title">
-                            <a href="/product/detail/<%= data.productModel.productId %>" target="_blank">
+                            <a href="/product/detail/<%= data.productModel.productId %>">
                                 <%= data.productModel.title %>
                             </a>
 
@@ -165,17 +180,33 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
                     </div>
                 </div>
 
+                <!--<i class="fas fa-fire progress-bar-buzz-icon"></i>-->
+                <div class="row">
+                    <div class="col-12">
+                        <a href="/product/detail/<%= data.productModel.productId %>">
+                            <div class="progress-bar-area">
+                                <div class="progress">
+                                <span class="progress-bar progress-bar-striped bg-danger" aria-valuenow="75"
+                                      aria-valuemin="0"
+                                      aria-valuemax="100" style="width: <%= progressBarPercentage %>%">
+                                    <%= data.statDataModel.buzz %> Buzz
+                                </span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-4 product-col">
                         <div class="product-info-block">
-
                             <%- include(productInfoTemplatePath, { data: data, }) %>
-
                         </div>
                     </div>
 
                     <%
                         var initialDisplayTweetData = __.first(data.tweetDataArray, INITIAL_DISPLAY_TWEET_NUM);
+                        var hasMoreTweets = INITIAL_DISPLAY_TWEET_NUM <= initialDisplayTweetData.length;
                         var dataAttrStr = __.map(data.tweetDataArray, function (tweetData) {
                             return '["' + tweetData.tweetModel.screenName + '","' + tweetData.tweetModel.tweetId + '"]';
                         }).join(',');
@@ -188,58 +219,69 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
                         <div class="tweet-references">
 
                             <div class="grad-wrap">
-                                <button class="btn grad-trigger"
-                                        type="button"
-                                        data-read-more-tweet-ids="[<%= dataAttrStr %>]"
-                                        data-is-open="false"
-                                        data-is-ever-opened="false"
-                                >
-                                    <div class="relative">
-                                        <p class="caption-btn-text">
-                                            続きを読む
-                                        </p>
-                                        <i class="fas fa-angle-down fa-lg accordion-icon"></i>
-                                    </div>
-                                </button>
 
-                                <div class="grad-item" data-grad-idx="<%= rank %>"
-                                     data-is-first-render='true'>
+                                <% if (hasMoreTweets) { %>
+                                    <button class="btn grad-trigger"
+                                            type="button"
+                                            data-read-more-tweet-ids="[<%= dataAttrStr %>]"
+                                            data-is-open="false"
+                                            data-is-ever-opened="false"
+                                    >
+                                        <div class="relative">
+                                            <p class="caption-btn-text">
+                                                続きを読む
+                                            </p>
+                                            <i class="fas fa-angle-down fa-lg accordion-icon"></i>
+                                        </div>
+                                    </button>
+                                <% } %>
 
-                                    <% if (data.bookCaptionModel) { %>
-                                        <div class="book-caption-accordion">
-                                            <div>
+                                <% if (initialDisplayTweetData.length) { %>
+                                    <div class="grad-item" data-grad-idx="<%= rank %>"
+                                         data-is-first-render='true'>
+
+                                        <% if (data.bookCaptionModel) { %>
+                                            <div class="book-caption-accordion">
+                                                <div>
                                                 <span class="btn read-book-caption-button">
                                                     <div class="relative">
                                                         <p class="caption-btn-text">あらすじ</p>
                                                         <i class="fas fa-angle-down fa-lg accordion-icon"></i>
                                                     </div>
                                                 </span>
-                                                <div class="book-caption">
-                                                    <%= data.bookCaptionModel.caption; %>
+                                                    <div class="book-caption">
+                                                        <%= data.bookCaptionModel.caption; %>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    <% } %>
-
-                                    <div class="twitter-reaction-area">
-                                        <%
-                                        __.each(initialDisplayTweetData, function(tweetData) {
-                                            var tweetModel = tweetData.tweetModel;
-                                        %>
-                                        <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
-                                            <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
-                                        </blockquote>
-
-                                        <% if (isAdmin) { %>
-                                            <button class="btn btn-danger remove-tweet-button"
-                                                    data-tweet-id="<%= tweetModel.tweetId %>">
-                                                (Admin)このツイートを無効化する
-                                            </button>
                                         <% } %>
-                                        <% }); %>
+
+                                        <div class="twitter-reaction-area">
+                                            <%
+                                            __.each(initialDisplayTweetData, function(tweetData) {
+                                                var tweetModel = tweetData.tweetModel;
+                                            %>
+                                            <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
+                                                <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
+                                            </blockquote>
+
+                                            <% if (isAdmin) { %>
+                                                <button class="btn btn-danger remove-tweet-button"
+                                                        data-tweet-id="<%= tweetModel.tweetId %>">
+                                                    (Admin)このツイートを無効化する
+                                                </button>
+                                            <% } %>
+                                            <% }); %>
+                                        </div>
                                     </div>
 
-                                </div>
+                                <% } else { %>
+                                    <div class="wip-text d-flex align-items-center">
+                                        情報を収集中です。<br>
+                                        しばらく経ってから再度ご確認ください。
+                                    </div>
+                                <% } %>
+
                             </div>
                         </div>
                     </div>
@@ -260,7 +302,15 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
         </div>
     </div>
 
+    <% if ((n + 1) % 4 == 0) { %>
+        <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
+    <% } %>
+
     <% }); %>
+
+    <% if (ranking.length % 4 != 0 && ranking.length < Const.PRODUCT_NUM_PER_PAGE) { %>
+        <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
+    <% } %>
 
     <% if (!ranking.length) { %>
         <div class="row">
@@ -270,7 +320,7 @@ var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTyp
         </div>
     <% } %>
 
-    <% if (targetPage == pageMax) { %>
+    <% if (!isNoBuzzThresholdProductType && targetPage == pageMax) { %>
         <div class="threshold-buzz-count-description">
             ※ Buzzが<%= Const.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT %>未満の商品・サービスはランキングには表示されません
         </div>

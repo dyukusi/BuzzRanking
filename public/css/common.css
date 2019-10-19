@@ -149,10 +149,6 @@ h6 {
     color: orangered;
 }
 
-.affiliate-html * {
-    width: 100%;
-}
-
 .common-border {
     position: relative;
     margin-top: 0.1em;
@@ -395,3 +391,13 @@ i {
 .nav-tabs {
     border-bottom: initial;
 }
+
+.affiliate-html {
+    min-height: 100px;
+}
+
+.affiliate-html a img {
+    height: 100%;
+    width: 100%;
+}
+

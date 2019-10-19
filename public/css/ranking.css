@@ -518,7 +518,7 @@ span {
 
 .twitter-reaction-area {
     /*height: 0px;*/
-    min-height: 200px;
+    /*min-height: 200px;*/
 }
 
 .book-caption {
@@ -655,4 +655,31 @@ span {
 .threshold-buzz-count-description {
     text-align: center;
     margin-bottom: 1rem;
+}
+
+.wip-text {
+    height: 100%;
+    width: 100%;
+    justify-content: left;
+}
+
+.progress {
+    height: 1.3rem;
+    width: 100%;
+    margin: auto;
+}
+
+.progress-bar-area {
+    width: 100%;
+    padding-bottom: 5px;
+}
+
+.progress-bar {
+    color: white;
+    font-weight: bold;
+}
+
+.progress-bar-buzz-icon {
+    color: red;
+    /*margin-right: 0.3rem;*/
 }

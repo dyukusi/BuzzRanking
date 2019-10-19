@@ -7,8 +7,6 @@
 
 <html>
 <head>
-    <%- include(appRoot + '/views/google_analytics.ejs') %>
-
     <title>control room</title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
@@ -22,6 +20,7 @@
         welcome to admin page :)
     </p>
 
+    日付を指定してランキングオブジェクトを生成
     <div class="row">
         <div class="col-12">
             <input id="build-ranking-date-input" class="form-control" type="text" placeholder="2019-07-12">
@@ -29,10 +28,12 @@
         </div>
     </div>
 
+    <br>
     <div class="row">
         <div class="col-12">
             <% __.each(memoryCache.keys(), key => { %>
-                <%= key %> : <button class="delete-cache-button page-link text-dark d-inline-block" value=<%= key %>>削除</button>
+                <button class="delete-cache-button page-link text-dark d-inline-block" value=<%= key %>>削除</button> : <%= key %>
+                <br>
             <% }); %>
         </div>
     </div>

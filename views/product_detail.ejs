@@ -22,8 +22,6 @@ var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => { return m.se
 
 <html>
 <head>
-    <%- include(appRoot + '/views/google_analytics.ejs') %>
-
     <title>
         <%= productModel.title %>のネットの反応【BuzzRanking】
     </title>
@@ -37,11 +35,15 @@ var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => { return m.se
 <%- include('header.ejs') %>
 
 <div id="content" class="container-fluid">
+    <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
+
     <%- include(productDetailTemplatePath, { dataChartPlots: dataChartPlots, twitterAltSearchWordsStr: twitterAltSearchWordsStr, }) %>
 
-    <% if (!isInvalidProduct) { %>
+    <% if (!isInvalidProduct && !!tweetDataArray.length) { %>
+            <div class="pt-3">
+                <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
+            </div>
 
-        <% if (!!tweetDataArray.length) { %>
             <div class="row">
                 <div class="col-12 text-align-center">
                     <h2>
@@ -54,7 +56,8 @@ var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => { return m.se
             <div class="row mx-auto tweet-reference-block">
                 <div class="col-12">
                     <%
-                    __.each(initialDisplayTweetDataArray, function(tweetData) {
+                    __.times(initialDisplayTweetDataArray.length, function(n) {
+                        var tweetData = initialDisplayTweetDataArray[n];
                         var tweetModel = tweetData.tweetModel;
                     %>
                     <div class="row">
@@ -64,9 +67,22 @@ var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => { return m.se
                             </blockquote>
                         </div>
                     </div>
+
+                    <% if ((n + 1) % 5 == 0) { %>
+                    <div class="row">
+                        <div class="col-12">
+                            <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
+                        </div>
+                    </div>
+                    <% } %>
+
                     <% }); %>
                 </div>
             </div>
+
+
+        <% if (initialDisplayTweetDataArray.length % 5 != 0) { %>
+            <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
         <% } %>
 
         <div class="pt-3">

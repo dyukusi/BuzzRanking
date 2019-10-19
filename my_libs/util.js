@@ -1,14 +1,14 @@
 const appRoot = require('app-root-path');
 const Q = require('q');
-const A8ProgramModel = require(appRoot + '/models/a8_program.js');
 const WebService = require(appRoot + '/models/web_service');
 const Book = require(appRoot + '/models/book');
 const Game = require(appRoot + '/models/game');
-const _ = require('underscore');
+const __ = require('underscore');
 const memoryCache = require('memory-cache');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const FastLevenShtein = require('fast-levenshtein');
 const Moment = require('moment');
+const CONST = require(appRoot + '/my_libs/const.js');
 
 const Stat = require(appRoot + '/models/stat.js');
 const StatData = require(appRoot + '/models/stat_data.js');
@@ -81,12 +81,12 @@ function htmlCache(cacheDurationSec) {
 function selectProductModelsByProductIds(productIds) {
   var d = Q.defer();
 
-  Q.allSettled([
-    Book.selectByProductIds(productIds),
-    Game.selectByProductIds(productIds),
-    WebService.selectByProductIds(productIds),
-  ]).then(function (results) {
-    var productModels = _.chain(results)
+  Q.allSettled(
+    __.map(CONST.PRODUCT_MODELS, Model => {
+      return Model.selectByProductIds(productIds);
+    })
+  ).then(function (results) {
+    var productModels = __.chain(results)
       .map(r => {
         return r.value;
       })
@@ -98,6 +98,18 @@ function selectProductModelsByProductIds(productIds) {
   });
 
   return d.promise;
+}
+
+async function selectProductModelsByProductTypeIds(productTypeIds) {
+  var productModels = __.flatten(
+    await Promise.all(
+      __.map(CONST.PRODUCT_MODELS, Model => {
+        return Model.selectByProductTypeIds(productTypeIds);
+      })
+    )
+  );
+
+  return productModels;
 }
 
 async function buildRanking(targetProductTypeIds, targetDateMoment) {
@@ -253,7 +265,7 @@ async function getProductIdToIsNewProductHash(statId) {
   ))[0];
 
   var productIdToIsNewProductHash = {};
-  _.each(statDataModels, statDataModel => {
+  __.each(statDataModels, statDataModel => {
     productIdToIsNewProductHash[statDataModel.product_id] = true;
   });
 
@@ -272,7 +284,7 @@ function calcNormalizedLevenshteinDistance(strA, strB) {
 function buildTweetDataArray(tweetModels, options) {
   options = options || {};
 
-  var tweetDataArray = _.map(tweetModels, m => {
+  var tweetDataArray = __.map(tweetModels, m => {
     var text = m.text;
 
     var trimedText;
@@ -289,7 +301,7 @@ function buildTweetDataArray(tweetModels, options) {
 
   // detect practically same tweets
   var tweetIdToParentTweetDataHash = {};
-  _.each(tweetDataArray, tweetData => {
+  __.each(tweetDataArray, tweetData => {
     var tweetModel = tweetData.tweetModel;
     var tweetId = tweetModel.retweetTargetId || tweetModel.tweetId;
     var parentTweetData = tweetIdToParentTweetDataHash[tweetId];
@@ -304,18 +316,18 @@ function buildTweetDataArray(tweetModels, options) {
 
   // this should be done before detecting similar tweet process which so high calc complexity
   if (options.excludeUnnecessaryDataForDisplay) {
-    tweetDataArray = _.filter(tweetDataArray, data => {
+    tweetDataArray = __.filter(tweetDataArray, data => {
       return !data.parentTweetData;
     });
   }
 
   // detect similar tweets
   // NOTE: too high calc complexity O(n^2). need fix
-  _.each(tweetDataArray, baseTweetData => {
+  __.each(tweetDataArray, baseTweetData => {
     baseTweetData.tweetIdToNLSDHash = baseTweetData.tweetIdToNLSDHash || {};
     if (baseTweetData.similarTweetData) return;
 
-    _.each(tweetDataArray, compareTweetData => {
+    __.each(tweetDataArray, compareTweetData => {
       if (baseTweetData.tweetModel.tweetId == compareTweetData.tweetModel.tweetId) return;
       if (baseTweetData.tweetIdToNLSDHash[compareTweetData.tweetModel.tweetId]) return;
 
@@ -344,7 +356,7 @@ function buildTweetDataArray(tweetModels, options) {
   });
 
   if (options.excludeUnnecessaryDataForDisplay) {
-    tweetDataArray = _.filter(tweetDataArray, data => {
+    tweetDataArray = __.filter(tweetDataArray, data => {
       return !data.parentTweetData && !data.similarTweetData;
     });
   }
@@ -354,7 +366,7 @@ function buildTweetDataArray(tweetModels, options) {
     var firstAppeared = [];
     var alreadyAppeared = [];
 
-    _.each(tweetDataArray, tweetData => {
+    __.each(tweetDataArray, tweetData => {
       var userId = tweetData.tweetModel.userId;
 
       if (!isAlreadyAppearedHash[userId]) {
@@ -365,7 +377,7 @@ function buildTweetDataArray(tweetModels, options) {
       }
     });
 
-    tweetDataArray = _.flatten([firstAppeared, alreadyAppeared]);
+    tweetDataArray = __.flatten([firstAppeared, alreadyAppeared]);
   }
 
   if (options.deprioritizeBlockedUser) {
@@ -386,7 +398,7 @@ function buildTweetDataArray(tweetModels, options) {
 
     var blockedTweetDataArray = [];
     var nonBlockedTweetDataArray = [];
-    _.each(tweetDataArray, tweetData => {
+    __.each(tweetDataArray, tweetData => {
       if (isExcluded(tweetData.tweetModel)) {
         blockedTweetDataArray.push(tweetData);
       } else {
@@ -394,14 +406,14 @@ function buildTweetDataArray(tweetModels, options) {
       }
     });
 
-    tweetDataArray = _.flatten([nonBlockedTweetDataArray, blockedTweetDataArray]);
+    tweetDataArray = __.flatten([nonBlockedTweetDataArray, blockedTweetDataArray]);
   }
 
   if (options.deprioritizeContainsSpecificWordsInText) {
     var blockedTweetDataArray = [];
     var nonBlockedTweetDataArray = [];
-    _.each(tweetDataArray, tweetData => {
-      var isNonBlocked = _.every(Const.DEPRIORITIZE_WORDS_IN_TWEET_TEXT, word => {
+    __.each(tweetDataArray, tweetData => {
+      var isNonBlocked = __.every(Const.DEPRIORITIZE_WORDS_IN_TWEET_TEXT, word => {
         return tweetData.tweetModel.text.indexOf(word) == -1 ? true : false;
       });
 
@@ -412,7 +424,7 @@ function buildTweetDataArray(tweetModels, options) {
       }
     });
 
-    tweetDataArray = _.flatten([nonBlockedTweetDataArray, blockedTweetDataArray]);
+    tweetDataArray = __.flatten([nonBlockedTweetDataArray, blockedTweetDataArray]);
   }
 
   return tweetDataArray;
@@ -426,6 +438,7 @@ module.exports = {
   isAdminByReq: isAdminByReq,
   htmlCache: htmlCache,
   selectProductModelsByProductIds: selectProductModelsByProductIds,
+  selectProductModelsByProductTypeIds: selectProductModelsByProductTypeIds,
   buildRanking: buildRanking,
   buildRankingByDateMoment: buildRankingByDateMoment,
   getProductIdToIsNewProductHash: getProductIdToIsNewProductHash,
