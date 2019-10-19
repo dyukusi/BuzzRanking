@@ -114,7 +114,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     productTypeBundleId: productTypeBundleId,
     targetProductTypeId: targetProductTypeId,
     isDateSpecified: !!queryParam['date'],
-    rank1Buzz: ranking[0].statDataModel.buzz,
+    rank1Buzz: ranking[0] ? ranking[0].statDataModel.buzz : 0,
 
     // for admin
     productIdToIsNewProductHash: productIdToIsNewProductHash,
