@@ -6,7 +6,10 @@ const Util = require(appRoot + '/my_libs/util.js');
 const Moment = require('moment');
 const Poller = require(appRoot + '/my_libs/poller.js');
 const Const = require(appRoot + '/my_libs/const.js');
+
+// admin settings
 const DISABLE_HTML_CACHE = true;
+const enableDisplayOnlyNewProducts = false;
 
 // this build latest Ranking object every 3 seconds if need
 var buildLatestRankingPoller = new Poller(3000);
@@ -72,7 +75,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
   var [statModel, ranking] = await Util.buildRanking(productTypeIds, dateMoment);
 
   // only display new products if Admin
-  if (isAdmin) {
+  if (isAdmin && enableDisplayOnlyNewProducts) {
     var productIdToIsNewProductHash = await Util.getProductIdToIsNewProductHash(statModel.id);
 
     ranking = __.filter(ranking, data => {
