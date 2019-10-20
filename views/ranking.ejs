@@ -172,7 +172,7 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
                                 <%= data.productModel.title %>
                             </a>
 
-                            <% if (isAdmin && productIdToIsNewProductHash[data.productModel.productId]) { %>
+                            <% if (isAdmin && productIdToIsNewProductHash && productIdToIsNewProductHash[data.productModel.productId]) { %>
                                 （！新商品！)
                             <% } %>
 
