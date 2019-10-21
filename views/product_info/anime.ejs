@@ -1,0 +1,35 @@
+<%
+var officialSiteURL = data.productModel.publicUrl;
+var ogpImageURL = data.productModel.ogpImageUrl;
+var siteThumbnailURL = "https://blinky.nemui.org/shot/xlarge?" + officialSiteURL;
+%>
+
+<div class="row">
+    <div class="col-12 product-col">
+        <div class="product-info-block">
+
+            <div class="row">
+                <div class="col-12">
+
+                    <% if (ogpImageURL) { %>
+                        <a href="<%= officialSiteURL %>">
+                            <img class="ogp-image" src="<%= ogpImageURL %>">
+                        </a>
+                    <% } else { %>
+                        <a href="<%= officialSiteURL %>">
+                            <img class="site-thumbnail-img" src="<%= siteThumbnailURL %>">
+                        </a>
+                    <% } %>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <%- include(appRoot + '/views/compact_tweet_list.ejs', { data: data, }) %>
+    </div>
+</div>

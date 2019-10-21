@@ -1,7 +1,6 @@
 <%
 const Ctype = Const.PRODUCT_TYPE_NAME_TO_ID_HASH;
 const Cbundle = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID;
-const INITIAL_DISPLAY_TWEET_NUM = 3;
 const PRODUCT_TYPE_ID_INTO_TEXT_HASH = {
     [Ctype.comic]: {
         titleTag: '今ネットで話題の漫画・コミックランキング 【BuzzRanking】',
@@ -31,6 +30,10 @@ const PRODUCT_TYPE_ID_INTO_TEXT_HASH = {
         titleTag: '今ネットで話題の出会い系・マッチングサービスランキング 【BuzzRanking】',
         description: '今ネットで話題になっている出会い系・マッチングサービスをバズっている順に紹介！【毎日更新】',
     },
+    [Ctype.anime]: {
+        titleTag: '今ネットで話題のアニメランキング 【BuzzRanking】',
+        description: '今ネットで話題になっているアニメをバズっている順に紹介！【毎日更新】',
+    },
 };
 
 const PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH = {
@@ -53,6 +56,10 @@ const PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH = {
     [Cbundle.dating]: {
         titleTag: '今ネットで話題の出会い系・マッチングサービスランキング 【BuzzRanking】',
         description: '今ネットで話題になっている出会い系・マッチングサービスをバズっている順に紹介！【毎日更新】',
+    },
+    [Cbundle.anime]: {
+        titleTag: '今ネットで話題のアニメランキング 【BuzzRanking】',
+        description: '今ネットで話題になっているアニメをバズっている順に紹介！【毎日更新】',
     },
 };
 
@@ -197,95 +204,7 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-4 product-col">
-                        <div class="product-info-block">
-                            <%- include(productInfoTemplatePath, { data: data, }) %>
-                        </div>
-                    </div>
-
-                    <%
-                        var initialDisplayTweetData = __.first(data.tweetDataArray, INITIAL_DISPLAY_TWEET_NUM);
-                        var hasMoreTweets = INITIAL_DISPLAY_TWEET_NUM <= initialDisplayTweetData.length;
-                        var dataAttrStr = __.map(data.tweetDataArray, function (tweetData) {
-                            return '["' + tweetData.tweetModel.screenName + '","' + tweetData.tweetModel.tweetId + '"]';
-                        }).join(',');
-                    %>
-
-                    <div class="col-8">
-                        <div class="twitter-reaction-loading">
-                            <span class="spinner-border text-primary" role="status" aria-hidden="true"></span>
-                        </div>
-                        <div class="tweet-references">
-
-                            <div class="grad-wrap">
-
-                                <% if (hasMoreTweets) { %>
-                                    <button class="btn grad-trigger"
-                                            type="button"
-                                            data-read-more-tweet-ids="[<%= dataAttrStr %>]"
-                                            data-is-open="false"
-                                            data-is-ever-opened="false"
-                                    >
-                                        <div class="relative">
-                                            <p class="caption-btn-text">
-                                                続きを読む
-                                            </p>
-                                            <i class="fas fa-angle-down fa-lg accordion-icon"></i>
-                                        </div>
-                                    </button>
-                                <% } %>
-
-                                <% if (initialDisplayTweetData.length) { %>
-                                    <div class="grad-item" data-grad-idx="<%= rank %>"
-                                         data-is-first-render='true'>
-
-                                        <% if (data.bookCaptionModel) { %>
-                                            <div class="book-caption-accordion">
-                                                <div>
-                                                <span class="btn read-book-caption-button">
-                                                    <div class="relative">
-                                                        <p class="caption-btn-text">あらすじ</p>
-                                                        <i class="fas fa-angle-down fa-lg accordion-icon"></i>
-                                                    </div>
-                                                </span>
-                                                    <div class="book-caption">
-                                                        <%= data.bookCaptionModel.caption; %>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        <% } %>
-
-                                        <div class="twitter-reaction-area">
-                                            <%
-                                            __.each(initialDisplayTweetData, function(tweetData) {
-                                                var tweetModel = tweetData.tweetModel;
-                                            %>
-                                            <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
-                                                <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
-                                            </blockquote>
-
-                                            <% if (isAdmin) { %>
-                                                <button class="btn btn-danger remove-tweet-button"
-                                                        data-tweet-id="<%= tweetModel.tweetId %>">
-                                                    (Admin)このツイートを無効化する
-                                                </button>
-                                            <% } %>
-                                            <% }); %>
-                                        </div>
-                                    </div>
-
-                                <% } else { %>
-                                    <div class="wip-text d-flex align-items-center">
-                                        情報を収集中です。<br>
-                                        しばらく経ってから再度ご確認ください。
-                                    </div>
-                                <% } %>
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <%- include(productInfoTemplatePath, { data: data, }) %>
 
                 <% if (isAdmin) { %>
                     <div class="row">

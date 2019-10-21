@@ -1,0 +1,61 @@
+<%
+productModel;
+bookCaptionModel;
+tweetDataArray;
+
+var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
+%>
+
+<div class="row pt-3 product-title">
+    <div class="col-12">
+        <h1>
+            <%= productModel.getProductName() %>
+        </h1>
+    </div>
+</div>
+
+<div class="row product-basic-info">
+    <div class="col-12 text-align-center">
+        <div class="row">
+            <div class="col-12">
+                <a href="<%= productModel.publicUrl %>">
+                    <img class="ogp-image" src="<%= productModel.ogpImageUrl %>">
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-4 text-align-center">
+                カテゴリ
+            </div>
+            <div class="col-8">
+                <%= Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] %>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-4 text-align-center">
+                Twitter検索ワード
+            </div>
+            <div class="col-8">
+                <%= twitterAltSearchWordsStr %>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-4 text-align-center">
+                公式サイト
+            </div>
+            <div class="col-8">
+                <a href="<%= productModel.publicUrl %>"><%= productModel.publicUrl %></a>
+            </div>
+        </div>
+
+    <% if (!isInvalidProduct) { %>
+            <%- include('buzz_chart.ejs') %>
+        <% } %>
+    </div>
+</div>

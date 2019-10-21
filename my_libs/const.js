@@ -3,18 +3,21 @@ const _ = require('underscore');
 const Book = require(appRoot + '/models/book');
 const Game = require(appRoot + '/models/game');
 const WebService = require(appRoot + '/models/web_service');
+const Anime = require(appRoot + '/models/anime');
 
 const CONST = {
   PRODUCT_MODELS: [
     Book,
     Game,
-    WebService
+    WebService,
+    Anime
   ],
 
   PRODUCT_TABLE_NAMES: [
     'book',
     'game',
     'web_service',
+    'anime',
   ],
 
   PRODUCT_TYPE_NAME_TO_ID_HASH: {
@@ -25,6 +28,7 @@ const CONST = {
     'it': 5,
     'inn_reservation': 6,
     'portable_game': 7,
+    'anime': 8,
   },
 
   PRODUCT_TYPE_BUNDLE_NAME_TO_ID: {
@@ -33,6 +37,7 @@ const CONST = {
     'game': 2,
     'dating': 3,
     'inn': 4,
+    'anime': 5,
   },
 
   ERROR_MESSAGE: {
@@ -75,6 +80,9 @@ const REFERENCE_CONST = {
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['dating']]: [
       CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['dating_service']
     ],
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['anime']]: [
+      CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['anime']
+    ],
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['all']]: _.values(CONST.PRODUCT_TYPE_NAME_TO_ID_HASH),
   },
 
@@ -84,6 +92,7 @@ const REFERENCE_CONST = {
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['game']]: 'ゲーム',
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['dating']]: '出会い',
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['inn']]: '宿泊・旅行予約',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['anime']]: 'アニメ',
   },
 
   PRODUCT_TYPE_ID_TO_JA_NAME_HASH: {
@@ -94,6 +103,7 @@ const REFERENCE_CONST = {
     [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['console_game']]: '据え置き型ゲーム',
     [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['inn_reservation']]: '宿泊・旅行予約サービス',
     [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['portable_game']]: '携帯ゲーム',
+    [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['anime']]: 'アニメ',
   },
 
   PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS: {
@@ -102,11 +112,14 @@ const REFERENCE_CONST = {
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['game']]: 'fa-gamepad',
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['dating']]: 'fa-heart',
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['inn']]: 'fa-hotel',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['anime']]: 'fa-earlybirds',
   },
 
   EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS: [
     CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['dating_service'],
     CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['inn_reservation'],
+
+    CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['anime'],
   ],
 };
 

@@ -61,30 +61,30 @@ exports.tweetJSONIntoInsertObject = (tweet, productId) => {
   };
 }
 
-exports.selectProductModels = (productTypeIds) => {
-  var d = Q.defer();
-
-  Q.allSettled([
-    BookModel.selectByProductTypeIds(productTypeIds, {
-      excludeUndefinedReleaseDate: true,
-    }),
-    GameModel.selectByProductTypeIds(productTypeIds, {
-      excludeUndefinedReleaseDate: true,
-    }),
-    A8ProgramModel.selectByProductTypeIds(productTypeIds, {
-      ignoreChildProgram: true,
-    }),
-  ]).then(function (results) {
-    var bookModels = results[0].value;
-    var gameModels = results[1].value;
-    var a8ProgramModels = results[2].value;
-    var productModels = _.flatten([bookModels, gameModels, a8ProgramModels]);
-
-    d.resolve(productModels);
-  });
-
-  return d.promise;
-}
+// exports.selectProductModels = (productTypeIds) => {
+//   var d = Q.defer();
+//
+//   Q.allSettled([
+//     BookModel.selectByProductTypeIds(productTypeIds, {
+//       excludeUndefinedReleaseDate: true,
+//     }),
+//     GameModel.selectByProductTypeIds(productTypeIds, {
+//       excludeUndefinedReleaseDate: true,
+//     }),
+//     A8ProgramModel.selectByProductTypeIds(productTypeIds, {
+//       ignoreChildProgram: true,
+//     }),
+//   ]).then(function (results) {
+//     var bookModels = results[0].value;
+//     var gameModels = results[1].value;
+//     var a8ProgramModels = results[2].value;
+//     var productModels = _.flatten([bookModels, gameModels, a8ProgramModels]);
+//
+//     d.resolve(productModels);
+//   });
+//
+//   return d.promise;
+// }
 
 exports.insertAltWordIfNeedForNewBook = async (productId, title) => {
   if (!title.match(/[\(\（]\d+[\)\）]/)) return;
