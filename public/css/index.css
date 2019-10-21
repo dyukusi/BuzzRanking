@@ -71,12 +71,6 @@
     border-radius: 8px;
 }
 
-.no-wrap {
-    /*display: inline-block;*/
-    white-space: nowrap;
-}
-
-
 .grid {
     padding: 5px;
     -webkit-column-break-inside: avoid;

@@ -156,13 +156,13 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
 
                 <span class="product-block-border-title relative">
                     <% if (data.statDataModel.buzz) { %>
-                        <span class="d-flex align-items-end">
+                        <span class="d-flex align-items-end no-wrap">
                             <% if (rank <= 3) { %>
                                 <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
                             <% } %>
                             <%= rank %>位
                             <!--<span class="buzz-count-text">(<%= data.statDataModel.buzz %>Buzz)</span>-->
-                    </span>
+                        </span>
                     <% } %>
                 </span>
 
