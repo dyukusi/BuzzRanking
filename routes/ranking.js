@@ -8,7 +8,7 @@ const Poller = require(appRoot + '/my_libs/poller.js');
 const Const = require(appRoot + '/my_libs/const.js');
 
 // admin settings
-const DISABLE_HTML_CACHE = true;
+const DISABLE_HTML_CACHE = false;
 const enableDisplayOnlyNewProducts = false;
 
 // this build latest Ranking object every 3 seconds if need
@@ -97,8 +97,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
   var end = start + Const.PRODUCT_NUM_PER_PAGE;
   var slicedRankings = ranking.slice(start, end);
 
-  // should not cache if admin
-  if (!isAdmin && !DISABLE_HTML_CACHE) {
+  if (!DISABLE_HTML_CACHE) {
     res.sendResponse = res.send;
     res.send = (body) => {
       memoryCache.put(targetRankingHTMLCacheKey, body, 60 * 60 * 24 * 1000);
