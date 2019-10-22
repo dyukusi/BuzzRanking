@@ -44,7 +44,7 @@ var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] 
 <%- include('header.ejs') %>
 
 <div id="content" class="container-fluid">
-    <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
+    <%- include(appRoot + '/views/google_adsense/horizontal.ejs') %>
 
     <%- include(productDetailTemplatePath, { dataChartPlots: dataChartPlots, twitterAltSearchWordsStr: twitterAltSearchWordsStr, }) %>
 
@@ -80,7 +80,7 @@ var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] 
                 <% if ((n + 1) % 5 == 0) { %>
                     <div class="row">
                         <div class="col-12">
-                            <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
+                            <%- include(appRoot + '/views/google_adsense/in_feed.ejs') %>
                         </div>
                     </div>
                 <% } %>
@@ -90,7 +90,7 @@ var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] 
         </div>
 
         <% if (initialDisplayTweetDataArray.length % 5 != 0) { %>
-            <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
+            <%- include(appRoot + '/views/google_adsense/in_feed.ejs') %>
         <% } %>
 
         <div class="pt-3">

@@ -222,13 +222,13 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
     </div>
 
     <% if ((n + 1) % 4 == 0) { %>
-        <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
+        <%- include(appRoot + '/views/google_adsense/in_feed.ejs') %>
     <% } %>
 
     <% }); %>
 
     <% if (ranking.length % 4 != 0 && ranking.length < Const.PRODUCT_NUM_PER_PAGE) { %>
-        <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
+        <%- include(appRoot + '/views/google_adsense/in_feed.ejs') %>
     <% } %>
 
     <% if (!ranking.length) { %>
