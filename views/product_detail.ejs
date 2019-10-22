@@ -48,11 +48,11 @@ var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] 
 
     <%- include(productDetailTemplatePath, { dataChartPlots: dataChartPlots, twitterAltSearchWordsStr: twitterAltSearchWordsStr, }) %>
 
-    <% if (!isInvalidProduct && !!tweetDataArray.length) { %>
-        <div class="pt-3">
-            <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
-        </div>
+    <div class="pt-3">
+        <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
+    </div>
 
+    <% if (!isInvalidProduct && !!tweetDataArray.length) { %>
         <div class="row">
             <div class="col-12 text-align-center">
                 <h2>
@@ -88,7 +88,6 @@ var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] 
                 <% }); %>
             </div>
         </div>
-
 
         <% if (initialDisplayTweetDataArray.length % 5 != 0) { %>
             <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
