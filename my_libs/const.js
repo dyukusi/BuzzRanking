@@ -107,12 +107,12 @@ const REFERENCE_CONST = {
   },
 
   PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS: {
-    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['all']]: 'fa-globe',
-    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['book']]: 'fa-book-reader',
-    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['game']]: 'fa-gamepad',
-    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['dating']]: 'fa-heart',
-    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['inn']]: 'fa-hotel',
-    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['anime']]: 'fa-earlybirds',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['all']]: 'fas fa-globe',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['book']]: 'fas fa-book-reader',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['game']]: 'fas fa-gamepad',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['dating']]: 'fas fa-heart',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['inn']]: 'fas fa-hotel',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['anime']]: 'fab fa-earlybirds',
   },
 
   EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS: [
@@ -121,6 +121,8 @@ const REFERENCE_CONST = {
 
     CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['anime'],
   ],
+
+
 };
 
 var PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID = {};

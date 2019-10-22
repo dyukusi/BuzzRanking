@@ -9,7 +9,16 @@ var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
 var productModelName = productModel._modelOptions.name.singular;
 var productDetailTemplatePath = 'product_detail/' + productModelName + '.ejs';
-var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => { return m.searchWord; }).join(', ') || productModel.title;
+var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => {
+    return m.searchWord;
+}).join(', ') || productModel.title;
+
+var TITLE_TAG_DEFAULT = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] + ' ' + productModel.title + 'のネットの評価、レビュー、反応【BuzzRanking】';
+var PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH = {
+    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH.comic]: '漫画 ' + productModel.title + ' のネットの評価、レビュー、反応【BuzzRanking】',
+};
+
+var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] || TITLE_TAG_DEFAULT;
 %>
 
 <!DOCTYPE html>
@@ -23,7 +32,7 @@ var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => { return m.se
 <html>
 <head>
     <title>
-        <%= productModel.title %>のネットの評価、レビュー、反応【BuzzRanking】
+        <%= titleTagStr %>
     </title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
@@ -40,45 +49,45 @@ var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => { return m.se
     <%- include(productDetailTemplatePath, { dataChartPlots: dataChartPlots, twitterAltSearchWordsStr: twitterAltSearchWordsStr, }) %>
 
     <% if (!isInvalidProduct && !!tweetDataArray.length) { %>
-            <div class="pt-3">
-                <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
-            </div>
+        <div class="pt-3">
+            <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
+        </div>
 
-            <div class="row">
-                <div class="col-12 text-align-center">
-                    <h2>
-                        <span class="no-wrap"><%= productModel.title + (productModel.subTitle ? ' ' + productModel.subTitle : '') %></span><span
-                                class="no-wrap">のネットの反応</span>
-                    </h2>
-                </div>
+        <div class="row">
+            <div class="col-12 text-align-center">
+                <h2>
+                    <span class="no-wrap"><%= productModel.title + (productModel.subTitle ? ' ' + productModel.subTitle : '') %></span><span
+                            class="no-wrap">のネットの反応</span>
+                </h2>
             </div>
+        </div>
 
-            <div class="row mx-auto tweet-reference-block">
-                <div class="col-12">
-                    <%
-                    __.times(initialDisplayTweetDataArray.length, function(n) {
-                        var tweetData = initialDisplayTweetDataArray[n];
-                        var tweetModel = tweetData.tweetModel;
-                    %>
-                    <div class="row">
-                        <div class="col-12">
-                            <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
-                                <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
-                            </blockquote>
-                        </div>
+        <div class="row mx-auto tweet-reference-block">
+            <div class="col-12">
+                <%
+                __.times(initialDisplayTweetDataArray.length, function(n) {
+                    var tweetData = initialDisplayTweetDataArray[n];
+                    var tweetModel = tweetData.tweetModel;
+                %>
+                <div class="row">
+                    <div class="col-12">
+                        <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
+                            <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
+                        </blockquote>
                     </div>
+                </div>
 
-                    <% if ((n + 1) % 5 == 0) { %>
+                <% if ((n + 1) % 5 == 0) { %>
                     <div class="row">
                         <div class="col-12">
                             <%- include(appRoot + '/views/google_adsense_ad.ejs') %>
                         </div>
                     </div>
-                    <% } %>
+                <% } %>
 
-                    <% }); %>
-                </div>
+                <% }); %>
             </div>
+        </div>
 
 
         <% if (initialDisplayTweetDataArray.length % 5 != 0) { %>

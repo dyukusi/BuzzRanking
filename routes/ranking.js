@@ -118,6 +118,8 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     isDateSpecified: !!queryParam['date'],
     rank1Buzz: ranking[0] ? ranking[0].statDataModel.buzz : 0,
 
+    originalURL: req.originalUrl,
+
     // for admin
     productIdToIsNewProductHash: productIdToIsNewProductHash,
   });

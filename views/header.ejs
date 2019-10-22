@@ -1,10 +1,26 @@
+<%
+var originalURL;
+var NAV_BUNDLE_ORDER = [
+    'all',
+    'book',
+    'game',
+    'anime',
+    'inn',
+    'dating'
+];
+%>
+
 <link rel="icon" href="/favicon.ico">
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-125946852-2"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
+
+  function gtag() {
+    dataLayer.push(arguments);
+  }
+
   gtag('js', new Date());
 
   gtag('config', 'UA-125946852-2');
@@ -34,42 +50,18 @@
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav">
-            <li id="nav-all-ranking" class="nav-item">
-                <a class="nav-link" href="/ranking/all">
-                    <i class="fas fa-globe"></i>
-                    総合
+            <%
+            __.each(NAV_BUNDLE_ORDER, bName => {
+                var bId = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID[bName];
+            %>
+            <li id="nav-<%= bName %>" class="nav-item <%= originalURL && originalURL.match(bName) ? 'active' : '' %>">
+
+                <a class="nav-link" href="/ranking/<%= bName %>">
+                    <i class="<%= Const.PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS[bId] %>"></i>
+                    <%= Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[bId] %>
                 </a>
             </li>
-            <li id="nav-book-ranking" class="nav-item">
-                <a class="nav-link" href="/ranking/book">
-                    <i class="fas fa-book-reader"></i>
-                    本・書籍<span class="sr-only">(current)</span>
-                </a>
-            </li>
-            <li id="nav-game-ranking" class="nav-item">
-                <a class="nav-link" href="/ranking/game">
-                    <i class="fas fa-gamepad"></i>
-                    ゲーム
-                </a>
-            </li>
-            <li id="nav-anime" class="nav-item">
-                <a class="nav-link" href="/ranking/anime">
-                    <i class="fab fa-earlybirds"></i>
-                    アニメ
-                </a>
-            </li>
-            <li id="nav-inn-ranking" class="nav-item">
-                <a class="nav-link" href="/ranking/inn">
-                    <i class="fas fa-hotel"></i>
-                    宿泊・旅行予約
-                </a>
-            </li>
-            <li id="nav-dating" class="nav-item">
-                <a class="nav-link" href="/ranking/dating">
-                    <i class="fas fa-heart"></i>
-                    出会い
-                </a>
-            </li>
+            <% }); %>
         </ul>
     </div>
 
@@ -79,7 +71,6 @@
             <i class="far fa-question-circle"></i>
         </a>
     </div>
-
 </nav>
 
 <p id="PageTopBtn"><a href="#wrap"><i class="fas fa-angle-double-up"></i></a></p>
@@ -101,10 +92,12 @@
 
                     <ul class="nav nav-tabs">
                         <li class="nav-item tab-item">
-                            <a href="#faq-tab" class="nav-link active" aria-controls="uploadTab" role="tab" data-toggle="tab">FAQ</a>
+                            <a href="#faq-tab" class="nav-link active" aria-controls="uploadTab" role="tab"
+                               data-toggle="tab">FAQ</a>
                         </li>
                         <li class="nav-item tab-item">
-                            <a href="#privacy-policy-tab" class="nav-link" aria-controls="uploadTab" role="tab" data-toggle="tab">
+                            <a href="#privacy-policy-tab" class="nav-link" aria-controls="uploadTab" role="tab"
+                               data-toggle="tab">
                                 プライバシーポリシー
                             </a>
                         </li>
