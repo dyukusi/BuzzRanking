@@ -175,7 +175,7 @@ function initReadMoreButtons() {
 }
 
 function adjustTwitterReactionAreaHeightForInit(area, isAutoClose) {
-  var productInfoAreaHeight = $(area.parents('.row')[0]).find('.product-info-block').height();
+  var productInfoAreaHeight = Math.min(area.parents('.product-block').find('.product-info-block').height(), 250);
   var bookCaption = area.parents('.grad-item').find('.book-caption');
   var bookCaptionHeight = bookCaption[0] && bookCaption.data('is-open') ? bookCaption.height() : 0;
 
