@@ -97,7 +97,7 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
   var end = start + Const.PRODUCT_NUM_PER_PAGE;
   var slicedRankings = ranking.slice(start, end);
 
-  if (!DISABLE_HTML_CACHE) {
+  if (!isAdmin && !DISABLE_HTML_CACHE) {
     res.sendResponse = res.send;
     res.send = (body) => {
       memoryCache.put(targetRankingHTMLCacheKey, body, 60 * 60 * 24 * 1000);
