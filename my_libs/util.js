@@ -17,6 +17,23 @@ const Tweet = require(appRoot + '/models/tweet');
 const BlockTwitterUser = require(appRoot + '/models/block_twitter_user');
 const BookCaption = require(appRoot + '/models/book_caption.js');
 
+function checkIsEnglishOnlyString(text) {
+  for(var i = 0; i < text.length; i++) {
+    if (256 <= text.charCodeAt(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function checkSearchWordValidity(word) {
+  var isEnglishStr = checkIsEnglishOnlyString(word);
+  if (!isEnglishStr) return true;
+  if (5 <= word.length) return true;
+
+  return false;
+};
+
 function convertJapaneseDateStrIntoMysqlDate(japaneseDateStr) {
   var after = japaneseDateStr.replace('年', '-').replace('月', '-').replace('日', '');
   var pattern = /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/g;
@@ -430,7 +447,9 @@ function buildTweetDataArray(tweetModels, options) {
   return tweetDataArray;
 }
 
+
 module.exports = {
+  checkSearchWordValidity: checkSearchWordValidity,
   convertJapaneseDateStrIntoMysqlDate: convertJapaneseDateStrIntoMysqlDate,
   convertDateObjectIntoJapaneseDateString: convertDateObjectIntoJapaneseDateString,
   convertDateObjectIntoMySqlReadableString: convertDateObjectIntoMySqlReadableString,

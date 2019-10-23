@@ -8,6 +8,14 @@ class TwitterAlternativeSearchWord extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
 
   // ------------------- Class Methods -------------------
+  static insertIfValid(productId, word) {
+    if (!Util.checkSearchWordValidity(word)) return new Promise((resolve, reject) => { resolve(); });
+
+    return this.upsert({
+      productId: productId,
+      searchWord: word,
+    });
+  }
 }
 
 TwitterAlternativeSearchWord.init({

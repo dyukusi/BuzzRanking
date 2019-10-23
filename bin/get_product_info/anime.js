@@ -81,10 +81,7 @@ async function fetchAndInsertProductData(task) {
     var shortTitles = _.compact([data.title_short1, data.title_short2, data.title_short3]);
 
     _.each(shortTitles, shortTitle => {
-      TwitterAlternativeSearchWord.upsert({
-        productId: productId,
-        searchWord: shortTitle,
-      });
+      TwitterAlternativeSearchWord.insertIfValid(productId, shortTitle);
     });
   });
 

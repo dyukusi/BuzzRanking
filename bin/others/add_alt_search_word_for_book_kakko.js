@@ -29,10 +29,7 @@ async function insertAltWordIfNeed(productId, title) {
   if(!title.match(/[\(\（]\d+[\)\）]/)) return;
   var trimmedTitle = title.replace(/[\(\（]\d+[\)\）]/g, '').trim();
 
-  await TwitterAlternativeSearchWord.create({
-    productId: productId,
-    searchWord: trimmedTitle,
-  });
+  await TwitterAlternativeSearchWord.insertIfValid(productId, trimmedTitle);
 
   return;
 }

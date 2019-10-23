@@ -42,23 +42,25 @@ exports.searchTweets = param => {
   return d.promise;
 }
 
-exports.tweetJSONIntoInsertObject = (tweet, productId) => {
-  return {
-    tweetId: tweet['id_str'],
-    retweetTargetId: tweet['retweeted_status'] ? tweet['retweeted_status']['id_str'] : null,
-    productId: productId,
-    userId: tweet['user']['id'],
-    name: tweet['user']['name'],
-    screenName: tweet['user']['screen_name'],
-    followersCount: tweet['user']['followers_count'],
-    followCount: tweet['user']['friends_count'] || 0,
-    tweetCount: tweet['user']['statuses_count'] || 0,
-    source: tweet['source'],
-    favouriteCount: tweet['favorite_count'] || 0,
-    text: tweet['text'],
-    isInvalid: 0,
-    tweetedAt: Util.convertDateObjectIntoMySqlReadableString(new Date(tweet['created_at'])),
-  };
+exports.getTweetDetailInfoByTweetIds = async function (tweetIds) {
+  var client = new Twitter(twitterAPIKeyParams);
+
+  return new Promise(function (resolve, reject) {
+    client.get('statuses/lookup',
+      {
+        id: tweetIds.join(','),
+      }, function (e, tweets, response) {
+        if (e) {
+          console.log('couldnt get tweet info');
+          resolve();
+          return;
+        }
+
+        var tweetInfoArray = JSON.parse(response.body);
+        resolve(tweetInfoArray);
+      });
+
+  });
 }
 
 // exports.selectProductModels = (productTypeIds) => {
@@ -98,10 +100,7 @@ exports.insertAltWordIfNeedForNewBook = async (productId, title) => {
   if (!_.isEmpty(twitterAltSearchWordModels)) return;
 
   var trimmedTitle = title.replace(/[\(\（]\d+[\)\）]/g, '').trim();
-  var twitterAltSearchWordModel = await TwitterAlternativeSearchWord.create({
-    productId: productId,
-    searchWord: trimmedTitle,
-  });
+  var twitterAltSearchWordModel = await TwitterAlternativeSearchWord.insertIfValid(productId, trimmedTitle);
 
   return;
 }
@@ -121,7 +120,7 @@ exports.calcBuzzByTweetModels = function (tweetModels, baseMoment) {
   _.each(targetTweetModels, tweetModel => {
     var compareMoment = new Moment(tweetModel.tweetedAt);
     var diffHours = Math.floor((baseMoment - compareMoment) / (60 * 60 * 1000));
-    var buzz = (1 / HOURS_EXPIRE_TWEET) * Math.max(HOURS_EXPIRE_TWEET - diffHours, 0);
+    var buzz = ((1 + tweetModel.retweetCount) / HOURS_EXPIRE_TWEET) * Math.max(HOURS_EXPIRE_TWEET - diffHours, 0);
 
     totalBuzz += buzz;
   });

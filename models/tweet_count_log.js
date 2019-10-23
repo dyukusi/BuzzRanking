@@ -6,6 +6,8 @@ const Util = require(appRoot + '/my_libs/util.js');
 
 class TweetCountLog extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
+
+  // ------------------- Class Methods -------------------
   static selectByProductId(productId) {
     return this.findAll({
       where: {
@@ -13,8 +15,6 @@ class TweetCountLog extends Sequelize.Model {
       }
     });
   }
-
-  // ------------------- Class Methods -------------------
 }
 
 TweetCountLog.init({
