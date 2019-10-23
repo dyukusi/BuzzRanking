@@ -58,7 +58,7 @@ async function main() {
       return CONST.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT <= row.count;
     })
     .map(row => {
-      return createInsertObjectBaseForStatData(null, row.product_id, row.count, null, null, false);
+      return createInsertObjectBaseForStatData(null, row.product_id, row.count, null, false);
     })
     .value();
 
@@ -76,13 +76,7 @@ async function main() {
       },
     });
 
-    var userCount = _.chain(tweetModels).groupBy(tweetModel => {
-      return tweetModel.userId;
-    }).keys().value().length;
-
     var buzz = BatchUtil.calcBuzzByTweetModels(tweetModels, tweetUntilMoment);
-
-    data.userCount = userCount;
     data.buzz = buzz;
   }
 
@@ -93,7 +87,7 @@ async function main() {
   // add missed products
   _.each(_.keys(isNoBuzzThresholdProductIdHash), productId => {
     if (!insertObjectBasesForStatDataHash[productId]) {
-      insertObjectBasesForStatData.push(createInsertObjectBaseForStatData(null, productId, 0, 0, 0, false));
+      insertObjectBasesForStatData.push(createInsertObjectBaseForStatData(null, productId, 0, 0, false));
     }
   });
 
@@ -125,12 +119,11 @@ async function createIsNoBuzzThresholdProductIdHash() {
   return isNoBuzzThresholdProductIdHash;
 }
 
-function createInsertObjectBaseForStatData(statId, productId, tweetCount, userCount, buzz, isInvalid) {
+function createInsertObjectBaseForStatData(statId, productId, tweetCount, buzz, isInvalid) {
   return {
     statId: statId,
     productId: productId,
     tweetCount: tweetCount,
-    userCount: userCount,
     buzz: buzz,
     isInvalid: isInvalid,
   };

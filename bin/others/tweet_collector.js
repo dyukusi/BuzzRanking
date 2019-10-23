@@ -295,11 +295,14 @@ async function collectTweets(task) {
   }).keys().value().length;
 
   let buzz = BatchUtil.calcBuzzByTweetModels(inRangeTweetModels, nowMoment);
+  var tweetCount = _.reduce(inRangeTweetModels, (memo, model) => {
+    return memo + model.retweetCount;
+  }, 0);
+
 
   let tweetCountLogModel = await TweetCountLog.create({
     productId: task.product_id,
-    tweetCount: inRangeTweetModels.length,
-    userCount: userCount,
+    tweetCount: tweetCount,
     buzz: buzz,
   });
 

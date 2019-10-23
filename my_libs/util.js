@@ -140,12 +140,12 @@ async function buildRanking(targetProductTypeIds, targetDateMoment) {
   });
 
   var rank = 0;
-  var previousUserCount = null;
+  var previousBuzz = null;
   __.each(filteredRanking, data => {
-    var userCount = data.statDataModel.userCount;
-    if (previousUserCount != userCount) {
+    var buzz = data.statDataModel.buzz;
+    if (previousBuzz != buzz) {
       rank++;
-      previousUserCount = rank;
+      previousBuzz = rank;
     }
     data.rank = rank;
   });

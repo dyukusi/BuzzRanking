@@ -19,7 +19,7 @@ const TweetSource = require(appRoot + '/models/tweet_source');
 
 const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 12;
 const WAITING_TIME_MSEC_PER_USING_TWITTER_API = 6500; // 6.5sec
-const ABNORMAL_THRESHOLD_USER_COUNT = 5000;
+const ABNORMAL_THRESHOLD_ORIGINAL_TWEET_COUNT = 8000;
 const SEARCH_TARGET_NUM_PER_EXECUTION = 1;
 const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
@@ -41,7 +41,6 @@ let tempRetweetCountHash = {};
 let tempUserCountHash = {};
 
 let findOriginalTweetHash = {};
-var retweetTweets = [];
 var taskQueue;
 let productIdToPriorityHash = {};
 
@@ -175,7 +174,7 @@ function calcPriority(row) {
 
 async function getProductIdArraySortedByTweetSearchPriority() {
   // 全プロダクトの最新のログをセレクトするクエリ
-  let latestTweetCountLogRowsPromise = sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.user_count, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date WHERE TweetCountLogA.product_id NOT IN (SELECT product_id FROM invalid_product);');
+  let latestTweetCountLogRowsPromise = sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date WHERE TweetCountLogA.product_id NOT IN (SELECT product_id FROM invalid_product);');
 
   let newProductIdsPromises = _.map(CONST.PRODUCT_TABLE_NAMES, tableName => {
     return sequelize.query('SELECT product_id FROM ' + tableName + ' WHERE product_id NOT IN (SELECT product_id FROM tweet_count_log) AND product_id NOT IN (SELECT product_id FROM invalid_product)');
@@ -299,8 +298,8 @@ async function collectTweets(task) {
   console.log('Priority: ' + productIdToPriorityHash[task.product_id]);
   console.log('Remaining: ' + taskQueue.length);
 
-  let totalUserCount = tempUserCountHash[task.product_id];
-  if (ABNORMAL_THRESHOLD_USER_COUNT <= totalUserCount) {
+  let totalOriginalTweetCount = tempOriginalTweetCountHash[task.product_id];
+  if (ABNORMAL_THRESHOLD_ORIGINAL_TWEET_COUNT <= totalOriginalTweetCount) {
     console.log("too much user count. maybe this is invalid product. added to invalid product");
     await InvalidProduct.create({
       productId: task.product_id,
@@ -348,7 +347,6 @@ async function calcAndInsertTweetCountLog(productId) {
   let tweetCountLogModel = await TweetCountLog.create({
     productId: productId,
     tweetCount: tweetCount,
-    userCount: userCount,
     buzz: buzz,
   });
 }

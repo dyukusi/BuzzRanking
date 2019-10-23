@@ -35,12 +35,6 @@ StatData.init({
       allowNull: false,
       field: 'tweet_count'
     },
-    userCount: {
-      type: Sequelize.INTEGER(11).UNSIGNED,
-      allowNull: true,
-      defaultValue: '0',
-      field: 'user_count'
-    },
     buzz: {
       type: Sequelize.INTEGER(11).UNSIGNED,
       allowNull: true,

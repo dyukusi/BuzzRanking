@@ -16,11 +16,11 @@ function initChart() {
   if (_.isEmpty(tweetCountLogData)) return;
 
   var plots = _.map(tweetCountLogData, function (data) {
-    var [createdAt, userCount] = data;
+    var [createdAt, buzz] = data;
     var createdAtMoment = new Moment(createdAt);
     return {
       x: createdAtMoment.unix(),
-      y: userCount,
+      y: buzz,
     };
   });
 
@@ -100,8 +100,8 @@ function initChart() {
           title: function (tooltipItem, data) { return ''; },
           label: function (tooltipItem, data) {
             var msec = tooltipItem.xLabel * 1000;
-            var userCount = tooltipItem.yLabel;
-            return '(' + new Moment(msec).format('YYYY年MM月DD日 HH:mm:ss') + ', ' + userCount + 'Buzz)';
+            var buzz = tooltipItem.yLabel;
+            return '(' + new Moment(msec).format('YYYY年MM月DD日 HH:mm:ss') + ', ' + buzz + 'Buzz)';
           },
         },
       },

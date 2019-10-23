@@ -28,11 +28,6 @@ TweetCountLog.init({
       allowNull: false,
       field: 'tweet_count'
     },
-    userCount: {
-      type: Sequelize.INTEGER(11),
-      allowNull: false,
-      field: 'user_count'
-    },
     buzz: {
       type: Sequelize.INTEGER(11),
       allowNull: false,
