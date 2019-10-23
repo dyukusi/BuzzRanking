@@ -11,7 +11,6 @@ const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 const Moment = require('moment');
 
 const NewTweet = require(appRoot + '/models/new_tweet'); // TEMP
-const Tweet = require(appRoot + '/models/tweet');
 const TweetCountLog = require(appRoot + '/models/tweet_count_log');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 const InvalidProduct = require(appRoot + '/models/invalid_product.js');
@@ -335,7 +334,10 @@ async function calcAndInsertTweetCountLog(productId) {
     }
   );
 
-  let tweetCount = inRangeTweetModels.length;
+  var tweetCount = _.reduce(inRangeTweetModels, (memo, model) => {
+    return memo + model.retweetCount;
+  }, 0);
+
   let userCount = _.chain(inRangeTweetModels).groupBy(tweetModel => {
     return tweetModel.userId
   }).keys().value().length;
