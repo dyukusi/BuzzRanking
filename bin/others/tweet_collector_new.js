@@ -335,7 +335,7 @@ async function calcAndInsertTweetCountLog(productId) {
   );
 
   var tweetCount = _.reduce(inRangeTweetModels, (memo, model) => {
-    return memo + model.retweetCount;
+    return memo + (1 + model.retweetCount);
   }, 0);
 
   let userCount = _.chain(inRangeTweetModels).groupBy(tweetModel => {
