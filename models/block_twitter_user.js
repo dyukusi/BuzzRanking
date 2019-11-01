@@ -7,6 +7,9 @@ class BlockTwitterUser extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
 
   // ------------------- Class Methods -------------------
+  static selectAll() {
+    return this.findAll({});
+  }
 }
 
 BlockTwitterUser.init({

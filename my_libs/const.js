@@ -13,12 +13,12 @@ const CONST = {
     Anime
   ],
 
-  PRODUCT_TABLE_NAMES: [
-    'book',
-    'game',
-    'web_service',
-    'anime',
-  ],
+  // PRODUCT_TABLE_NAMES: [
+  //   'book',
+  //   'game',
+  //   'web_service',
+  //   'anime',
+  // ],
 
   PRODUCT_TYPE_NAME_TO_ID_HASH: {
     'comic': 1,
@@ -44,19 +44,29 @@ const CONST = {
     'DEFAULT': '内部エラーが発生しました',
     '404': 'お探しのページを見つけることができませんでした',
     'PAGE_EXCEEDED': '存在しないページ番号が指定されています',
-    'IN_PREPARING_RANKING': '最新のランキングを生成中です。<br>数分後に再度アクセスしてください。',
+    'IN_PREPARING_RANKING': '最新のランキングを生成中です。<br>しばらく経ってから再度アクセスしてください。',
   },
 
   THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT: 30,
 
   STR_LENGTH_FOR_CALC_LSD: 20,
 
-  PRODUCT_NUM_PER_PAGE: 20,
+  PRODUCT_NUM_PER_PAGE: 10,
+
+  INITIAL_DISPLAY_TWEET_NUM_IN_RANKING: 3,
 
   DEPRIORITIZE_WORDS_IN_TWEET_TEXT: [
     '実況',
     '今日買った漫画',
+    '#自分の趣味全開で',
   ],
+
+  VALIDITY_STATUS_NAME_TO_ID: {
+    'normal': 0,
+    'suspicious': 1,
+    'protected': 2, // manually checked as valid product
+    'invalid': 99, // manually checked as "invalid" product
+  },
 };
 
 const REFERENCE_CONST = {
@@ -120,7 +130,14 @@ const REFERENCE_CONST = {
     CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['inn_reservation'],
   ],
 
+  PRODUCT_MODEL_NAME_TO_MODEL_CLASS: _.indexBy(CONST.PRODUCT_MODELS, modelClass => {
+    return modelClass.name;
+  }),
 
+  VALID_STATUS_IDS: [
+    CONST.VALIDITY_STATUS_NAME_TO_ID.normal,
+    CONST.VALIDITY_STATUS_NAME_TO_ID.protected,
+  ],
 };
 
 var PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID = {};

@@ -22,12 +22,12 @@ $(function() {
 function initAboutBtn() {
   var scrollTarget = $('body,html');
 
-  $('#nav-about').click(function() {
-    scrollTarget.animate({
-      scrollTop: $('#footer')[0].offsetTop,
-    }, 300);
-    return false;
-  });
+  // $('#nav-about').click(function() {
+  //   scrollTarget.animate({
+  //     scrollTop: $('#footer')[0].offsetTop,
+  //   }, 300);
+  //   return false;
+  // });
 }
 
 function initScrollHideNavbar() {

@@ -19,7 +19,6 @@
 
 <%- include(appRoot + '/views/header.ejs') %>
 
-
 <div id="content" class="container-fluid pt-3">
     <section class="section">
         <h2 class="parent">ランキング</h2>
@@ -36,7 +35,7 @@
                         <a href="/ranking/<%= productTypeBundleName %>">
                             <%= productTypeBundleJapaneseName %>
                         </a>
-                        <% if (!__.isEmpty(belongedProductTypeIds) && productTypeBundleName != 'all') { %>
+                        <% if (!__.isEmpty(belongedProductTypeIds) && 2 <= belongedProductTypeIds.length && productTypeBundleName != 'all') { %>
                             <ul class="sitemap_list">
                                 <%
                                 __.each(belongedProductTypeIds, productTypeId => {
@@ -63,7 +62,7 @@
         <div class="row">
             <div class="col-12">
                 <ul class="sitemap_list">
-                    <li><a href="/product/list">商品・サービス一覧</a></li>
+                    <li><a href="/product/list">商品・サービス検索</a></li>
                 </ul>
             </div>
         </div>
@@ -74,16 +73,15 @@
         <div class="row">
             <div class="col-12">
                 <ul class="sitemap_list">
-                    <li><a href="#footer">BuzzRankingとは？</a></li>
-                    <li><a href="#footer">運営者情報</a></li>
-                    <li><a href="#" data-toggle="modal" data-target="#desc-modal">FAQ</a></li>
-                    <li><a href="#" data-toggle="modal" data-target="#desc-modal">プライバシーポリシー</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/privacy_policy">プライバシーポリシー</a></li>
+                    <li><a href="/profile">運営者情報</a></li>
                 </ul>
             </div>
         </div>
     </section>
 
-    <%- include(appRoot + '/views/google_adsense/in_feed.ejs') %>
+    <%- include(appRoot + '/public/ad/adsense/horizontal.html') %>
 </div>
 
 <%- include(appRoot + '/views/footer.ejs') %>

@@ -3,47 +3,12 @@ const __ = require('underscore');
 const DBUtil = require(appRoot + '/my_libs/db_util.js');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
+const ProductBase = require(appRoot + '/models/product_base');
 
-class Game extends Sequelize.Model {
+class Game extends ProductBase {
   // ------------------- Instance Methods -------------------
-  getProductName() {
-    return this.title;
-  }
 
   // ------------------- Class Methods -------------------
-  static selectByProductIds(productIds) {
-    return this.findAll({
-      where: {
-        productId: productIds,
-      }
-    });
-  }
-
-  static selectByProductTypeIds(productTypeIds, options = {}) {
-    var where = {
-      productTypeId: productTypeIds,
-    };
-
-    if (options.excludeUndefinedReleaseDate) {
-      where['$ne'] = '9999-12-31';
-    }
-
-    return this.findAll({
-      where: where,
-    });
-  }
-
-  static selectByJANCodes(janCodes) {
-    return this.findAll({
-      where: {
-        janCode: janCodes,
-      }
-    });
-  }
-
-  static bulkInsert(insertObjects) {
-    return DBUtil.productBulkInsertUpdateOnDuplicate(Game, insertObjects);
-  }
 }
 
 Game.init({
@@ -115,6 +80,11 @@ Game.init({
       type: Sequelize.DATEONLY,
       allowNull: false,
       field: 'sale_date'
+    },
+    validityStatus: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: false,
+      field: 'validity_status'
     },
     updatedAt: {
       type: Sequelize.DATE,

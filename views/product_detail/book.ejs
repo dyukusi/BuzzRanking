@@ -1,7 +1,6 @@
 <%
 productModel;
 bookCaptionModel;
-tweetDataArray;
 
 var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
 %>
@@ -84,7 +83,7 @@ var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_
         </div>
 
 
-    <% if (!isInvalidProduct) { %>
+    <% if (productModel.isValid()) { %>
             <%- include('buzz_chart.ejs') %>
         <% } %>
 

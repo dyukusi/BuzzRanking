@@ -1,6 +1,4 @@
 <%
-var initialDisplayTweetDataArray = __.first(tweetDataArray, 100);
-
 var dataChartPlots = __.map(tweetCountLogModels, function (m) {
     return '["' + m.createdAt + '",' + m.buzz + ']';
 }).join(',');
@@ -9,9 +7,15 @@ var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
 var productModelName = productModel._modelOptions.name.singular;
 var productDetailTemplatePath = 'product_detail/' + productModelName + '.ejs';
-var twitterAltSearchWordsStr = __.map(twitterAltSearchModels, m => {
-    return m.searchWord;
-}).join(', ') || productModel.title;
+var twitterAltSearchWordsStr = __.chain(twitterAltSearchModels)
+        .filter(m => {
+          return m.isValid();
+        })
+        .map(m => {
+            return m.searchWord;
+        })
+        .value()
+        .join(', ') || productModel.title;
 
 var TITLE_TAG_DEFAULT = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] + ' ' + productModel.title + 'のネットの評価、レビュー、反応【BuzzRanking】';
 var PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH = {
@@ -44,7 +48,7 @@ var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] 
 <%- include('header.ejs') %>
 
 <div id="content" class="container-fluid">
-    <%- include(appRoot + '/views/google_adsense/horizontal.ejs') %>
+    <%- include(appRoot + '/public/ad/adsense/horizontal.html') %>
 
     <%- include(productDetailTemplatePath, { dataChartPlots: dataChartPlots, twitterAltSearchWordsStr: twitterAltSearchWordsStr, }) %>
 
@@ -52,7 +56,7 @@ var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] 
         <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
     </div>
 
-    <% if (!isInvalidProduct && !!tweetDataArray.length) { %>
+    <% if (productModel.isValid()) { %>
         <div class="row">
             <div class="col-12 text-align-center">
                 <h2>
@@ -63,35 +67,13 @@ var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] 
         </div>
 
         <div class="row mx-auto tweet-reference-block">
-            <div class="col-12">
-                <%
-                __.times(initialDisplayTweetDataArray.length, function(n) {
-                    var tweetData = initialDisplayTweetDataArray[n];
-                    var tweetModel = tweetData.tweetModel;
-                %>
-                <div class="row">
-                    <div class="col-12">
-                        <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
-                            <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
-                        </blockquote>
-                    </div>
+            <div class="col-12 text-align-center">
+                <span id="tweet-list-load-spin" class="spinner-border text-primary" role="status" aria-hidden="true"></span>
+                <div class="related-tweet">
+                    <!-- tweet list -->
                 </div>
-
-                <% if ((n + 1) % 5 == 0) { %>
-                    <div class="row">
-                        <div class="col-12">
-                            <%- include(appRoot + '/views/google_adsense/in_feed.ejs') %>
-                        </div>
-                    </div>
-                <% } %>
-
-                <% }); %>
             </div>
         </div>
-
-        <% if (initialDisplayTweetDataArray.length % 5 != 0) { %>
-            <%- include(appRoot + '/views/google_adsense/in_feed.ejs') %>
-        <% } %>
 
         <div class="pt-3">
             <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>

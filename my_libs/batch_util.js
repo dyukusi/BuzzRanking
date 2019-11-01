@@ -91,13 +91,6 @@ exports.getTweetDetailInfoByTweetIds = async function (tweetIds) {
 exports.insertAltWordIfNeedForNewBook = async (productId, title) => {
   if (!title.match(/[\(\（]\d+[\)\）]/)) return;
   if (!productId || !title) return;
-  var twitterAltSearchWordModels = await TwitterAlternativeSearchWord.findAll({
-    where: {
-      productId: productId,
-    },
-  });
-
-  if (!_.isEmpty(twitterAltSearchWordModels)) return;
 
   var trimmedTitle = title.replace(/[\(\（]\d+[\)\）]/g, '').trim();
   var twitterAltSearchWordModel = await TwitterAlternativeSearchWord.insertIfValid(productId, trimmedTitle);
@@ -120,7 +113,10 @@ exports.calcBuzzByTweetModels = function (tweetModels, baseMoment) {
   _.each(targetTweetModels, tweetModel => {
     var compareMoment = new Moment(tweetModel.tweetedAt);
     var diffHours = Math.floor((baseMoment - compareMoment) / (60 * 60 * 1000));
-    var buzz = ((1 + tweetModel.retweetCount) / HOURS_EXPIRE_TWEET) * Math.max(HOURS_EXPIRE_TWEET - diffHours, 0);
+    var buzz = (1 / HOURS_EXPIRE_TWEET) * Math.max(HOURS_EXPIRE_TWEET - diffHours, 0);
+
+    // old formula. removed retweetCount to prevent noise
+    //var buzz = ((1 + tweetModel.retweetCount) / HOURS_EXPIRE_TWEET) * Math.max(HOURS_EXPIRE_TWEET - diffHours, 0);
 
     totalBuzz += buzz;
   });

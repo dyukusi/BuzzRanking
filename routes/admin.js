@@ -1,11 +1,9 @@
 const appRoot = require('app-root-path');
 const express = require('express');
 const router = express.Router();
-const InvalidProductModel = require(appRoot + '/models/invalid_product.js');
-const TweetModel = require(appRoot + '/models/tweet');
+const NewTweet = require(appRoot + '/models/new_tweet');
 const Moment = require('moment');
-const Util = require(appRoot + '/my_libs/util.js');
-const memoryCache = require('memory-cache');
+const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 
 function isAdmin(req, res, next) {
   var email = req.user ? req.user.email : null;
@@ -18,54 +16,77 @@ function isAdmin(req, res, next) {
   }
 }
 
-router.get('/', isAdmin, function(req, res, next) {
+router.get('/', isAdmin, async function (req, res, next) {
+  var cacheKeys = __.sortBy(await redis.keys('*'));
+
+  var cacheKeyIntoByteSizeHash = {};
+
+  for (var i = 0; i < cacheKeys.length; i++) {
+    var key = cacheKeys[i];
+    var value = await redis.get(key);
+    cacheKeyIntoByteSizeHash[key] = getBinarySize(value);
+  }
+
   res.render('admin', {
-    memoryCache: memoryCache,
+    cacheKeyIntoByteSizeHash: cacheKeyIntoByteSizeHash,
   });
 });
 
-router.post('/add_product_into_invalid_product_table', isAdmin, function (req, res, next) {
-  var q = req.query;
+router.post('/update_product_validity_status', isAdmin, async function (req, res, next) {
+  var q = req.body;
+  var productId = q.productId;
+  var status = q.status;
 
-  InvalidProductModel.insert(q.productId, 0)
-    .then((model) => {
-      res.send({
-        result: true,
-      });
-    });
-});
+  var productModel = (await Util.selectProductModels({
+    productId: productId,
+  }))[0];
 
-router.post('/enable_is_invalid_tweet_flag', isAdmin, function (req, res, next) {
-  var q = req.query;
-
-  TweetModel.updateIsInvalid(q.tweetId, true)
-    .then((model) => {
-      res.send({
-        result: true,
-      });
-    });
-});
-
-router.post('/build_ranking', isAdmin, function (req, res, next) {
-  var q = req.query;
-  var targetMoment = new Moment(q.date);
+  var updatedProductModel = await productModel.update({
+    validityStatus: status,
+  });
 
   res.send({
     result: true,
   });
+});
 
-  (async () => {
-    console.log("build ranking request received. Date: " + targetMoment.format());
-    var ranking = await Util.buildRankingByDateMoment(targetMoment)
-    console.log("build ranking completed! Date: " + targetMoment.format());
-  })();
+router.post('/update_alt_search_word_validity_status', isAdmin, async function (req, res, next) {
+  var q = req.body;
+  var productId = q.productId;
+  var status = q.status;
+  var searchWord = q.searchWord;
+
+  var altSearchWordModel = await TwitterAlternativeSearchWord.findOne({
+    where: {
+      productId: productId,
+      searchWord: searchWord,
+    },
+  });
+
+  var updatedModel = await altSearchWordModel.update({
+    validityStatus: status,
+  })
+
+  res.send({
+    result: true,
+  });
+});
+
+
+router.post('/enable_is_invalid_tweet_flag', isAdmin, async function (req, res, next) {
+  var q = req.body;
+  var updatedTweetModel = await NewTweet.updateIsInvalid(q.tweetId, true);
+
+  res.send({
+    result: true,
+  });
 });
 
 router.post('/delete_cache', isAdmin, function (req, res, next) {
-  var q = req.query;
+  var q = req.body;
   var key = q.key;
 
-  memoryCache.del(key);
+  redis.del(key);
   console.log("delete cache. key: " + key);
 
   res.send({
@@ -74,3 +95,7 @@ router.post('/delete_cache', isAdmin, function (req, res, next) {
 });
 
 module.exports = router;
+
+function getBinarySize(string) {
+  return Buffer.byteLength(string, 'utf8');
+}

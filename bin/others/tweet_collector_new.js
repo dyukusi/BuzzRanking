@@ -6,6 +6,7 @@ const sprintf = require('sprintf-js').sprintf;
 const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
 const CONST = require(appRoot + '/my_libs/const.js');
 const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 const sequelize = require(appRoot + '/db/sequelize_config');
 const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 const Moment = require('moment');
@@ -13,7 +14,6 @@ const Moment = require('moment');
 const NewTweet = require(appRoot + '/models/new_tweet'); // TEMP
 const TweetCountLog = require(appRoot + '/models/tweet_count_log');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
-const InvalidProduct = require(appRoot + '/models/invalid_product.js');
 const TweetSource = require(appRoot + '/models/tweet_source');
 
 const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 12;
@@ -90,21 +90,20 @@ async function main() {
 }
 
 async function createTaskQueue() {
-  let results = await Promise.all([
-    getProductIdArraySortedByTweetSearchPriority(),
-    TwitterAlternativeSearchWord.findAll(),
-    InvalidProduct.findAll(),
+  let [searchBaseData, twitterAltSearchWordModels] = await Promise.all([
+    getSearchBaseData(),
+    TwitterAlternativeSearchWord.selectAllValid(),
   ]);
 
-  let targetSortedProductIds = _.last(results[0], SEARCH_TARGET_NUM_PER_EXECUTION);
+  let productIdIntoTweetCountLogRowHash = searchBaseData.productIdIntoTweetCountLogRowHash;
+  let targetSortedProductIds = _.last(searchBaseData.sortedProductIds, SEARCH_TARGET_NUM_PER_EXECUTION);
 
-  let altSearchWordsHash = _.groupBy(results[1], altSearchWordModel => {
+  let altSearchWordsHash = _.groupBy(twitterAltSearchWordModels, altSearchWordModel => {
     return altSearchWordModel.productId;
   });
-  let invalidProductModelHash = _.indexBy(results[2], invalidProductModel => {
-    return invalidProductModel.productId;
+  let productModels = await Util.selectProductModels({
+    productId: targetSortedProductIds,
   });
-  let productModels = await Util.selectProductModelsByProductIds(targetSortedProductIds);
   let productIdToModel = _.indexBy(productModels, m => {
     return m.productId;
   });
@@ -119,30 +118,43 @@ async function createTaskQueue() {
   for (var i = 0; i < sortedProductModels.length; i++) {
     var productModel = sortedProductModels[i];
 
-    if (invalidProductModelHash[productModel.productId]) {
+    if (!productModel.isValid()) {
       continue;
     }
 
-    let altSearchWords = _.map(altSearchWordsHash[productModel.productId], model => {
-      return model.searchWord;
-    });
+    let altSearchWords = _.chain(altSearchWordsHash[productModel.productId])
+      .filter(altSearchWordModel => {
+        return altSearchWordModel.isValid();
+      })
+      .map(altSearchWordModel => {
+        return altSearchWordModel.searchWord;
+      })
+      .value();
+
     let searchWords = !_.isEmpty(altSearchWords) ? altSearchWords : [productModel.getProductName()];
 
     var hasInvalidSearchWord = _.some(searchWords, word => {
       return isMaybeInvalidProduct(word) || !Util.checkSearchWordValidity(word);
     });
-    if (hasInvalidSearchWord) {
-      await InvalidProduct.create({
-        productId: productModel.productId,
-        status: 1,
-      });
 
+    if (!productModel.isProtected() && hasInvalidSearchWord) {
+      await productModel.update({
+        validityStatus: 1,
+      });
       continue;
     }
 
     let joinedSearchWord = searchWords.join(" OR ");
 
-    taskQueue.push(createTask(productModel.productTypeId, productModel.productId, joinedSearchWord));
+    // NOTE: since param is really important to prevent duplicate search
+    let since = null;
+    if (productIdIntoTweetCountLogRowHash[productModel.productId]) {
+      var createdAt = productIdIntoTweetCountLogRowHash[productModel.productId].created_at;
+      var sinceMoment = new Moment(createdAt);
+      since = sinceMoment.subtract(1, 'day').utc().format("YYYY-MM-DD");
+    }
+
+    taskQueue.push(createTask(productModel.productTypeId, productModel.productId, joinedSearchWord, since));
   }
 
   return taskQueue;
@@ -171,21 +183,22 @@ function calcPriority(row) {
   // 単純にbuzzを傾きとして計算して十分に見えるので複雑な計算はこれで何か問題が起きない限り却下. 案自体は残しておく
 }
 
-async function getProductIdArraySortedByTweetSearchPriority() {
-  // 全プロダクトの最新のログをセレクトするクエリ
-  let latestTweetCountLogRowsPromise = sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date WHERE TweetCountLogA.product_id NOT IN (SELECT product_id FROM invalid_product);');
+async function getSearchBaseData() {
+  // 全プロダクトの最新のTweetCountLogをセレクトするクエリ
+  let latestTweetCountLogRowsPromise = sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date');
 
-  let newProductIdsPromises = _.map(CONST.PRODUCT_TABLE_NAMES, tableName => {
-    return sequelize.query('SELECT product_id FROM ' + tableName + ' WHERE product_id NOT IN (SELECT product_id FROM tweet_count_log) AND product_id NOT IN (SELECT product_id FROM invalid_product)');
+  let newProductIdsPromises = _.map(CONST.PRODUCT_MODELS, modelClass => {
+    return sequelize.query('SELECT product_id FROM ' + modelClass.name + ' WHERE product_id NOT IN (SELECT product_id FROM tweet_count_log)');
   });
 
-  let results = await Promise.all(_.flatten([
+  let [latestTweetCountLogRows, newProductIdsResults] = await Promise.all(_.flatten([
     latestTweetCountLogRowsPromise,
     newProductIdsPromises,
   ]));
 
-  var latestTweetCountLogRows = results.shift()[0];
-  var newProductIdsResults = results;
+  let productIdIntoTweetCountLogRowHash = _.indexBy(latestTweetCountLogRows, row => {
+    return row.product_id;
+  });
 
   let productIdsSortedByPriority = _.chain(latestTweetCountLogRows)
     .sortBy(row => {
@@ -207,10 +220,27 @@ async function getProductIdArraySortedByTweetSearchPriority() {
     });
   }));
 
-  return _.flatten([productIdsSortedByPriority, newProductIds]);
+  var sortedProductIds = _.flatten([productIdsSortedByPriority, newProductIds]);
+
+  var productIdIntoProductModel = _.indexBy(await Util.selectProductModels({
+    productId: sortedProductIds,
+  }), productModel => {
+    return productModel.productId;
+  });
+
+  // exclude invalid products
+  sortedProductIds = _.filter(sortedProductIds, productId => {
+    var productModel = productIdIntoProductModel[productId];
+    return productModel.isValid();
+  });
+
+  return {
+    sortedProductIds: sortedProductIds,
+    productIdIntoTweetCountLogRowHash: productIdIntoTweetCountLogRowHash,
+  };
 }
 
-function createTask(productTypeId, productId, searchWord) {
+function createTask(productTypeId, productId, searchWord, since) {
   let searchQueryBase = _.contains(STRICT_WORD_SEARCH_PRODUCT_TYPES, productTypeId) ? '"%s" %s' : '%s %s';
   return {
     api_param: {
@@ -224,6 +254,7 @@ function createTask(productTypeId, productId, searchWord) {
       count: 100,
       result_type: 'recent',
       max_id: '',
+      since: since,
     },
     product_id: productId,
     product_type: productTypeId,
@@ -300,21 +331,32 @@ async function collectTweets(task) {
   let totalOriginalTweetCount = tempOriginalTweetCountHash[task.product_id];
   if (ABNORMAL_THRESHOLD_ORIGINAL_TWEET_COUNT <= totalOriginalTweetCount) {
     console.log("too much user count. maybe this is invalid product. added to invalid product");
-    await InvalidProduct.create({
-      productId: task.product_id,
-      status: 1,
-    });
+    await updateProductValidityStatusByProductId(task.product_id, 1);
     return;
   }
 
   let hasNextPage = !!metaData['next_results'];
   if (hasNextPage) {
     console.log("should search for next page. added to taskQueue.");
-    let newTask = createTask(task.product_type_id, task.product_id, task.search_word);
+
+    // NOTE: dont need to set since arg becauze next_results is already considering since param
+    let newTask = createTask(task.product_type_id, task.product_id, task.search_word, null);
     newTask.api_param = QueryString.parse(metaData['next_results']);
     taskQueue.push(newTask);
     return;
   }
+}
+
+async function updateProductValidityStatusByProductId(productId, status) {
+  var productModel = (await Util.selectProductModels({
+    productId: [productId],
+  }))[0];
+
+  if (productModel.isProtected()) return;
+
+  await productModel.update({
+    validityStatus: status, // suspicious
+  });
 }
 
 function isMaybeInvalidProduct(productName) {
@@ -367,7 +409,7 @@ async function findMissedTweetsAndInsert() {
     await sleep(3000);
   }
 
-  var tweetInfoHash =_.indexBy(tweetInfoArray, tweetInfo => {
+  var tweetInfoHash = _.indexBy(tweetInfoArray, tweetInfo => {
     return tweetInfo['id_str'];
   });
 
@@ -390,7 +432,7 @@ async function findMissedTweetsAndInsert() {
   });
 }
 
-function tweetJSONIntoInsertObject (tweet, productId, tweetSourceId) {
+function tweetJSONIntoInsertObject(tweet, productId, tweetSourceId) {
   return {
     id: tweet['id_str'],
     quoteTweetId: tweet['quoted_status_id_str'],

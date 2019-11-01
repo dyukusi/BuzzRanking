@@ -1,3 +1,7 @@
+<%
+
+  %>
+
 <!DOCTYPE html>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
       integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
@@ -7,7 +11,7 @@
 
 <html>
 <head>
-    <title>control room</title>
+    <title>CONTROL ROOM</title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
 </head>
@@ -16,28 +20,40 @@
 <%- include(appRoot + '/views/header.ejs') %>
 
 <div class="container-fluid p-3">
-    <p>
-        welcome to admin page :)
-    </p>
 
-    日付を指定してランキングオブジェクトを生成
+    リンク一覧
     <div class="row">
         <div class="col-12">
-            <input id="build-ranking-date-input" class="form-control" type="text" placeholder="2019-07-12">
-            <button id="build-ranking-button" class="page-link text-dark d-inline-block">実行</button>
+            <a href="/ranking/testing">デバッグ用プロダクト一覧ページ</a>
         </div>
     </div>
 
     <br>
-    <div class="row">
-        <div class="col-12">
-            <% __.each(memoryCache.keys(), key => { %>
-                <button class="delete-cache-button page-link text-dark d-inline-block" value=<%= key %>>削除</button> : <%= key %>
-                <br>
-            <% }); %>
-        </div>
-    </div>
 
+    <table class="table table-striped table-hover">
+        <tr>
+            <th>key</th>
+            <th>size(MB)</th>
+            <th>Delete</th>
+        </tr>
+
+        <%
+        __.each(cacheKeyIntoByteSizeHash, (byte, key) => {
+            var mb = byte / (1000 * 1000);
+            var roundedMb = Math.round(mb * 1000) / 1000;
+        %>
+        <tr>
+            <td><%= key %></td>
+            <td><%= roundedMb %></td>
+            <td>
+                <button type="button" class="btn btn-danger delete-cache-button" value="<%= key %>">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </td>
+        </tr>
+
+        <% }); %>
+    </table>
 </div>
 
 <%- include(appRoot + '/views/footer.ejs') %>

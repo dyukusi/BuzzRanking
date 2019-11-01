@@ -7,9 +7,6 @@ const Moment = require('moment');
 
 class Stat extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
-  getRankingDateObj() {
-    return new Date(this.rankingDate);
-  }
 
   // ------------------- Class Methods -------------------
   static selectByRankingDate(dateMoment) {

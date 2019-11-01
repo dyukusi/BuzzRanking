@@ -1,93 +1,64 @@
 const express = require('express');
 const router = express.Router();
-const Util = require(appRoot + '/my_libs/util.js');
-const Tweet = require(appRoot + '/models/tweet');
+const NewTweet = require(appRoot + '/models/new_tweet');
 const BookCaption = require(appRoot + '/models/book_caption');
 const TweetCountLog = require(appRoot + '/models/tweet_count_log');
-const InvalidProduct = require(appRoot + '/models/invalid_product.js');
-const ReleaseControl = require(appRoot + '/models/release_control.js');
-const BlockTwitterUser = require(appRoot + '/models/block_twitter_user');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 const Moment = require('moment');
-const memoryCache = require('memory-cache');
 const sequelize = require(appRoot + '/db/sequelize_config');
+const cacheUtil = require(appRoot + '/my_libs/cache_util.js');
+
 const PRODUCT_NUM_PER_PAGE_IN_LISTING_PAGE = 100;
 
-router.get('/detail/:product_id', function (req, res, next) {
+router.get('/detail/:product_id', async function (req, res, next) {
   var productId = req.params.product_id;
+  var htmlCacheKey = cacheUtil.generateProductDetailHTMLCacheKey(productId);
+  var htmlCache = await redis.get(htmlCacheKey);
 
-  (async () => {
-    var [productModels, bookCaptionModels, tweetModels, tweetCountLogModels, invalidProductModels, blockTwitterUserModels, twitterAltSearchWordModels] = await Promise.all([
-      Util.selectProductModelsByProductIds([productId]),
-      BookCaption.selectByProductIds([productId]),
-      Tweet.selectByProductIds([productId]),
-      TweetCountLog.selectByProductId(productId),
-      InvalidProduct.selectByProductIds([productId]),
-      BlockTwitterUser.findAll({}),
-      TwitterAlternativeSearchWord.findAll({
-        where: {
-          productId: productId,
-        },
-      })
-    ]);
-
-    var targetProductModel = productModels[0];
-    var targetBookCaption = bookCaptionModels[0];
-    var screenNameToBlockTwitterUserModelHash = __.indexBy(blockTwitterUserModels, m => {
-      return m.screenName;
-    });
-
-    var tweetDataArray = Util.buildTweetDataArray(tweetModels, {
-      excludeUnnecessaryDataForDisplay: true,
-      prioritizeFirstAppearUserTweet: true,
-      deprioritizeBlockedUser: true,
-      screenNameToBlockTwitterUserModelHash: screenNameToBlockTwitterUserModelHash,
-      deprioritizeContainsSpecificWordsInText: true,
-    });
-
-    var isInvalidProduct = !!invalidProductModels[0];
-
-    var sortedTweetCountLogModels = __.sortBy(tweetCountLogModels, m => {
-      return new Moment(m.createdAt).unix();
-    });
-
-    var top3RankingData = await getTop3RankingData(targetProductModel.productTypeId);
-
-    res.render('product_detail', {
-      productModel: targetProductModel,
-      bookCaptionModel: targetBookCaption,
-      twitterAltSearchModels: twitterAltSearchWordModels,
-      tweetDataArray: tweetDataArray,
-      tweetCountLogModels: sortedTweetCountLogModels,
-      isInvalidProduct: isInvalidProduct,
-      top3RankingData: top3RankingData,
-
-      Moment: Moment,
-    });
-  })()
-    .catch((e) => {
-      next(e);
-    });
-});
-
-async function getTop3RankingData(productTypeId) {
-  var releaseControlModel = await ReleaseControl.selectLatestReleaseDate();
-  var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productTypeId];
-  var targetDateMoment = releaseControlModel.getDateMoment();
-  var top3RankingCacheKey = 'ranking_top3_' + productTypeId + '_' + targetDateMoment.format();
-  var top3RankingCache = memoryCache.get(top3RankingCacheKey);
-
-  if (top3RankingCache) {
-    return top3RankingCache;
+  if (htmlCache) {
+    res.send(htmlCache);
+    return;
   }
 
-  var [statModel, ranking] = await Util.buildRanking([productTypeId], targetDateMoment);
-  var top3Ranking = __.first(ranking, 3);
+  console.log("cache miss: " + htmlCacheKey);
 
-  memoryCache.put(top3RankingCacheKey, top3Ranking);
+  var [productModels, bookCaptionModels, tweetCountLogModels, twitterAltSearchWordModels] = await Promise.all([
+    Util.selectProductModels({
+      productId: [productId],
+    }),
+    BookCaption.selectByProductIds([productId]),
+    TweetCountLog.selectByProductId(productId),
+    TwitterAlternativeSearchWord.selectByProductIds([productId]),
+  ]);
 
-  return top3Ranking;
-}
+  var targetProductModel = productModels[0];
+  var targetBookCaption = bookCaptionModels[0];
+
+  var sortedTweetCountLogModels = __.sortBy(tweetCountLogModels, m => {
+    return new Moment(m.createdAt).unix();
+  });
+
+  var latestProductDataListCacheKey = await cacheUtil.generateLatestProductDataListCacheKey();
+  var productDataList = await cacheUtil.getCachedProductDataList(latestProductDataListCacheKey);
+  var top3ProductDataList = __.first(productDataList, 3);
+
+  // html cache
+  res.sendResponse = res.send;
+  res.send = (body) => {
+    redis.set(htmlCacheKey, body);
+    res.sendResponse(body);
+  };
+
+  res.render('product_detail', {
+    productModel: targetProductModel,
+    bookCaptionModel: targetBookCaption,
+    twitterAltSearchModels: twitterAltSearchWordModels,
+    tweetCountLogModels: sortedTweetCountLogModels,
+    top3ProductDataList: top3ProductDataList,
+
+    Moment: Moment,
+  });
+});
 
 router.get('/list', async function (req, res, next) {
   var queryParam = req.query || {};
@@ -127,9 +98,9 @@ async function buildProductBasicInfos(options = {}) {
     replacements.searchWord = options.searchWord;
   }
 
-  var selectAllProductBasicInfoPromises = __.map(Const.PRODUCT_TABLE_NAMES, tableName => {
+  var selectAllProductBasicInfoPromises = __.map(Const.PRODUCT_MODELS, productModel => {
     return sequelize.query(
-      sprintf(baseSQL, tableName),
+      sprintf(baseSQL, productModel.name),
       {
         replacements: replacements,
         type: sequelize.QueryTypes.SELECT,

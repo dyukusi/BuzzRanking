@@ -1,21 +1,16 @@
 <%
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
-
+var rankingName = originalURL.replace('/ranking/', '').replace(/\?.*/, '');
 var generateURL = (page) => {
     var url = sprintf(
             "/ranking/%s?page=%d",
-            productTypeBundleName,
+            rankingName,
             page
     );
 
     if (targetProductTypeId) {
         var productTypeName = Const.PRODUCT_TYPE_ID_TO_NAME_HASH[targetProductTypeId];
         url += sprintf("&type=%s", productTypeName);
-    }
-
-    if (isDateSpecified) {
-        var dateStr = targetDateMoment.format("YYYY-MM-DD");
-        url += sprintf("&date=%s", dateStr);
     }
 
     return url;

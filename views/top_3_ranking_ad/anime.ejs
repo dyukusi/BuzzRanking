@@ -1,3 +1,8 @@
-<a href="/product/detail/<%= rankingProductModel.productId %>">
-    <img class="ogp-image" src="<%= rankingProductModel.ogpImageUrl %>">
+<%
+var ogpImageURL = productModel.ogpImageUrl;
+var siteThumbnailURL = "https://blinky.nemui.org/shot/large?" + productModel.publicUrl;
+%>
+
+<a href="/product/detail/<%= productModel.productId %>">
+    <img class="ogp-image" src="<%= ogpImageURL || siteThumbnailURL %>">
 </a>

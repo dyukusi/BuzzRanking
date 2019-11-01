@@ -1,11 +1,9 @@
 <%
-const INITIAL_DISPLAY_TWEET_NUM = 3;
-
-var rank = data.rank;
-var initialDisplayTweetData = __.first(data.tweetDataArray, INITIAL_DISPLAY_TWEET_NUM);
-var hasMoreTweets = INITIAL_DISPLAY_TWEET_NUM <= initialDisplayTweetData.length;
-var dataAttrStr = __.map(data.tweetDataArray, function (tweetData) {
-    return '["' + tweetData.tweetModel.screenName + '","' + tweetData.tweetModel.tweetId + '"]';
+var rank = productData.rank;
+var initialDisplayTweetModels = __.first(productData.tweetModels, Const.INITIAL_DISPLAY_TWEET_NUM_IN_RANKING);
+var hasMoreTweets = Const.INITIAL_DISPLAY_TWEET_NUM_IN_RANKING <= initialDisplayTweetModels.length;
+var dataAttrStr = __.map(productData.tweetModels, function (tweetModel) {
+    return '["' + tweetModel.screenName + '","' + tweetModel.id + '"]';
 }).join(',');
 %>
 
@@ -32,11 +30,11 @@ var dataAttrStr = __.map(data.tweetDataArray, function (tweetData) {
             </button>
         <% } %>
 
-        <% if (initialDisplayTweetData.length) { %>
+        <% if (initialDisplayTweetModels.length) { %>
             <div class="grad-item" data-grad-idx="<%= rank %>"
                  data-is-first-render='true'>
 
-                <% if (data.bookCaptionModel) { %>
+                <% if (productData.bookCaptionModel) { %>
                     <div class="book-caption-accordion">
                         <div>
                                                 <span class="btn read-book-caption-button">
@@ -46,7 +44,7 @@ var dataAttrStr = __.map(data.tweetDataArray, function (tweetData) {
                                                     </div>
                                                 </span>
                             <div class="book-caption">
-                                <%= data.bookCaptionModel.caption; %>
+                                <%= productData.bookCaptionModel.caption; %>
                             </div>
                         </div>
                     </div>
@@ -54,11 +52,10 @@ var dataAttrStr = __.map(data.tweetDataArray, function (tweetData) {
 
                 <div class="twitter-reaction-area">
                     <%
-                    __.each(initialDisplayTweetData, function(tweetData) {
-                        var tweetModel = tweetData.tweetModel;
+                    __.each(initialDisplayTweetModels, function(tweetModel) {
                     %>
                     <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
-                        <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.tweetId %>"><%= tweetModel.text %></a>
+                        <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.id %>"><%= tweetModel.text %></a>
                     </blockquote>
 
                     <% if (isAdmin) { %>

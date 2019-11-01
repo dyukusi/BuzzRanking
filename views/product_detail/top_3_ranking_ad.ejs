@@ -17,11 +17,11 @@ var productImgTemplatePath = appRoot + '/views/top_3_ranking_ad/' + productModel
             上位
         </span>
     <div class="row top-3-ranking-row">
-        <% __.each(top3RankingData, data => { %>
+        <% __.each(top3ProductDataList, data => { %>
             <div class="col-4 d-flex align-items-center justify-content-center">
                 <div class="row">
                     <div class="col-12 ">
-                        <%- include(productImgTemplatePath, { rankingProductModel: data.productModel, }) %>
+                        <%- include(productImgTemplatePath, { productModel: data.productModel, }) %>
                     </div>
                 </div>
             </div>
@@ -29,9 +29,9 @@ var productImgTemplatePath = appRoot + '/views/top_3_ranking_ad/' + productModel
     </div>
 
     <div class="row top-3-ranking-row">
-        <% __.each(top3RankingData, data => { %>
+        <% __.each(top3ProductDataList, data => { %>
             <div class="col-4 text-align-center">
-                (<%= data.statDataModel.buzz %>Buzz)
+                (<%= data.statData.buzz %>Buzz)
             </div>
         <% }); %>
     </div>

@@ -11,10 +11,8 @@ var logger = require('morgan');
 var passport = require('passport');
 var session = require('express-session');
 var rfs = require("rotating-file-stream");
-var ReleaseControl = require(appRoot + '/models/release_control.js');
-// var UAParser = require('ua-parser-js');
-
-var redirectToHTTPS = require('express-http-to-https').redirectToHTTPS
+var redirectToHTTPS = require('express-http-to-https').redirectToHTTPS;
+var cacheUtil = require(appRoot + '/my_libs/cache_util.js');
 
 // global vars
 global.Config = require('config');
@@ -22,10 +20,11 @@ global.appRoot = require('app-root-path');
 global.__ = require('underscore');
 global.sprintf = require('sprintf-js').sprintf;
 global.async = require('async');
-global.myUtil = require(appRoot + '/my_libs/util.js');
+global.Util = require(appRoot + '/my_libs/util.js');
 global.Const = require(appRoot + '/my_libs/const.js');
 global.Q = require('q');
 global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+global.redis = cacheUtil.createRedisInstance();
 
 var app = express();
 
@@ -69,31 +68,12 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// check cached ranking
-app.use((req, res, next) => {
-  (async () => {
-    var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
-    var targetMoment = latestReleaseControlModel.getDateMoment();
-
-    if (myUtil.isCachedRanking(targetMoment)) {
-      next();
-    } else {
-      // need wait for building ranking obj by buildLatestRankingPoller or admin
-      var statusCode = 503; // maintenance code
-      res.status(statusCode);
-      res.render('error', {
-        status: 503,
-        dispMessage: Const.ERROR_MESSAGE.IN_PREPARING_RANKING,
-      });
-    }
-  })();
-});
-
 app.use('/', require('./routes/index.js'));
 app.use('/product', require('./routes/product.js'));
 app.use('/ranking', require('./routes/ranking.js'));
 app.use('/auth', require('./routes/auth.js'));
 app.use('/admin', require('./routes/admin.js'));
+app.use('/api', require('./routes/api.js'));
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -110,6 +90,7 @@ app.use(function (err, req, res, next) {
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
+  console.log("Request URL: " + req.url);
   console.error(err);
 
   // render the error page

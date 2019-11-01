@@ -1,38 +1,41 @@
 #!/usr/bin/env node
-
-/**
- * Module dependencies.
- */
-
-var app = require('../app');
-var debug = require('debug')('trendranking:server');
-var http = require('http');
-
-/**
- * Get port from environment and store in Express.
- */
-
+const appRoot = require('app-root-path');
+const app = require('../app');
+const debug = require('debug')('trendranking:server');
+const http = require('http');
+const cluster = require('cluster');
+const expressCluster = require('express-cluster');
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
-console.log("PORT: " + port);
-
-/**
- * Create HTTP server.
- */
 
 var server = http.createServer(app);
 
-/**
- * Listen on provided port, on all network interfaces.
- */
+if (cluster.isMaster) {
+  console.log("Im master process :)");
+  console.log("PORT: " + port);
+}
 
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
-/**
- * Normalize a port into a number, string, or false.
- */
+// expressCluster(worker => {
+//   console.log("Child process started. id: " + worker.id);
+//   global.worker = worker;
+//   server.listen(port);
+//   server.on('error', onError);
+//   server.on('listening', onListening);
+//
+//   var slaveManager = require(appRoot + '/my_libs/slave_manager.js');;
+//   process.on('message', slaveManager.messageFromMaster);
+// });
+// MASTER
+// if (cluster.isMaster) {
+//   var masterManager = require(appRoot + '/my_libs/master_manager.js');
+//   for (const id in cluster.workers) {
+//     cluster.workers[id].on('message', masterManager.requestFromWorker);
+//   }
+// }
 
 function normalizePort(val) {
   var port = parseInt(val, 10);

@@ -6,6 +6,7 @@ const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const Op = Sequelize.Op;
 const Moment = require('moment');
+const sprintf = require('sprintf-js').sprintf;
 
 class NewTweet extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
@@ -45,12 +46,28 @@ class NewTweet extends Sequelize.Model {
     });
   }
 
+  // NOTE: you must update query when the new_tweet table definition is changed
+  static async selectLatestTweetsOfEachProductId(productIds, countPerGroup) {
+    var query = sprintf(
+      "SELECT id, quote_tweet_id, product_id, user_id, name, screen_name, favourite_count, retweet_count, source_id, text, is_invalid, tweeted_at, created_at FROM ( SELECT  @prev := '', @n := 0 ) init JOIN ( SELECT  @n := if(product_id != @prev, 1, @n + 1) AS n, @prev := product_id, id, quote_tweet_id, product_id, user_id, name, screen_name, favourite_count, retweet_count, source_id, text, is_invalid, tweeted_at, created_at FROM  new_tweet WHERE product_id IN (%s) ORDER BY product_id ASC, tweeted_at DESC) AS x WHERE  n <= %d ORDER BY  product_id, n;",
+      productIds.join(','),
+      countPerGroup,
+    );
+
+    let tweetModels = (await sequelize.query(query, {
+      mapToModel: true,
+      model: NewTweet,
+    }));
+
+    return tweetModels;
+  }
+
   static updateIsInvalid(tweetId, isInvalid) {
     return this.update({
       isInvalid: isInvalid,
     }, {
       where: {
-        tweetId: tweetId
+        id: tweetId
       }
     });
   }

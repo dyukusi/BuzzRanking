@@ -2,31 +2,12 @@ const appRoot = require('app-root-path');
 const __ = require('underscore');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
+const ProductBase = require(appRoot + '/models/product_base');
 
-class WebService extends Sequelize.Model {
+class WebService extends ProductBase {
   // ------------------- Instance Methods -------------------
-  getProductName() {
-    return this.title;
-  }
 
   // ------------------- Class Methods -------------------
-  static selectByProductIds(productIds) {
-    return this.findAll({
-      where: {
-        productId: productIds,
-      }
-    });
-  }
-
-  static selectByProductTypeIds(productTypeIds, options) {
-    var where = {
-      productTypeId: productTypeIds,
-    };
-
-    return this.findAll({
-      where: where,
-    });
-  }
 }
 
 WebService.init({
@@ -57,7 +38,12 @@ WebService.init({
       type: Sequelize.TEXT,
       allowNull: true,
       field: 'memo'
-    }
+    },
+    validityStatus: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: false,
+      field: 'validity_status'
+    },
   }, {
     freezeTableName: true,
     underscored: true,

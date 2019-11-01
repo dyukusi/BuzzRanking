@@ -15,8 +15,7 @@ const async = require('async');
 const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
 const sprintf = require('sprintf-js').sprintf;
 
-const Tweet = require(appRoot + '/models/tweet.js');
-const InvalidProduct = require(appRoot + '/models/invalid_product.js');
+const NewTweet = require(appRoot + '/models/new_tweet.js');
 const Stat = require(appRoot + '/models/stat.js');
 
 const CONST = require(appRoot + '/my_libs/const.js');
@@ -24,6 +23,7 @@ const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const Op = Sequelize.Op;
 
+const RANK_IN_BUZZ_THRESHOLD = 30;
 var rankingMoment = moment(process.argv[2]);
 var tweetSinceMoment = moment(rankingMoment).subtract(7, 'days');
 var tweetUntilMoment = moment(rankingMoment);
@@ -33,80 +33,88 @@ if (!process.argv[2]) {
 }
 
 console.log('ranking date: ' + rankingMoment.format());
-console.log('tweet since: ' + tweetSinceMoment.format());
-console.log('tweet until: ' + tweetUntilMoment.format());
+console.log('tweet since(<=): ' + tweetSinceMoment.format());
+console.log('tweet until(<): ' + tweetUntilMoment.format());
 
 main()
   .then(() => {
     console.log("Finish!");
   });
 
-
 async function main() {
   var isNoBuzzThresholdProductIdHash = await createIsNoBuzzThresholdProductIdHash();
 
-  let productIdAndTweetCountRows = (await sequelize.query(
+  console.log("finding high buzz product candidates");
+  var productIdAndOriginalTweetCountRows = (await sequelize.query(
     sprintf(
-      "SELECT product_id, count(*) AS count FROM tweet WHERE product_id NOT IN (SELECT product_id FROM invalid_product) AND '%s' <= tweeted_at AND tweeted_at <= '%s' GROUP BY product_id ORDER BY count DESC;",
-      tweetSinceMoment.format(),
-      tweetUntilMoment.format()
+      "SELECT * FROM (SELECT product_id, count(*) AS count FROM new_tweet WHERE product_id NOT IN (SELECT product_id FROM invalid_product) AND '%s' <= tweeted_at AND tweeted_at <= '%s' GROUP BY product_id ORDER BY count DESC) AS temp WHERE %d <= count;",
+      tweetSinceMoment.format("YYYY-MM-DD"),
+      tweetUntilMoment.format("YYYY-MM-DD"),
+      RANK_IN_BUZZ_THRESHOLD
     )
   ))[0];
 
-  var insertObjectBasesForStatData = _.chain(productIdAndTweetCountRows)
-    .filter(row => {
-      return CONST.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT <= row.count;
-    })
-    .map(row => {
-      return createInsertObjectBaseForStatData(null, row.product_id, row.count, null, false);
-    })
-    .value();
+  // let productIdAndBuzzRows = (await sequelize.query(
+  //   sprintf(
+  //     "SELECT TweetCountLogA.product_id, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log WHERE '%s' <= created_at AND created_at < '%s' GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date WHERE TweetCountLogA.product_id NOT IN (SELECT product_id FROM invalid_product) AND %d <= TweetCountLogA.buzz ORDER BY TweetCountLogA.buzz DESC;",
+  //     tweetSinceMoment.format("YYYY-MM-DD"),
+  //     tweetUntilMoment.format("YYYY-MM-DD"),
+  //     RANK_IN_BUZZ_THRESHOLD
+  //   )
+  // ))[0];
 
-  for (var i = 0; i < insertObjectBasesForStatData.length; i++) {
-    var data = insertObjectBasesForStatData[i];
-
-    var tweetModels = await Tweet.findAll({
-      where: {
-        productId: data.productId,
-        tweetedAt: {
-          [Op.gte]: tweetSinceMoment.format(),
-          [Op.lt]: tweetUntilMoment.format(),
-        },
-        isInvalid: 0,
-      },
-    });
-
-    var buzz = BatchUtil.calcBuzzByTweetModels(tweetModels, tweetUntilMoment);
-    data.buzz = buzz;
-  }
-
-  var insertObjectBasesForStatDataHash = _.indexBy(insertObjectBasesForStatData, data => {
-    return data.productId;
+  var candidateProductIdHash = _.indexBy(productIdAndOriginalTweetCountRows, row => {
+    return row.product_id;
   });
 
   // add missed products
   _.each(_.keys(isNoBuzzThresholdProductIdHash), productId => {
-    if (!insertObjectBasesForStatDataHash[productId]) {
-      insertObjectBasesForStatData.push(createInsertObjectBaseForStatData(null, productId, 0, 0, false));
+    if (!candidateProductIdHash[productId]) {
+      candidateProductIdHash[productId] = true;
     }
   });
 
-  // exclude worthless products
-  insertObjectBasesForStatData = _.filter(insertObjectBasesForStatData, data => {
-    if (!isNoBuzzThresholdProductIdHash[data.productId]) {
-      return 30 <= data.buzz;
-    }
+  var candidateProductIds = _.keys(candidateProductIdHash);
 
-    return true;
+  console.log("selecting tweets");
+  var mixedTweetModels = await NewTweet.selectByProductIds(
+    candidateProductIds,
+    {
+      since: tweetSinceMoment,
+      until: tweetUntilMoment,
+    }
+  );
+
+  var productIdIntoTweetModels = _.groupBy(mixedTweetModels, m => {
+    return m.productId;
   });
 
-  await Stat.createRankingData(rankingMoment, tweetSinceMoment, tweetUntilMoment, insertObjectBasesForStatData);
+  var productIdIntoInsertObjectBaseForStatData = {};
+
+  console.log("creating stat data objects");
+  for (var i = 0; i < candidateProductIds.length; i++) {
+    var productId = candidateProductIds[i];
+    var tweetModels = productIdIntoTweetModels[productId] || [];
+    var tweetCount = _.reduce(tweetModels, (memo, model) => {
+      return memo + (1 + model.retweetCount);
+    }, 0);
+    var buzz = BatchUtil.calcBuzzByTweetModels(tweetModels, tweetUntilMoment);
+
+    if (!isNoBuzzThresholdProductIdHash[productId] && buzz < RANK_IN_BUZZ_THRESHOLD) continue;
+    productIdIntoInsertObjectBaseForStatData[productId] = createInsertObjectBaseForStatData(productId, tweetCount, buzz);
+  }
+
+  console.log("creating ranking");
+
+  await Stat.createRankingData(rankingMoment, tweetSinceMoment, tweetUntilMoment, _.values(productIdIntoInsertObjectBaseForStatData));
 
   console.log("finish!");
 }
 
 async function createIsNoBuzzThresholdProductIdHash() {
-  var productModels = await Util.selectProductModelsByProductTypeIds(CONST.EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS);
+  var productModels = await Util.selectProductModels({
+    productTypeId: CONST.EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS,
+  });
 
   var productIds = _.map(productModels, m => {
     return m.productId;
@@ -119,12 +127,12 @@ async function createIsNoBuzzThresholdProductIdHash() {
   return isNoBuzzThresholdProductIdHash;
 }
 
-function createInsertObjectBaseForStatData(statId, productId, tweetCount, buzz, isInvalid) {
+function createInsertObjectBaseForStatData(productId, tweetCount, buzz) {
   return {
-    statId: statId,
+    statId: null,
     productId: productId,
     tweetCount: tweetCount,
     buzz: buzz,
-    isInvalid: isInvalid,
+    isInvalid: 0,
   };
 }

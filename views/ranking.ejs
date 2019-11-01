@@ -1,4 +1,16 @@
 <%
+<!-- possible args -->
+var isAdmin;
+var targetPage;
+var productDataList;
+var lastUpdateMoment;
+var productTypeBundleId;
+var targetProductTypeId;
+var isDateSpecified;
+var originalURL;
+var productIdToIsNewProductHash;
+var productIdIntoTwitterAltSearchWordModelsHash;
+
 const Ctype = Const.PRODUCT_TYPE_NAME_TO_ID_HASH;
 const Cbundle = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID;
 const PRODUCT_TYPE_ID_INTO_TEXT_HASH = {
@@ -63,7 +75,17 @@ const PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH = {
     },
 };
 
-var texts = targetProductTypeId ? PRODUCT_TYPE_ID_INTO_TEXT_HASH[targetProductTypeId] : PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH[productTypeBundleId];
+const DEFAULT_TEXT = {
+    titleTag: 'タイトルが指定されていません',
+    description: 'descriptionが指定されていません',
+};
+
+// slice for pagination
+var start = (targetPage - 1) * Const.PRODUCT_NUM_PER_PAGE;
+var end = start + Const.PRODUCT_NUM_PER_PAGE;
+var productDataListForThisPage = productDataList.slice(start, end);
+var rank1Buzz = productDataList[0].statDataModel ? productDataList[0].statDataModel.buzz : 0;
+var texts = PRODUCT_TYPE_ID_INTO_TEXT_HASH[targetProductTypeId] || PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH[productTypeBundleId] || DEFAULT_TEXT;
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
 var productTypeIds = Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
 var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, Const.EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS));
@@ -104,24 +126,19 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
 <%- include(appRoot + '/views/header.ejs') %>
 
 <div id="content" class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="text-align-left">
-                <span class="last-updated-at"><%= latestStatDateMoment.locale('ja').format("YYYY年MMMDo") %></span>
-                最終更新
-            </div>
-        </div>
-    </div>
 
-    <% if (targetDateMoment < latestStatDateMoment) { %>
+    <% if (lastUpdateMoment) { %>
         <div class="row">
             <div class="col-12">
-                ※
+                <div class="text-align-left">
+                    <span class="last-updated-at"><%= lastUpdateMoment.locale('ja').format("YYYY年MMMDo") %></span>
+                    最終更新
+                </div>
             </div>
         </div>
     <% } %>
 
-    <% if (productTypeBundleId != Cbundle.all && 2 <= productTypeIds.length) { %>
+    <% if (productTypeBundleId && productTypeBundleId != Cbundle.all && 2 <= productTypeIds.length) { %>
         <ul class="nav nav-tabs">
             <li class="nav-item tab-item"><a href="/ranking/<%= productTypeBundleName %>"
                                              class="nav-link <%= targetProductTypeId ? '' : 'active' %>">総合</a></li>
@@ -139,12 +156,14 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
     <% } %>
 
     <%
-    __.times(ranking.length, function(n) {
-        var data = ranking[n];
-        var rank = data.rank;
-        var productModelName = data.productModel._modelOptions.name.singular;
+    __.times(productDataListForThisPage.length, function(n) {
+        var productData = productDataListForThisPage[n];
+        var productId = productData.productModel.productId;
+        var rank = (start + 1) + n;
+        var productModelName = productData.productClassName;
         var productInfoTemplatePath = 'product_info/' + productModelName + '.ejs';
-        var progressBarPercentage = ((data.statDataModel.buzz / rank1Buzz) * 100) || 0;
+        var buzz = productData.statDataModel ? productData.statDataModel.buzz : 0;
+        var progressBarPercentage = ((buzz / rank1Buzz) * 100) || 0;
     %>
 
     <div class="row product-row-block">
@@ -152,22 +171,22 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
         <div class="col-md-12">
             <!--<div class="product-block shadow bg-white rounded"-->
             <div class="product-block product-block-border"
-                 data-product-id="<%= data.statDataModel.productId %>">
+                 data-product-id="<%= productId %>">
 
                 <span class="product-block-border-title relative">
-                    <% if (data.statDataModel.buzz) { %>
+                    <% if (buzz) { %>
                         <span class="d-flex align-items-end no-wrap">
-                            <% if (rank <= 3) { %>
+                            <% if (0 <= rank && rank <= 3) { %>
                                 <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
                             <% } %>
                             <%= rank %>位
-                            <!--<span class="buzz-count-text">(<%= data.statDataModel.buzz %>Buzz)</span>-->
+                            <!--<span class="buzz-count-text">(<%= buzz %>Buzz)</span>-->
                         </span>
                     <% } %>
                 </span>
 
                 <div class="product-detail-icon">
-                    <a href="/product/detail/<%= data.productModel.productId %>">
+                    <a href="/product/detail/<%= productId %>">
                         <i class="fas fa-file-contract"></i>
                     </a>
                 </div>
@@ -175,11 +194,11 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
                 <div class="row d-flex align-items-center product-block-header">
                     <div class="col-12 d-flex align-items-center justify-content-center">
                         <h2 class="product-title">
-                            <a href="/product/detail/<%= data.productModel.productId %>">
-                                <%= data.productModel.title %>
+                            <a href="/product/detail/<%= productId %>">
+                                <%= productData.productModel.title %>
                             </a>
 
-                            <% if (isAdmin && productIdToIsNewProductHash && productIdToIsNewProductHash[data.productModel.productId]) { %>
+                            <% if (isAdmin && productIdToIsNewProductHash && productIdToIsNewProductHash[productId]) { %>
                                 （！新商品！)
                             <% } %>
 
@@ -190,31 +209,56 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
                 <!--<i class="fas fa-fire progress-bar-buzz-icon"></i>-->
                 <div class="row">
                     <div class="col-12">
-                        <a href="/product/detail/<%= data.productModel.productId %>">
+                        <a href="/product/detail/<%= productId %>">
                             <div class="progress-bar-area">
                                 <div class="progress">
                                 <span class="progress-bar progress-bar-striped bg-danger" aria-valuenow="75"
                                       aria-valuemin="0"
                                       aria-valuemax="100" style="width: <%= progressBarPercentage %>%">
-                                    <%= data.statDataModel.buzz %> Buzz
+                                    <%= buzz %> Buzz
                                 </span>
                                 </div>
                             </div>
-                        </a>
+
                     </div>
                 </div>
 
-                <%- include(productInfoTemplatePath, { data: data, }) %>
+                <%- include(productInfoTemplatePath, { productData: productData, }) %>
 
-                <% if (isAdmin) { %>
+                <%
+                if (isAdmin) {
+                    var altSearchModels = productIdIntoTwitterAltSearchWordModelsHash ? productIdIntoTwitterAltSearchWordModelsHash[productId] : [];
+                %>
+                <br>
+                <p class="text-align-center">Admin用</p>
+                <% __.each(altSearchModels, altSearchModel => { %>
                     <div class="row">
-                        <div class="col-12">
-                            <p>Admin用ツール</p>
-                            <button type="button" class="btn btn-danger add-to-invalid-table">
-                                invalid_productテーブルに追加
+                        <div class="col-6">
+                            <%= altSearchModel.searchWord %>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-danger update-alt-search-word-validity-status"
+                                    data-search-word="<%= altSearchModel.searchWord %>" value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.invalid %>">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
                     </div>
+                <% }); %>
+
+                <div class="row">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-danger update-product-validity-status"
+                                value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.invalid %>">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-success update-product-validity-status"
+                                value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.protected %>">
+                            保護ステータスに更新
+                        </button>
+                    </div>
+                </div>
                 <% } %>
             </div>
 
@@ -222,16 +266,16 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
     </div>
 
     <% if ((n + 1) % 4 == 0) { %>
-        <%- include(appRoot + '/views/google_adsense/in_feed.ejs') %>
+            <%- include(appRoot + '/public/ad/adsense/in_feed.html') %>
     <% } %>
 
     <% }); %>
 
-    <% if (ranking.length % 4 != 0 && ranking.length < Const.PRODUCT_NUM_PER_PAGE) { %>
-        <%- include(appRoot + '/views/google_adsense/in_feed.ejs') %>
+    <% if (productDataListForThisPage.length % 4 != 0 && productDataListForThisPage.length < Const.PRODUCT_NUM_PER_PAGE) { %>
+        <%- include(appRoot + '/public/ad/adsense/in_feed.html') %>
     <% } %>
 
-    <% if (!ranking.length) { %>
+    <% if (!productDataListForThisPage.length) { %>
         <div class="row">
             <div class="col-12 text-align-center p-5">
                 該当カテゴリでランキング内の商品はありません
@@ -244,9 +288,9 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
             ※ Buzzが<%= Const.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT %>未満の商品・サービスはランキングには表示されません
         </div>
     <% } %>
-</div>
 
-<%- include('ranking_pagination.ejs') %>
+        <%- include('ranking_pagination.ejs', { pageMax: pageMax, }) %>
+</div>
 
 <%- include(appRoot + '/views/footer.ejs') %>
 

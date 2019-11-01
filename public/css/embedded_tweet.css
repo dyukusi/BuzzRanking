@@ -1,0 +1,38 @@
+.tweet-InformationCircle {
+    display: none;
+}
+
+.CallToAction {
+    display: none;
+}
+
+.FollowButton-bird {
+    display: none;
+}
+
+.EmbeddedTweet {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 3px;
+}
+
+.EmbeddedTweet-tweet {
+    padding: 3px !important;
+}
+
+.TweetInfo {
+    margin-top: 5px;
+}
+
+.Tweet-body {
+    margin-top: 0px;
+}
+
+.EmbeddedTweet-ancestor {
+    padding-top: 5px;
+}
+
+.Tweet-text {
+    /*font-size: 2rem;*/
+    font-family: Gadget, sans-serif;
+}

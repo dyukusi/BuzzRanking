@@ -1,42 +1,70 @@
 const express = require('express');
 const router = express.Router();
-const memoryCache = require('memory-cache');
+const cluster = require('cluster');
 const ReleaseControl = require(appRoot + '/models/release_control.js');
-const Util = require(appRoot + '/my_libs/util.js');
 const Moment = require('moment');
-const Poller = require(appRoot + '/my_libs/poller.js');
 const Const = require(appRoot + '/my_libs/const.js');
+const Stat = require(appRoot + '/models/stat.js');
+const StatData = require(appRoot + '/models/stat_data.js');
+const slaveManager = require(appRoot + '/my_libs/slave_manager.js');
+const cacheUtil = require(appRoot + '/my_libs/cache_util.js');
+const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 
 // admin settings
-const DISABLE_HTML_CACHE = false;
-const enableDisplayOnlyNewProducts = false;
+const ENABLE_HTML_CACHE = false;
 
-// this build latest Ranking object every 3 seconds if need
-var buildLatestRankingPoller = new Poller(3000);
-buildLatestRankingPoller.onPoll(async () => {
-  var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
-  var targetMoment = latestReleaseControlModel.getDateMoment();
+// for testing
+router.get('/testing', async function (req, res, next) {
+  var queryParam = req.query || {};
+  var isAdmin = Util.isAdminByReq(req);
+  var page = Number(queryParam['page']) || 1;
 
-  if (!Util.isCachedRanking(targetMoment)) {
-    console.log("building latest ranking object... " + targetMoment.format());
-    var ranking = await Util.buildRankingByDateMoment(targetMoment)
-    console.log("Ranking object was successfully built!!! :) " + targetMoment.format());
+  if (!isAdmin) {
+    return res.redirect('/auth');
   }
 
-  buildLatestRankingPoller.poll();
+  var productDataList = await cacheUtil.getCachedProductDataList(cacheUtil.getProductDataListForDebugCacheKey(), {
+    restoreProductModel: true,
+  });
+
+  var productIdIntoTwitterAltSearchWordModelsHash = __.groupBy(await TwitterAlternativeSearchWord.selectAllValid(), m => {
+    return m.productId;
+  });
+
+  var pageMax = Math.ceil(productDataList.length / Const.PRODUCT_NUM_PER_PAGE) || 1;
+
+  return res.render('ranking', {
+    isAdmin: isAdmin,
+    targetPage: page,
+    productDataList: productDataList,
+    lastUpdateMoment: null,
+    productTypeBundleId: null,
+    targetProductTypeId: null,
+    isDateSpecified: null,
+    originalURL: req.originalUrl,
+    pageMax: pageMax,
+
+    // for admin
+    productIdIntoTwitterAltSearchWordModelsHash: productIdIntoTwitterAltSearchWordModelsHash,
+  });
 });
-buildLatestRankingPoller.poll();
 
 router.get('/:product_type_bundle_name', async function (req, res, next) {
+  var isAdmin = Util.isAdminByReq(req);
   var queryParam = req.query || {};
   var page = Number(queryParam['page']) || 1;
-  var productTypeBundleName = req.params.product_type_bundle_name;
-  var productTypeId = Const.PRODUCT_TYPE_NAME_TO_ID_HASH[queryParam['type']] || null;
-  var productTypeBundleId = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID[productTypeBundleName];
-  var isAdmin = myUtil.isAdminByReq(req);
+  var targetProductTypeBundleName = req.params.product_type_bundle_name;
+  var targetProductTypeBundleId = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID[targetProductTypeBundleName];
+  var targetProductTypeId = Const.PRODUCT_TYPE_NAME_TO_ID_HASH[queryParam['type']] || null;
+  var targetProductTypeIds = targetProductTypeId ? [targetProductTypeId] : Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[targetProductTypeBundleId];
+  var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
+  var targetMoment = process.argv[2] ? new Moment(process.argv[2]) : latestReleaseControlModel.getDateMoment();
+  // var targetMoment = queryParam['date'] ? new Moment(queryParam['date']) : latestReleaseControlModel.getDateMoment();
+  var htmlCacheKey = 'html_ranking_' + (targetProductTypeId || 'bundle_' + targetProductTypeBundleId) + '_' + targetMoment.format("YYYY-MM-DD") + '_p' + page;
+  var htmlCache = await redis.get(htmlCacheKey);
 
-  if (!productTypeBundleId) {
-    return next(productTypeBundleName + ' is not defined');
+  if (!targetProductTypeBundleId) {
+    return next(targetProductTypeBundleName + ' is not defined');
   }
 
   // date function is only for admin
@@ -44,47 +72,31 @@ router.get('/:product_type_bundle_name', async function (req, res, next) {
     return res.redirect('/auth');
   }
 
-  var releaseControlModel = await ReleaseControl.selectLatestReleaseDate();
-  var targetMoment = queryParam['date'] ? new Moment(queryParam['date']) : releaseControlModel.getDateMoment();
-
-  await renderRankingPage(productTypeBundleId, productTypeId, targetMoment, page, req, res, next);
-});
-
-async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateMoment, page, req, res, next) {
-  var queryParam = req.query || {};
-  var productTypeIds = targetProductTypeId ? [targetProductTypeId] : Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
-  var targetRankingHTMLCacheKey = 'html_ranking_' + (targetProductTypeId || 'bundle_' + productTypeBundleId) + '_' + dateMoment.format() + '_p' + page;
-  var targetRankingHTMLCache = memoryCache.get(targetRankingHTMLCacheKey);
-  var isAdmin = myUtil.isAdminByReq(req);
-  var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
-  var latestReleaseDateMoment = latestReleaseControlModel.getDateMoment();
-
-  // accessing to unreleased page that only admin can see
-  if (latestReleaseDateMoment < dateMoment) {
-    if (!isAdmin) {
-      return res.redirect('/auth');
-    }
+  // html cache hit
+  if (htmlCache && ENABLE_HTML_CACHE && !isAdmin) {
+    return res.send(htmlCache);
   }
 
-  // cache hit
-  if (targetRankingHTMLCache && !isAdmin) {
-    return res.send(targetRankingHTMLCache);
-  }
+  console.log("html cache miss: " + htmlCacheKey);
 
-  console.log("cache miss: " + targetRankingHTMLCacheKey);
-  var [statModel, ranking] = await Util.buildRanking(productTypeIds, dateMoment);
+  var statModel = await Stat.selectByRankingDate(targetMoment);
+  var productDataListCacheKey = cacheUtil.generateProductDataListCacheKeyByStatId(statModel.id);
+  var allProductDataList = await cacheUtil.getCachedProductDataList(productDataListCacheKey);
 
-  // only display new products if Admin
-  if (isAdmin && enableDisplayOnlyNewProducts) {
-    var productIdToIsNewProductHash = await Util.getProductIdToIsNewProductHash(statModel.id);
-
-    ranking = __.filter(ranking, data => {
-      return productIdToIsNewProductHash[data.productModel.productId];
+  // product list object cache miss
+  if (!allProductDataList) {
+    console.log("product data list cache miss: " + productDataListCacheKey);
+    return next({
+      message: 'preparing product data list: ' + productDataListCacheKey,
+      dispMessage: Const.ERROR_MESSAGE.IN_PREPARING_RANKING,
     });
   }
 
-  var pageMax = Math.ceil(ranking.length / Const.PRODUCT_NUM_PER_PAGE) || 1;
+  var targetProductDataList = __.filter(allProductDataList, productData => {
+    return __.contains(targetProductTypeIds, productData.productModel.productTypeId);
+  });
 
+  var pageMax = Math.ceil(targetProductDataList.length / Const.PRODUCT_NUM_PER_PAGE) || 1;
   if (pageMax < page) {
     return next({
       message: 'Exceeded page limit. Page: ' + page + ' MaxPage: ' + pageMax,
@@ -92,37 +104,38 @@ async function renderRankingPage(productTypeBundleId, targetProductTypeId, dateM
     });
   }
 
-  // slice for pagination
-  var start = (page - 1) * Const.PRODUCT_NUM_PER_PAGE;
-  var end = start + Const.PRODUCT_NUM_PER_PAGE;
-  var slicedRankings = ranking.slice(start, end);
-
-  if (!isAdmin && !DISABLE_HTML_CACHE) {
+  // html cache
+  if (!isAdmin && ENABLE_HTML_CACHE) {
     res.sendResponse = res.send;
     res.send = (body) => {
-      memoryCache.put(targetRankingHTMLCacheKey, body, 60 * 60 * 24 * 1000);
+      redis.set(htmlCacheKey, body);
       res.sendResponse(body);
     };
   }
 
+  var productIdIntoTwitterAltSearchWordModelsHash;
+  if (isAdmin) {
+    productIdIntoTwitterAltSearchWordModelsHash = __.groupBy(await TwitterAlternativeSearchWord.selectAllValid(), m => {
+      return m.productId;
+    });
+  }
+
   return res.render('ranking', {
     isAdmin: isAdmin,
-    targetDateMoment: dateMoment,
-    targetPage: page,
     pageMax: pageMax,
-    latestStatDateMoment: latestReleaseDateMoment,
-    ranking: slicedRankings,
-    statModel: statModel,
-    productTypeBundleId: productTypeBundleId,
+    targetDateMoment: targetMoment,
+    targetPage: page,
+    productDataList: targetProductDataList,
+    lastUpdateMoment: latestReleaseControlModel.getDateMoment(),
+    productTypeBundleId: targetProductTypeBundleId,
     targetProductTypeId: targetProductTypeId,
     isDateSpecified: !!queryParam['date'],
-    rank1Buzz: ranking[0] ? ranking[0].statDataModel.buzz : 0,
-
     originalURL: req.originalUrl,
 
     // for admin
-    productIdToIsNewProductHash: productIdToIsNewProductHash,
+    productIdIntoTwitterAltSearchWordModelsHash: productIdIntoTwitterAltSearchWordModelsHash,
   });
-}
+
+});
 
 module.exports = router;

@@ -89,7 +89,9 @@ async function createTaskQueue() {
   let invalidProductModelHash = _.indexBy(results[2], invalidProductModel => {
     return invalidProductModel.productId;
   });
-  let productModels = await Util.selectProductModelsByProductIds(targetSortedProductIds);
+  let productModels = await Util.selectProductModels({
+    productId: targetSortedProductIds,
+  });
   let productIdToModel = _.indexBy(productModels, m => { return m.productId; });
   let sortedProductModels = _.chain(targetSortedProductIds)
     .map(productId => {

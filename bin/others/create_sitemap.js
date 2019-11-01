@@ -3,7 +3,6 @@ const fs = require('fs');
 var ejs = require('ejs');
 var SiteMapBase = fs.readFileSync(appRoot + '/views/sitemap_base.ejs', 'utf8');
 var _ = require('underscore');
-const InvalidProduct = require(appRoot + '/models/invalid_product.js');
 const CONST = require(appRoot + '/my_libs/const.js');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
@@ -22,13 +21,6 @@ main()
 
 
 async function main() {
-  // for judge is invalid
-  var invalidProductModels = await InvalidProduct.findAll({});
-  var productIdToIsInvalidHash = {};
-  _.each(invalidProductModels, m => {
-    productIdToIsInvalidHash[m.productId] = true;
-  });
-
   // for judge is popular
   var rankInProductIdRows = (await sequelize.query(
     "SELECT product_id, count(*) FROM stat_data GROUP BY product_id;",
@@ -40,13 +32,13 @@ async function main() {
 
   // fetch all product ids
   var productIds = [];
-  for (var i = 0; i < CONST.PRODUCT_TABLE_NAMES.length; i++) {
-    var tableName = CONST.PRODUCT_TABLE_NAMES[i];
+  for (var i = 0; i < CONST.PRODUCT_MODELS.length; i++) {
+    var modelClass = CONST.PRODUCT_MODELS[i];
 
     let productIdRows = (await sequelize.query(
       sprintf(
         "SELECT product_id FROM %s;",
-        tableName,
+        modelClass,
       )
     ))[0];
 

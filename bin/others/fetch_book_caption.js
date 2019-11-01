@@ -48,7 +48,9 @@ async.waterfall([
           return m.productId;
         });
 
-        Util.selectProductModelsByProductIds(productIds)
+        Util.selectProductModels({
+          productId: productIds,
+        })
           .then(productModels => {
             var bookModels = _.chain(productModels)
               .filter(m => {

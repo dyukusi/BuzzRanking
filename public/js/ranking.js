@@ -1,13 +1,12 @@
 $ = jQuery = require('jquery');
 const _ = require('underscore');
 const sprintf = require('sprintf-js').sprintf;
-// const Liminous = require('luminous-lightbox').Luminous;
-const request = require('request');
 const MyUtil = require('./util.js')
 const Accordion = require('accordion').Accordion;
 const Lazysizes = require('lazysizes');
 const isMobileDevice = 'ontouchstart' in window;
 const isAdmin = !!$('#is-admin-dummy-div')[0];
+
 
 var isFirstTwitterWigetsLoad = true;
 
@@ -48,27 +47,56 @@ function initReadCaptionButton() {
 }
 
 function initAdminFunctions() {
-  $('.add-to-invalid-table').on('click', function () {
+  $('.update-product-validity-status').on('click', function () {
     var button = $(this);
     var productId = Number(button.parents('.product-block').data('productId'));
+    var status = Number(button.val());
 
     // disable button
     button.attr('disabled', true);
     button.html('処理中...');
 
-    // API for adding to disable_product table
-    request({
-      url: MyUtil.getLocationOrigin() + '/admin/add_product_into_invalid_product_table',
+    $.ajax({
+      url: MyUtil.getLocationOrigin() + '/admin/update_product_validity_status',
       method: 'POST',
-      headers: {'Content-Type': 'application/json',},
-      qs: {
+      data: {
         productId: productId,
+        status: status,
       },
-    }, function (error, response, body) {
-      var responseJSON = JSON.parse(response.body);
-      button.html(responseJSON.result ? 'invalid_productテーブルに追加されました' : '失敗しました');
+    }).done(function (data) {
+      button.html(data.result ? 'validityStatusを' + status + 'に更新しました' : '失敗しました');
+    }).fail(function (e) {
+      button.html('失敗しました: ' + e);
     });
+
   });
+
+  $('.update-alt-search-word-validity-status').on('click', function () {
+    var button = $(this);
+    var productId = Number(button.parents('.product-block').data('productId'));
+    var searchWord = button.data('search-word');
+    var status = Number(button.val());
+
+    // disable button
+    button.attr('disabled', true);
+    button.html('処理中...');
+
+    $.ajax({
+      url: MyUtil.getLocationOrigin() + '/admin/update_alt_search_word_validity_status',
+      method: 'POST',
+      data: {
+        productId: productId,
+        searchWord: searchWord,
+        status: status,
+      },
+    }).done(function (data) {
+      button.html(data.result ? 'validityStatusを' + status + 'に更新しました' : '失敗しました');
+    }).fail(function (e) {
+      button.html('失敗しました: ' + e);
+    });
+
+  });
+
 
   $('.remove-tweet-button').on('click', function () {
     var button = $(this);
@@ -78,17 +106,16 @@ function initAdminFunctions() {
     button.attr('disabled', true);
     button.html('処理中...');
 
-    // API for adding to disable_product table
-    request({
+    $.ajax({
       url: MyUtil.getLocationOrigin() + '/admin/enable_is_invalid_tweet_flag',
       method: 'POST',
-      headers: {'Content-Type': 'application/json',},
-      qs: {
+      data: {
         tweetId: tweetId,
       },
-    }, function (error, response, body) {
-      var responseJSON = JSON.parse(response.body);
-      button.html(responseJSON.result ? 'invalid_tweetフラグが有効になりました' : '失敗しました');
+    }).done(function (data) {
+      button.html(data.result ? 'invalid_tweetフラグが有効になりました' : '失敗しました');
+    }).fail(function (e) {
+      button.html('失敗しました: ' + e);
     });
   });
 }
@@ -257,37 +284,11 @@ function initEmbeddedTweets() {
 
     twttr.events.bind('rendered', function (event) {
       var tgt = event.target;
-      $(tgt.shadowRoot).find(".EmbeddedTweet").css({
-        // "border":"30px solid black",
-        // "border-radius":"7px",
-        "width": "100%",
-        "max-width": "100%",
+      var embeddedTweetStyle = $('<link>').attr({
+        'rel': 'stylesheet',
+        'href': location.origin + '/css/embedded_tweet.css',
       });
-
-      $(tgt.shadowRoot).find(".EmbeddedTweet-tweet").css({
-        "padding": "5px",
-        "border-top-width": "1px",
-        "border-bottom-width": "1px",
-        // "border-bottom": "solid",
-        "border-radius": "1px",
-      });
-
-      $(tgt.shadowRoot).find(".CallToAction").css({
-        "padding": "5px",
-      });
-
-      $(tgt.shadowRoot).find(".Tweet-body").css({
-        "margin-top": "0px",
-      });
-
-      $(tgt.shadowRoot).find(".CallToAction").css({
-        "display": "none",
-      });
-
-      $(tgt.shadowRoot).find(".Icon--twitter").css({
-        "display": "none",
-      });
-
+      $(tgt.shadowRoot).append(embeddedTweetStyle);
     });
   });
 }
