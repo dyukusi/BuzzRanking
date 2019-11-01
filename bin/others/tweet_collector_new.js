@@ -1,15 +1,15 @@
-const appRoot = require('app-root-path');
-const _ = require('underscore');
-const Util = require(appRoot + '/my_libs/util.js');
-const QueryString = require('query-string');
-const sprintf = require('sprintf-js').sprintf;
-const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
-const CONST = require(appRoot + '/my_libs/const.js');
-const Sequelize = require('sequelize');
-const Op = Sequelize.Op;
-const sequelize = require(appRoot + '/db/sequelize_config');
-const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
-const Moment = require('moment');
+global.appRoot = require('app-root-path');
+global._ = require('underscore');
+global.Util = require(appRoot + '/my_libs/util.js');
+global.QueryString = require('query-string');
+global.sprintf = require('sprintf-js').sprintf;
+global.BatchUtil = require(appRoot + '/my_libs/batch_util.js');
+global.CONST = Const = require(appRoot + '/my_libs/const.js');
+global.Sequelize = require('sequelize');
+global.Op = Sequelize.Op;
+global.sequelize = require(appRoot + '/db/sequelize_config');
+global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+global.Moment = require('moment');
 
 const NewTweet = require(appRoot + '/models/new_tweet'); // TEMP
 const TweetCountLog = require(appRoot + '/models/tweet_count_log');
@@ -19,7 +19,7 @@ const TweetSource = require(appRoot + '/models/tweet_source');
 const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 12;
 const WAITING_TIME_MSEC_PER_USING_TWITTER_API = 6500; // 6.5sec
 const ABNORMAL_THRESHOLD_ORIGINAL_TWEET_COUNT = 8000;
-const SEARCH_TARGET_NUM_PER_EXECUTION = 1;
+const SEARCH_TARGET_NUM_PER_EXECUTION = 5;
 const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
 ];
@@ -63,6 +63,8 @@ main()
 
 // ---------------------------------------------------------------------------
 async function main() {
+  await sleep(1000);
+
   taskQueue = await createTaskQueue();
   var productIds = _.map(taskQueue, task => {
     return task.product_id;
@@ -195,6 +197,8 @@ async function getSearchBaseData() {
     latestTweetCountLogRowsPromise,
     newProductIdsPromises,
   ]));
+  latestTweetCountLogRows = latestTweetCountLogRows[0];
+  newProductIdsResults = newProductIdsResults[0];
 
   let productIdIntoTweetCountLogRowHash = _.indexBy(latestTweetCountLogRows, row => {
     return row.product_id;
