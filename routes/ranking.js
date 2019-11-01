@@ -11,7 +11,7 @@ const cacheUtil = require(appRoot + '/my_libs/cache_util.js');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 
 // admin settings
-const ENABLE_HTML_CACHE = false;
+const ENABLE_HTML_CACHE = true;
 
 // for testing
 router.get('/testing', async function (req, res, next) {

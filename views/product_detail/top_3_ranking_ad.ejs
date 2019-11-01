@@ -31,7 +31,7 @@ var productImgTemplatePath = appRoot + '/views/top_3_ranking_ad/' + productModel
     <div class="row top-3-ranking-row">
         <% __.each(top3ProductDataList, data => { %>
             <div class="col-4 text-align-center">
-                (<%= data.statData.buzz %>Buzz)
+                (<%= data.statDataModel.buzz %>Buzz)
             </div>
         <% }); %>
     </div>

@@ -43,7 +43,6 @@ async function getCachedProductDataList(cacheKey) {
   var productDataList;
 
   if (productDataList = memoryCache.get(cacheKey)) {
-    console.log("cache from memory");
     return productDataList;
   }
 
@@ -61,7 +60,6 @@ async function getCachedProductDataList(cacheKey) {
 
   memoryCache.put(cacheKey, productDataList);
 
-  console.log("cache from redis");
   return productDataList;
 }
 

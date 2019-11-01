@@ -93,6 +93,10 @@ app.use(function (err, req, res, next) {
   console.log("Request URL: " + req.url);
   console.error(err);
 
+  if (res.sendResponse) {
+    res.send = res.sendResponse;
+  }
+
   // render the error page
   res.status(status);
   res.render('error', {
