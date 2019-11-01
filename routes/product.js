@@ -7,6 +7,8 @@ const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternat
 const Moment = require('moment');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const cacheUtil = require(appRoot + '/my_libs/cache_util.js');
+const ReleaseControl = require(appRoot + '/models/release_control.js');
+const Stat = require(appRoot + '/models/stat.js');
 
 const PRODUCT_NUM_PER_PAGE_IN_LISTING_PAGE = 100;
 
@@ -38,9 +40,10 @@ router.get('/detail/:product_id', async function (req, res, next) {
     return new Moment(m.createdAt).unix();
   });
 
-  var latestProductDataListCacheKey = await cacheUtil.generateLatestProductDataListCacheKey();
-  var productDataList = await cacheUtil.getCachedProductDataList(latestProductDataListCacheKey);
-  var top3ProductDataList = __.first(productDataList, 3);
+  var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
+  var statModel = await Stat.selectByRankingDate(latestReleaseControlModel.getDateMoment());
+  var top3ProductDataListCacheKey = cacheUtil.generateTop3RankProductDataListCacheKey(statModel.id, targetProductModel.productTypeId);
+  var top3ProductDataList = await cacheUtil.getCachedProductDataList(top3ProductDataListCacheKey);
 
   // html cache
   res.sendResponse = res.send;

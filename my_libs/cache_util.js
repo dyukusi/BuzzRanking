@@ -26,8 +26,8 @@ async function generateLatestProductDataListCacheKey() {
   return generateProductDataListCacheKeyByStatId(statModel.id);
 }
 
-function generateTop3RankProductDataListCacheKeyByProductTypeId(productTypeId) {
-  return 'top_3_product_data_list_per_product_type_id_' + productTypeId;
+function generateTop3RankProductDataListCacheKey(statId, productTypeId) {
+  return 'top_3_product_data_list_per_product_type_id_' + statId + "_" + productTypeId;
 }
 
 function generateTweetDataListForProductDetailPageCacheKey(productId) {
@@ -64,12 +64,13 @@ async function getCachedProductDataList(cacheKey) {
 }
 
 module.exports = {
-  getCachedProductDataList: getCachedProductDataList,
   createRedisInstance: createRedisInstance,
+  getCachedProductDataList: getCachedProductDataList,
+
   generateProductDataListCacheKeyByStatId: generateProductDataListCacheKeyByStatId,
-  generateTop3RankProductDataListCacheKeyByProductTypeId: generateTop3RankProductDataListCacheKeyByProductTypeId,
-  getProductDataListForDebugCacheKey: getProductDataListForDebugCacheKey,
+  generateTop3RankProductDataListCacheKey: generateTop3RankProductDataListCacheKey,
   generateLatestProductDataListCacheKey: generateLatestProductDataListCacheKey,
   generateTweetDataListForProductDetailPageCacheKey: generateTweetDataListForProductDetailPageCacheKey,
   generateProductDetailHTMLCacheKey: generateProductDetailHTMLCacheKey,
+  getProductDataListForDebugCacheKey: getProductDataListForDebugCacheKey,
 }

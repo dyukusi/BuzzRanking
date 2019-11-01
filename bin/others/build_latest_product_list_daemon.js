@@ -57,6 +57,16 @@ buildLatestRankingPoller.onPoll(async () => {
 
   redis.set(cacheKey, JSON.stringify(productDataList));
 
+  // create top3 productDataList per product type id
+  var productTypeIdIntoProductDataList = _.groupBy(productDataList, productData => {
+    return productData.productModel.productTypeId;
+  });
+  _.each(productTypeIdIntoProductDataList, (productDataList, productTypeId) => {
+    var key = cacheUtil.generateTop3RankProductDataListCacheKey(statModel.id, productTypeId);
+    var top3ProductDataList = _.first(productDataList, 3);
+    redis.set(key, JSON.stringify(top3ProductDataList));
+  });
+
   console.log("Ranking object have been successfully built and cached!!! cache key: " + cacheKey);
 
   buildLatestRankingPoller.poll();

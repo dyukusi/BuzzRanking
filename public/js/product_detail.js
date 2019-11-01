@@ -82,7 +82,6 @@ async function initTweetList() {
     },
   });
 
-  allTweetDataList = _.first(allTweetDataList, 20);
   var tweetDataListChunks = _.chunk(allTweetDataList, 5);
   var relatedTweetDivElement = $('.related-tweet');
 
