@@ -4,6 +4,7 @@ const router = express.Router();
 const NewTweet = require(appRoot + '/models/new_tweet');
 const Moment = require('moment');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
+const TweetCountLog = require(appRoot + '/models/tweet_count_log');
 
 function isAdmin(req, res, next) {
   var email = req.user ? req.user.email : null;
@@ -31,6 +32,34 @@ router.get('/', isAdmin, async function (req, res, next) {
     cacheKeyIntoByteSizeHash: cacheKeyIntoByteSizeHash,
   });
 });
+
+router.post('/delete_tweet_and_tweet_count_log', isAdmin, async function (req, res, next) {
+  var q = req.body;
+  var productId = Number(q.productId);
+
+  if (!productId) {
+    return res.send({
+      result: false,
+    });
+  }
+
+  await NewTweet.destroy({
+    where: {
+      productId: productId,
+    }
+  });
+
+  await TweetCountLog.destroy({
+    where: {
+      productId: productId,
+    }
+  });
+
+  return res.send({
+    result: true,
+  });
+});
+
 
 router.post('/update_product_validity_status', isAdmin, async function (req, res, next) {
   var q = req.body;

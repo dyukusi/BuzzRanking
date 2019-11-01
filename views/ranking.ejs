@@ -246,13 +246,19 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
                 <% }); %>
 
                 <div class="row">
-                    <div class="col-6">
+                    <div class="col-4">
                         <button type="button" class="btn btn-danger update-product-validity-status"
                                 value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.invalid %>">
-                            <i class="fas fa-trash-alt"></i>
+                            ブロック<i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
-                    <div class="col-6">
+                    <div class="col-4">
+                        <button type="button" class="btn btn-warning delete-tweet-and-tweet-count-log"
+                                value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.invalid %>">
+                            この商品に関連する全てのツイートとTweetCountLogを削除
+                        </button>
+                    </div>
+                    <div class="col-4">
                         <button type="button" class="btn btn-success update-product-validity-status"
                                 value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.protected %>">
                             保護ステータスに更新

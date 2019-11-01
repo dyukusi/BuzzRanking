@@ -11,6 +11,7 @@ global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 global.Moment = require('moment');
 
 const argDateStr = process.argv[2];
+var isForceBuild = !!Number(process.argv[3]);
 var redis = cacheUtil.createRedisInstance();
 
 var buildLatestRankingPoller = new Poller(3000);
@@ -21,9 +22,10 @@ buildLatestRankingPoller.onPoll(async () => {
   var cacheKey = cacheUtil.generateProductDataListCacheKeyByStatId(statModel.id);
   var productDataListCache = await redis.get(cacheKey);
 
-  if (productDataListCache) {
+  if (productDataListCache && !isForceBuild) {
     return buildLatestRankingPoller.poll();
   }
+  isForceBuild = false;
 
   console.log("building latest ranking object... statId: " + statModel.id + " date: " + statModel.rankingDate);
   var statDataModels = await StatData.selectByStatId(statModel.id);
