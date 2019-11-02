@@ -19,7 +19,7 @@ const TweetSource = require(appRoot + '/models/tweet_source');
 const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 12;
 const WAITING_TIME_MSEC_PER_USING_TWITTER_API = 6500; // 6.5sec
 const ABNORMAL_THRESHOLD_ORIGINAL_TWEET_COUNT = 8000;
-const SEARCH_TARGET_NUM_PER_EXECUTION = 5;
+const SEARCH_TARGET_NUM_PER_EXECUTION = 10;
 const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
 ];
@@ -187,18 +187,16 @@ function calcPriority(row) {
 
 async function getSearchBaseData() {
   // 全プロダクトの最新のTweetCountLogをセレクトするクエリ
-  let latestTweetCountLogRowsPromise = sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date');
+  let latestTweetCountLogRows = (await sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date'))[0];
 
   let newProductIdsPromises = _.map(CONST.PRODUCT_MODELS, modelClass => {
     return sequelize.query('SELECT product_id FROM ' + modelClass.name + ' WHERE product_id NOT IN (SELECT product_id FROM tweet_count_log)');
   });
+  let results = await Promise.all(newProductIdsPromises);
 
-  let [latestTweetCountLogRows, newProductIdsResults] = await Promise.all(_.flatten([
-    latestTweetCountLogRowsPromise,
-    newProductIdsPromises,
-  ]));
-  latestTweetCountLogRows = latestTweetCountLogRows[0];
-  newProductIdsResults = newProductIdsResults[0];
+  let newProductIdsRows = _.flatten(_.map(results, result => {
+    return result[0];
+  }));
 
   let productIdIntoTweetCountLogRowHash = _.indexBy(latestTweetCountLogRows, row => {
     return row.product_id;
@@ -217,12 +215,10 @@ async function getSearchBaseData() {
     // .reverse()
     .value();
 
-  let newProductIds = _.flatten(_.map(newProductIdsResults, result => {
-    return _.map(result[0], row => {
+  let newProductIds = _.map(newProductIdsRows, row => {
       productIdToPriorityHash[row.product_id] = -1;
       return row.product_id;
-    });
-  }));
+  });
 
   var sortedProductIds = _.flatten([productIdsSortedByPriority, newProductIds]);
 
@@ -267,7 +263,7 @@ function createTask(productTypeId, productId, searchWord, since) {
 }
 
 async function collectTweets(task) {
-  console.log('■ Processing... ' + task.api_param.q);
+  console.log('■ Processing... ' + task.api_param.q + " ProductId: " + task.product_id);
 
   let param = task.api_param;
   let tweetJson = await BatchUtil.searchTweets(param);
