@@ -17,12 +17,47 @@ var twitterAltSearchWordsStr = __.chain(twitterAltSearchModels)
         .value()
         .join(', ') || productModel.title;
 
-var TITLE_TAG_DEFAULT = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] + ' ' + productModel.title + 'のネットの評価、レビュー、反応【BuzzRanking】';
+var TITLE_DEFAULT = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] + ' ' + productModel.title + 'のネットの評価、レビュー、反応【BuzzRanking】';
+var DESC_PRODUCT_DEFAULT = productModel.title + 'は本当に買いなのか？SNSから分かるリアルな評判をまとめてみました。' + productModel.title + 'が気になっている方、ご購入を考えている方は必見です！';
+
 var PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH = {
-    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH.comic]: '漫画 ' + productModel.title + ' のネットの評価、レビュー、反応【BuzzRanking】',
+    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['comic']]: {
+        title: '漫画 ' + productModel.title + 'を読むべき理由まとめ ネットの注目度、評判は？',
+        description: DESC_PRODUCT_DEFAULT,
+    },
+    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['novel']]: {
+        title: '小説 ' + productModel.title + 'を読むべき理由まとめ ネットの注目度、評判は？',
+        description: DESC_PRODUCT_DEFAULT,
+    },
+    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['it']]: {
+        title: '技術書 ' + productModel.title + 'を読むべき理由まとめ ネットの注目度、評判は？',
+        description: DESC_PRODUCT_DEFAULT,
+    },
+    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['console_game']]: {
+        title: productModel.title + 'をプレイすべき理由まとめ ネットの注目度、評判は？',
+        description: DESC_PRODUCT_DEFAULT,
+    },
+    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['portable_game']]: {
+        title: productModel.title + 'をプレイすべき理由まとめ ネットの注目度、評判は？',
+        description: DESC_PRODUCT_DEFAULT,
+    },
+    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['dating_service']]: {
+        title: productModel.title + 'が本当に出会える理由まとめ ネットの注目度、評判は？',
+        description: productModel.title + 'って本当に出会えるの？SNSから分かるリアルな評判をまとめてみました。' + productModel.title + 'が気になっている方、利用を考えている方は必見です！',
+    },
+    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['inn_reservation']]: {
+        title: 'ホテル・宿泊予約ならここ！' + productModel.title + 'で予約するべき理由まとめ ネットの注目度、評判は？',
+        description: productModel.title + 'で予約しておけば安心？SNSから分かるリアルな評判をまとめてみました。' + productModel.title + 'が気になっている方、利用を考えている方は必見です！',
+    },
+    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['anime']]: {
+        title: productModel.title + 'を観るべき理由まとめ ネットの注目度、評判は？',
+        description: productModel.title + 'は絶対に観ておくべき！？SNSから分かるリアルな評判をまとめてみました。' + productModel.title + 'が気になっている方は必見です！',
+    },
 };
 
-var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] || TITLE_TAG_DEFAULT;
+var target = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId];
+var title = target.title || TITLE_DEFAULT;
+var description = target.description || DESC_PRODUCT_DEFAULT;
 %>
 
 <!DOCTYPE html>
@@ -36,12 +71,11 @@ var titleTagStr = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId] 
 <html>
 <head>
     <title>
-        <%= titleTagStr %>
+        <%= title %>
     </title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
-
-    <meta name="description" content="<%= productModel.title %>のネットの反応や話題度推移を紹介！【BuzzRanking】">
+    <meta name="description" content="<%= description %>">
 </head>
 <body>
 
