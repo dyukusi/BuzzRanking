@@ -4,21 +4,16 @@ const Book = require(appRoot + '/models/book');
 const Game = require(appRoot + '/models/game');
 const WebService = require(appRoot + '/models/web_service');
 const Anime = require(appRoot + '/models/anime');
+const Movie = require(appRoot + '/models/movie');
 
 const CONST = {
   PRODUCT_MODELS: [
     Book,
     Game,
     WebService,
-    Anime
+    Anime,
+    Movie,
   ],
-
-  // PRODUCT_TABLE_NAMES: [
-  //   'book',
-  //   'game',
-  //   'web_service',
-  //   'anime',
-  // ],
 
   PRODUCT_TYPE_NAME_TO_ID_HASH: {
     'comic': 1,
@@ -29,6 +24,7 @@ const CONST = {
     'inn_reservation': 6,
     'portable_game': 7,
     'anime': 8,
+    'movie': 9,
   },
 
   PRODUCT_TYPE_BUNDLE_NAME_TO_ID: {
@@ -38,6 +34,7 @@ const CONST = {
     'dating': 3,
     'inn': 4,
     'anime': 5,
+    'movie': 6,
   },
 
   ERROR_MESSAGE: {
@@ -93,6 +90,9 @@ const REFERENCE_CONST = {
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['anime']]: [
       CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['anime']
     ],
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['movie']]: [
+      CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['movie']
+    ],
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['all']]: _.values(CONST.PRODUCT_TYPE_NAME_TO_ID_HASH),
   },
 
@@ -103,6 +103,7 @@ const REFERENCE_CONST = {
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['dating']]: '出会い',
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['inn']]: '宿泊・旅行予約',
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['anime']]: 'アニメ',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['movie']]: '映画',
   },
 
   PRODUCT_TYPE_ID_TO_JA_NAME_HASH: {
@@ -114,6 +115,7 @@ const REFERENCE_CONST = {
     [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['inn_reservation']]: '宿泊・旅行予約サービス',
     [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['portable_game']]: '携帯ゲーム',
     [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['anime']]: 'アニメ',
+    [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['movie']]: '映画',
   },
 
   PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS: {
@@ -123,6 +125,7 @@ const REFERENCE_CONST = {
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['dating']]: 'fas fa-heart',
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['inn']]: 'fas fa-hotel',
     [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['anime']]: 'fab fa-earlybirds',
+    [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['movie']]: 'fas fa-film',
   },
 
   EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS: [

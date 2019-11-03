@@ -19,11 +19,10 @@ function checkIsEnglishOnlyString(text) {
 }
 
 function checkSearchWordValidity(word) {
-  var isEnglishStr = checkIsEnglishOnlyString(word);
-  if (!isEnglishStr) return true;
-  if (5 <= word.length) return true;
+  if (checkIsEnglishOnlyString(word)) return false;
+  if (word.length < 4) return false;
 
-  return false;
+  return true;
 };
 
 function isValidByStatus(s) {

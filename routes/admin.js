@@ -101,7 +101,6 @@ router.post('/update_alt_search_word_validity_status', isAdmin, async function (
   });
 });
 
-
 router.post('/enable_is_invalid_tweet_flag', isAdmin, async function (req, res, next) {
   var q = req.body;
   var updatedTweetModel = await NewTweet.updateIsInvalid(q.tweetId, true);

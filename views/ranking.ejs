@@ -46,6 +46,10 @@ const PRODUCT_TYPE_ID_INTO_TEXT_HASH = {
         titleTag: '今ネットで話題のアニメランキング 【BuzzRanking】',
         description: '今ネットで話題になっているアニメをバズっている順に紹介！【毎日更新】',
     },
+    [Ctype.movie]: {
+        titleTag: '今ネットで話題の映画ランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている映画をバズっている順に紹介！【毎日更新】',
+    },
 };
 
 const PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH = {
@@ -73,6 +77,10 @@ const PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH = {
         titleTag: '今ネットで話題のアニメランキング 【BuzzRanking】',
         description: '今ネットで話題になっているアニメをバズっている順に紹介！【毎日更新】',
     },
+    [Cbundle.movie]: {
+        titleTag: '今ネットで話題の映画ランキング 【BuzzRanking】',
+        description: '今ネットで話題になっている映画をバズっている順に紹介！【毎日更新】',
+    },
 };
 
 const DEFAULT_TEXT = {
@@ -84,7 +92,7 @@ const DEFAULT_TEXT = {
 var start = (targetPage - 1) * Const.PRODUCT_NUM_PER_PAGE;
 var end = start + Const.PRODUCT_NUM_PER_PAGE;
 var productDataListForThisPage = productDataList.slice(start, end);
-var rank1Buzz = productDataList[0].statDataModel ? productDataList[0].statDataModel.buzz : 0;
+var rank1Buzz = productDataList[0] && productDataList[0].statDataModel ? productDataList[0].statDataModel.buzz : 0;
 var texts = PRODUCT_TYPE_ID_INTO_TEXT_HASH[targetProductTypeId] || PRODUCT_TYPE_BUNDLE_ID_INTO_TEXT_HASH[productTypeBundleId] || DEFAULT_TEXT;
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
 var productTypeIds = Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
@@ -238,7 +246,8 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
                         </div>
                         <div class="col-6">
                             <button type="button" class="btn btn-danger update-alt-search-word-validity-status"
-                                    data-search-word="<%= altSearchModel.searchWord %>" value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.invalid %>">
+                                    data-search-word="<%= altSearchModel.searchWord %>"
+                                    value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.invalid %>">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
@@ -272,7 +281,7 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
     </div>
 
     <% if ((n + 1) % 4 == 0) { %>
-            <%- include(appRoot + '/public/ad/adsense/in_feed.html') %>
+        <%- include(appRoot + '/public/ad/adsense/in_feed.html') %>
     <% } %>
 
     <% }); %>
@@ -295,7 +304,7 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
         </div>
     <% } %>
 
-        <%- include('ranking_pagination.ejs', { pageMax: pageMax, }) %>
+    <%- include('ranking_pagination.ejs', { pageMax: pageMax, }) %>
 </div>
 
 <%- include(appRoot + '/views/footer.ejs') %>
