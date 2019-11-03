@@ -7,6 +7,8 @@ const CONST = require(appRoot + '/my_libs/const.js');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const sprintf = require('sprintf-js').sprintf;
+
+// NOTE: GOOGLE IS NO LONGER CONSIDERS PRIORITY VALUE
 const PRIORITY_OF = {
   POPULAR: 0.8,
   NORMAL: 0.3,
@@ -25,45 +27,36 @@ async function main() {
   var rankInProductIdRows = (await sequelize.query(
     "SELECT product_id, count(*) FROM stat_data GROUP BY product_id;",
   ))[0];
-  var productIdToIsPopularHash = {};
-  _.each(rankInProductIdRows, rankInProductIdRow => {
-    productIdToIsPopularHash[rankInProductIdRow.product_id] = true;
-  });
+
+  // var productIdToIsPopularHash = {};
+  // _.each(rankInProductIdRows, rankInProductIdRow => {
+  //   productIdToIsPopularHash[rankInProductIdRow.product_id] = true;
+  // });
 
   // fetch all product ids
-  var productIds = [];
-  for (var i = 0; i < CONST.PRODUCT_MODELS.length; i++) {
-    var modelClass = CONST.PRODUCT_MODELS[i];
-
-    let productIdRows = (await sequelize.query(
-      sprintf(
-        "SELECT product_id FROM %s;",
-        modelClass,
-      )
-    ))[0];
-
-    let newProductIds = _.map(productIdRows, productIdRow => {
-      return productIdRow.product_id;
-    });
-
-    productIds = _.compact(_.flatten([productIds, newProductIds]));
-  }
+  // var productIds = [];
+  // for (var i = 0; i < CONST.PRODUCT_MODELS.length; i++) {
+  //   var modelClass = CONST.PRODUCT_MODELS[i];
+  //
+  //   let productIdRows = (await sequelize.query(
+  //     sprintf(
+  //       "SELECT product_id FROM %s;",
+  //       modelClass,
+  //     )
+  //   ))[0];
+  //
+  //   let newProductIds = _.map(productIdRows, productIdRow => {
+  //     return productIdRow.product_id;
+  //   });
+  //
+  //   productIds = _.compact(_.flatten([productIds, newProductIds]));
+  // }
 
   // set priority
-  var productDataset = _.map(productIds, productId => {
-    var priority = PRIORITY_OF.NORMAL;
-
-    if (productIdToIsPopularHash[productId]) {
-      priority = PRIORITY_OF.POPULAR;
-    }
-
-    if (productIdToIsInvalidHash[productId]) {
-      priority = PRIORITY_OF.INVALID;
-    }
-
+  var productDataset = _.map(rankInProductIdRows, rankInProductIdRow => {
     return {
-      productId: productId,
-      priority: priority,
+      productId: rankInProductIdRow.product_id,
+      priority: PRIORITY_OF.POPULAR,
     };
   });
 
