@@ -24,15 +24,9 @@ const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
 ];
 
-let TWITTER_SEARCH_OPTION_BY_PRODUCT_TYPE_ID = {
-  1: 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+let DEFAULT_TWITTER_SEARCH_OPTION_BASE = 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App';
+let TWITTER_SEARCH_OPTION_BASE_BY_PRODUCT_TYPE_ID = {
   2: 'OR @kslghahfs -filter:links source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
-  3: 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
-  4: 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
-  5: 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
-  6: 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
-  7: 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
-  8: 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
 };
 
 let tempOriginalTweetCountHash = {};
@@ -247,7 +241,7 @@ function createTask(productTypeId, productId, searchWord, since) {
       q: sprintf(
         searchQueryBase,
         searchWord,
-        TWITTER_SEARCH_OPTION_BY_PRODUCT_TYPE_ID[productTypeId],
+        TWITTER_SEARCH_OPTION_BASE_BY_PRODUCT_TYPE_ID[productTypeId] || DEFAULT_TWITTER_SEARCH_OPTION_BASE,
       ),
       lang: 'ja',
       locale: 'ja',
