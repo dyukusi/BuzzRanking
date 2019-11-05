@@ -43,7 +43,8 @@ process.on('uncaughtException', (err) => {
 });
 
 process.on('unhandledRejection', (reason, p) => {
-  console.log('Unhandled Rejection at:', p, 'reason:', reason);
+  console.log('Unhandled Rejection at: ', p);
+  console.log('reason: ', reason)
   process.exit(1);
 });
 
@@ -69,7 +70,16 @@ async function main() {
   }).length);
 
   while (taskQueue.length) {
-    await collectTweets(taskQueue.pop());
+    var task = taskQueue.pop();
+
+    try {
+      await collectTweets(task);
+    } catch (e) {
+      console.log(e);
+      taskQueue.push(task);
+      continue;
+    }
+
     await sleep(WAITING_TIME_MSEC_PER_USING_TWITTER_API);
     console.log("NEXT");
   }
