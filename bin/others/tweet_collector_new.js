@@ -6,7 +6,6 @@ global.sprintf = require('sprintf-js').sprintf;
 global.BatchUtil = require(appRoot + '/my_libs/batch_util.js');
 global.CONST = Const = require(appRoot + '/my_libs/const.js');
 global.Sequelize = require('sequelize');
-global.Op = Sequelize.Op;
 global.sequelize = require(appRoot + '/db/sequelize_config');
 global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 global.Moment = require('moment');
@@ -58,8 +57,7 @@ main()
 
 // ---------------------------------------------------------------------------
 async function main() {
-  await sleep(1000);
-
+  console.log("creating tasks...");
   taskQueue = await createTaskQueue();
   var productIds = _.map(taskQueue, task => {
     return task.product_id;
@@ -113,6 +111,19 @@ async function createTaskQueue() {
   let productIdToModel = _.indexBy(productModels, m => {
     return m.productId;
   });
+  let latestTweetedAtRows = (await sequelize.query(
+    "SELECT product_id, MAX(tweeted_at) AS latest_date FROM new_tweet WHERE product_id IN (:productIds) GROUP BY product_id",
+    {
+      replacements: {
+        productIds: targetSortedProductIds,
+      },
+      type: Sequelize.QueryTypes.SELECT,
+    }
+  ));
+  let productIdToLatestTweetedAtRow = _.indexBy(latestTweetedAtRows, row => {
+    return row.product_id;
+  });
+
   let sortedProductModels = _.chain(targetSortedProductIds)
     .map(productId => {
       return productIdToModel[productId];
@@ -154,10 +165,10 @@ async function createTaskQueue() {
 
     // NOTE: since param is really important to prevent duplicate search
     let since = null;
-    if (productIdIntoTweetCountLogRowHash[productModel.productId]) {
-      var createdAt = productIdIntoTweetCountLogRowHash[productModel.productId].created_at;
-      var sinceMoment = new Moment(createdAt);
-      since = sinceMoment.subtract(1, 'day').utc().format("YYYY-MM-DD");
+    if (productIdToLatestTweetedAtRow[productModel.productId]) {
+      var tweetedAt = productIdToLatestTweetedAtRow[productModel.productId].tweeted_at;
+      var sinceMoment = new Moment(tweetedAt);
+      since = sinceMoment.utc().format("YYYY-MM-DD");
     }
 
     taskQueue.push(createTask(productModel.productTypeId, productModel.productId, joinedSearchWord, since));
@@ -202,9 +213,9 @@ async function getSearchBaseData() {
     return result[0];
   }));
 
-  let productIdIntoTweetCountLogRowHash = _.indexBy(latestTweetCountLogRows, row => {
-    return row.product_id;
-  });
+  // let productIdIntoTweetCountLogRowHash = _.indexBy(latestTweetCountLogRows, row => {
+  //   return row.product_id;
+  // });
 
   let productIdsSortedByPriority = _.chain(latestTweetCountLogRows)
     .sortBy(row => {
@@ -240,7 +251,7 @@ async function getSearchBaseData() {
 
   return {
     sortedProductIds: sortedProductIds,
-    productIdIntoTweetCountLogRowHash: productIdIntoTweetCountLogRowHash,
+    // productIdIntoTweetCountLogRowHash: productIdIntoTweetCountLogRowHash,
   };
 }
 
@@ -267,7 +278,7 @@ function createTask(productTypeId, productId, searchWord, since) {
 }
 
 async function collectTweets(task) {
-  console.log('■ Processing... ' + task.api_param.q + " ProductId: " + task.product_id);
+  console.log('■ Processing... ' + task.api_param.q + " ProductId: " + task.product_id + " Since: " + task.api_param.since);
 
   let param = task.api_param;
   let tweetJson = await BatchUtil.searchTweets(param);
@@ -343,8 +354,10 @@ async function collectTweets(task) {
   if (hasNextPage) {
     console.log("should search for next page. added to taskQueue.");
 
+    console.log(metaData['next_results']);
+
     // NOTE: dont need to set since arg becauze next_results is already considering since param
-    let newTask = createTask(task.product_type_id, task.product_id, task.search_word, null);
+    let newTask = createTask(task.product_type_id, task.product_id, task.search_word, task.api_param.since);
     newTask.api_param = QueryString.parse(metaData['next_results']);
     taskQueue.push(newTask);
     return;
