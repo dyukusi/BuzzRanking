@@ -1,0 +1,11 @@
+<%
+var imageUrl = productModel.ogpImageUrl || "https://blinky.nemui.org/shot/large?" + productModel.publicUrl;
+%>
+
+<% if (linkTag) { %>
+<a href="<%= productModel.publicUrl %>">
+    <img src="<%= imageUrl %>">
+</a>
+<% } else { %>
+<img src="<%= imageUrl %>">
+<% } %>

@@ -8,7 +8,7 @@
 /* pc */
 @media (min-width: 992px) {
     #content.container-fluid {
-        max-width: 40%;
+        max-width: 60%;
     }
 }
 

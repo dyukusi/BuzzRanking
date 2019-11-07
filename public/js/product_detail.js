@@ -7,19 +7,40 @@ const sprintf = require('sprintf-js').sprintf;
 const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 
 var TWEETS_LAZY_LOAD_OFFSET_HEIGHT_PX = $(window).height();
-var tempYear = 0;
+var TWEET_NUM_PER_CHUNK = 10;
 var productId = Number(location.pathname.replace('/product/detail/', '').replace(/\?.*/, ''));
+var pahToAdHTML = location.origin + '/ad/adsense/in_feed.html';
+var tempYear = 0;
+var isFirstChartRender = true;
+var isLoaded = false;
+var tweetDataList = [];
 
 $(async () => {
-  initChart();
+  initBuzzChart();
   await initTwitterWidget();
 
   // NOTE: widget.js do load every embedded tweets in html after random msec. wait 1 sec to avoid load all tweets at same time,
   await sleep(1000);
+  await fetchTweetDataListWithAjax();
 
-  await initTweetList();
-  initLazyChunkLoad();
+  loadChunkTweets(true);
+  initTweetReadMoreButton();
+
+  // initLazyChunkLoad();
 });
+
+function initTweetReadMoreButton() {
+  $('.readmore-button').on('click', function () {
+    var button = $(this);
+
+    $('.related-tweet-area').css('height', sprintf('%dpx', $('.related-tweet').height()));
+    button.addClass('disabled');
+    button.html('<span class="spinner-border" role="status" aria-hidden="true"></span>');
+
+    isLoaded = false;
+    loadChunkTweets();
+  });
+}
 
 function initLazyChunkLoad() {
   var $tweetChunks = $('.tweet-chunk');
@@ -72,8 +93,76 @@ function isScrolledIntoView(elem) {
     || docViewTop > eleBottom && eleBottom + TWEETS_LAZY_LOAD_OFFSET_HEIGHT_PX >= docViewTop;
 }
 
-async function initTweetList() {
-  var allTweetDataList = await $.ajax({
+function loadChunkTweets(isFirstLoad) {
+  var targetTweetDataList = tweetDataList.splice(0, TWEET_NUM_PER_CHUNK);
+  var relatedTweetDivElement = $('.related-tweet');
+  var adsenseIndex = TWEET_NUM_PER_CHUNK / 2;
+  var tweetBlockquotesHTML = '';
+
+  // add margin for readmore button
+  $('.related-tweet-area').css('margin-bottom', sprintf('%dpx', ($('.readmore-button').height() / 2)));
+
+  _.times(targetTweetDataList.length, n => {
+    var tweetData = targetTweetDataList[n];
+    tweetBlockquotesHTML += sprintf(
+      '<div class="embedded-tweet">' +
+      '<blockquote class="twitter-tweet" data-lang="ja" data-cards="">' +
+      '<a href="https://twitter.com/9191919%s/status/%s">%s</a>' +
+      '</blockquote>' +
+      '<hr>' +
+      '</div>'
+      ,
+      tweetData[0], tweetData[1], tweetData[2]
+    );
+
+    if (n == adsenseIndex) {
+      tweetBlockquotesHTML += '<div class="ad"><div class="adsense-infeed"></div><hr></div>';
+    }
+  });
+
+  var tweetBlockquotesChunkHTML = '<div class=tweet-chunk>' + tweetBlockquotesHTML + '</div>';
+  relatedTweetDivElement.append(tweetBlockquotesChunkHTML);
+
+  var tweetChunks = $('.tweet-chunk');
+  _.each(tweetChunks, tweetChunk => {
+    var $adDiv = $('.related-tweet').find('.adsense-infeed');
+    $adDiv.load(pahToAdHTML);
+    $adDiv.removeClass('adsense-infeed');
+    twttr.widgets.load(tweetChunk);
+  });
+}
+
+function loadChunkBACKUP() {
+  var tweetDataListChunk = tweetDataList.splice(0, 10);
+  var relatedTweetDivElement = $('.related-tweet');
+
+  _.each(tweetDataListChunk, tweetDataList => {
+    var tweetBlockquotesHTML = '';
+
+    _.each(tweetDataList, tweetData => {
+      tweetBlockquotesHTML += sprintf(
+        '<div class="embedded-tweet">' +
+        '<blockquote class="twitter-tweet" data-lang="ja" data-cards="">' +
+        '<a href="https://twitter.com/%s/status/%s">%s</a>' +
+        '</blockquote>' +
+        '<hr>' +
+        '</div>'
+        ,
+        tweetData[0], tweetData[1], tweetData[2]
+      );
+    });
+
+    var tweetBlockquotesChunkHTML = '<div class=tweet-chunk>' + tweetBlockquotesHTML + '<div class="adsense-infeed"></div><hr></div>';
+
+    relatedTweetDivElement.append(tweetBlockquotesChunkHTML);
+  });
+
+  $('#tweet-list-load-spin').remove();
+}
+
+
+async function fetchTweetDataListWithAjax() {
+  tweetDataList = await $.ajax({
     url: MyUtil.getLocationOrigin() + '/api/product/tweet_list',
     type: 'GET',
     dataType: 'json',
@@ -81,28 +170,6 @@ async function initTweetList() {
       productId: productId,
     },
   });
-
-  var tweetDataListChunks = _.chunk(allTweetDataList, 5);
-  var relatedTweetDivElement = $('.related-tweet');
-
-  _.each(tweetDataListChunks, tweetDataList => {
-    var tweetBlockquotesHTML = '';
-
-    _.each(tweetDataList, tweetData => {
-      tweetBlockquotesHTML += sprintf(
-        '<blockquote class="twitter-tweet" data-lang="ja" data-cards="">' +
-        '<a href="https://twitter.com/%s/status/%s">%s</a>' +
-        '</blockquote>',
-        tweetData[0], tweetData[1], tweetData[2]
-      );
-    });
-
-    var tweetBlockquotesChunkHTML = '<div class=tweet-chunk>' + tweetBlockquotesHTML + '<div class="adsense-infeed"></div> </div>';
-
-    relatedTweetDivElement.append(tweetBlockquotesChunkHTML);
-  });
-
-  $('#tweet-list-load-spin').remove();
 }
 
 function initTwitterWidget() {
@@ -125,16 +192,47 @@ function initTwitterWidget() {
     }(document, "script", "twitter-wjs"));
 
     twttr.ready(function (twttr) {
+      twttr.events.bind('click', function (event) {
+      });
+      twttr.events.bind('tweet', function (event) {
+      });
+
       twttr.events.bind('loaded', function (event) {
+        var isEmptyLoad = !$('.related-tweet').find('.embedded-tweet').length;
+        if (isLoaded || isEmptyLoad) return;
+        isLoaded = true;
       });
 
       twttr.events.bind('rendered', function (event) {
         var tgt = event.target;
-        var embeddedTweetStyle = $('<link>').attr({
-          'rel': 'stylesheet',
-          'href': location.origin + '/css/embedded_tweet.css',
-        });
-        $(tgt.shadowRoot).append(embeddedTweetStyle);
+        var isError = $(tgt).hasClass('twitter-tweet-error');
+        var $chunk = $(tgt).parents('.tweet-chunk');
+        var $embeddedTweet = $(tgt).parents('.embedded-tweet');
+
+        if (!isError) {
+          var embeddedTweetStyle = $('<link>').attr({
+            'rel': 'stylesheet',
+            'href': location.origin + '/css/embedded_tweet.css',
+          });
+
+          // triggered after render
+          embeddedTweetStyle.bind('load', () => {
+            $embeddedTweet.addClass('rendered');
+
+            if (isAllRendered($chunk)) {
+              afterAllRendered($chunk);
+            }
+          });
+
+          $(tgt.shadowRoot).append(embeddedTweetStyle);
+          return;
+        }
+
+        $embeddedTweet.addClass('rendered');
+
+        if (isAllRendered($chunk)) {
+          afterAllRendered($chunk);
+        }
       });
 
       resolve();
@@ -142,105 +240,22 @@ function initTwitterWidget() {
   });
 }
 
-function initChart() {
-  var tweetCountLogData = $('#buzz-chart').data('chart-plots');
+function afterAllRendered($chunk) {
+  $('.readmore-button').removeClass('display-none');
+  $chunk.removeClass('tweet-chunk');
+  $('#tweet-list-load-spin').remove();
 
-  if (_.isEmpty(tweetCountLogData)) return;
-
-  var plots = _.map(tweetCountLogData, function (data) {
-    var [createdAt, buzz] = data;
-    var createdAtMoment = new Moment(createdAt);
-    return {
-      x: createdAtMoment.unix(),
-      y: buzz,
-    };
+  $('.related-tweet-area').animate({height: sprintf('%dpx', $('.related-tweet').height())}, 1000, 'swing', function () {
+    $('.related-tweet-area').css('height', '100%');
+    var $readMoreButton = $('.readmore-button');
+    $readMoreButton.removeClass('disabled');
+    $readMoreButton.html('<div class="relative"><p class="readmore-text">続きを読み込む</p><i class="fas fa-angle-down fa-lg readmore-icon"></i></div>');
   });
+}
 
-  var firstMoment = new Moment(tweetCountLogData[0][0]);
-  floorMoment(firstMoment);
-
-  var [minMoment, maxMoment] = getMinAndMaxMoment(tweetCountLogData);
-
-  var ctx = document.getElementById('buzz-chart').getContext('2d');
-  var buzzChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      datasets: [{
-        label: 'Buzz度推移',
-        data: plots,
-        pointRadius: 2,
-        backgroundColor: 'orange',
-        fill: false,
-        lineTension: 0,
-        borderWidth: 1,
-        borderColor: 'red',
-        // backgroundColor: [
-        //   'rgba(255, 99, 132, 0.2)',
-        //   'rgba(54, 162, 235, 0.2)',
-        //   'rgba(255, 206, 86, 0.2)',
-        //   'rgba(75, 192, 192, 0.2)',
-        //   'rgba(153, 102, 255, 0.2)',
-        //   'rgba(255, 159, 64, 0.2)'
-        // ],
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      fill: false,
-      scales: {
-        xAxes: [{
-          type: 'linear',
-          position: 'bottom',
-          ticks: {
-            callback: function (unixTimeSec) {
-              var moment = new Moment(unixTimeSec * 1000);
-              var shouldAppendYearStr = false;
-              var isFirst = moment.unix() == firstMoment.unix();
-
-              if (isFirst || moment.year() != tempYear) {
-                shouldAppendYearStr = true;
-                tempYear = moment.year();
-              }
-
-              var msec = unixTimeSec * 1000;
-              return new Moment(msec).format(shouldAppendYearStr ? 'YYYY年M月D日' : 'M月D日');
-            },
-            stepSize: 60 * 60 * 24, // 1 day
-            min: minMoment.unix(),
-            max: maxMoment.unix(),
-
-            autoSkip: true,
-            maxTicksLimit: 20 //値の最大表示数
-          },
-
-        }],
-        yAxes: [{
-          scaleLabel: {
-            display: true,
-            labelString: 'Buzz',
-            fontSize: 18,
-          },
-          ticks: {
-            beginAtZero: true
-          }
-        }],
-      },
-
-      tooltips: {
-        callbacks: {
-          title: function (tooltipItem, data) {
-            return '';
-          },
-          label: function (tooltipItem, data) {
-            var msec = tooltipItem.xLabel * 1000;
-            var buzz = tooltipItem.yLabel;
-            return '(' + new Moment(msec).format('YYYY年MM月DD日 HH:mm:ss') + ', ' + buzz + 'Buzz)';
-          },
-        },
-      },
-
-    },
+function isAllRendered($chunk) {
+  return _.every($chunk.find('.embedded-tweet'), embeddedTweet => {
+    return $(embeddedTweet).hasClass('rendered');
   });
 }
 
@@ -263,4 +278,156 @@ function floorMoment(moment) {
   moment.set('second', 0);
   moment.set('minute', 0);
   moment.set('hour', 0);
+}
+
+
+async function initBuzzChart() {
+  var buzzChartData = await $.ajax({
+    url: MyUtil.getLocationOrigin() + '/api/product/buzz_chart_data',
+    type: 'GET',
+    dataType: 'json',
+    data: {
+      productId: productId,
+    },
+  });
+
+  // x date label for display
+  var previousYear = null;
+  var dispDateLabels = _.map(buzzChartData.xLabels, date => {
+    var moment = new Moment(date);
+    var formatStr = "MM/DD";
+    if (previousYear != moment.year()) {
+      formatStr = "YYYY/MM/DD";
+    }
+    previousYear = moment.year();
+
+    return moment.format(formatStr);
+  });
+  dispDateLabels[dispDateLabels.length - 1] += '(暫定)';
+
+  var ctx = document.getElementById('buzz-chart').getContext('2d');
+  ctx.canvas.height = 300;
+  // Chart.defaults.global.defaultFontFamily = 'cursive';
+  // Chart.defaults.global.defaultFontStyle = 'bold';
+  var buzzChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dispDateLabels,
+      datasets: [{
+        type: 'line',
+        label: 'Buzz',
+        data: buzzChartData.buzzChartData,
+        borderColor: "#eb6f00",
+        borderWidth: "2",
+        pointBackgroundColor: "red",
+        fill: false,
+        yAxisID: "y-axis-buzz",
+        spanGaps: true,
+        backgroundColor: "rgba(255,0,0,0.4)",
+        legend: {
+          position: 'bottom',
+        },
+      }, {
+        type: 'bar',
+        label: 'ツイート数',
+        data: buzzChartData.tweetCountChartData,
+        borderWidth: "2",
+        borderColor: "#abdfff",
+        backgroundColor: "#c3eeff",
+        yAxisID: "y-axis-tweet-count",
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      "animation": {
+        "duration": 1,
+        "onComplete": function () {
+          if (isFirstChartRender) {
+            $('#buzz-chart-load-div').remove();
+            $('#buzz-chart').show();
+            isFirstChartRender = false;
+          }
+
+          var chartInstance = this.chart,
+            ctx = chartInstance.ctx;
+
+          ctx.font = Chart.helpers.fontString(
+            Chart.defaults.global.defaultFontSize,
+            Chart.defaults.global.defaultFontStyle,
+            // 'bold',
+            Chart.defaults.global.defaultFontFamily
+          );
+
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillStyle = 'blue';
+
+          var tweetDataset = this.data.datasets.find((data) => {
+            return data.label == 'ツイート数';
+          });
+          var meta = tweetDataset._meta[0];
+          var tweetValues = tweetDataset.data;
+          meta.data.forEach((bar, index) => {
+            var data = tweetValues[index];
+            ctx.fillText(data, bar._model.x, bar._model.y - 5);
+          });
+        }
+      },
+      hover: {
+        animationDuration: 0,
+      },
+      responsive: true,
+      legend: {
+        display: true,
+        labels: {
+          fontColor: "black",
+        },
+      },
+      scales: {
+        xAxes: [
+          {
+            ticks: {
+              fontColor: "black",
+              fontSize: 14,
+              maxRotation: 90,
+              // minRotation: 90,
+            },
+            gridLines: {
+              drawOnChartArea: false,
+            },
+          }
+        ],
+        yAxes: [{
+          id: "y-axis-buzz",
+          type: "linear",
+          position: "left",
+          ticks: {
+            fontColor: "black",
+            beginAtZero: true
+            // max: 0.2,
+            // stepSize: 0.1
+            // min: 0,
+            // fontStyle: "bold",
+          },
+          gridLines: {
+            drawOnChartArea: false,
+          },
+        }, {
+          id: "y-axis-tweet-count",
+          type: "linear",
+          position: "right",
+          ticks: {
+            display: false,
+            max: _.max(buzzChartData.tweetCountChartData) + (_.max(buzzChartData.tweetCountChartData) / 10),
+            beginAtZero: true,
+            fontColor: "black",
+          },
+          gridLines: {
+            drawOnChartArea: false,
+          },
+        }],
+      },
+    },
+  });
 }

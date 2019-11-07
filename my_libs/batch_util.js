@@ -8,12 +8,9 @@ const request = require('request');
 const Q = require('q');
 const Util = require(appRoot + '/my_libs/util.js');
 const Twitter = require('twitter');
-const sprintf = require('sprintf-js').sprintf;
 const Moment = require('moment');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
-const A8ProgramModel = require(appRoot + '/models/a8_program');
-const BookModel = require(appRoot + '/models/book');
-const GameModel = require(appRoot + '/models/game');
+
 
 const DAYS_EXPIRE_TWEET = 7;
 const HOURS_EXPIRE_TWEET = DAYS_EXPIRE_TWEET * 24;
@@ -23,6 +20,7 @@ var twitterAPIKeyParams = {
   consumer_secret: Config.twitter_api.consumer_secret,
   access_token_key: Config.twitter_api.access_token_key,
   access_token_secret: Config.twitter_api.access_token_secret,
+  timeout_ms: 1000 * 5, // 5 sec timeout
 };
 
 exports.searchTweets = param => {

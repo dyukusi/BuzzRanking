@@ -9,7 +9,12 @@ const ProductBase = require(appRoot + '/models/product_base');
 
 class Book extends ProductBase {
   // ------------------- Instance Methods -------------------
-
+  generateProductImageHtmlForProductDetailPage() {
+    return sprintf(
+      '<a href="%s"><img class="product-image" src="%s"></a>',
+      this.affiliateItemUrl, this.imageUrlBase
+    );
+  }
   // ------------------- Class Methods -------------------
 }
 

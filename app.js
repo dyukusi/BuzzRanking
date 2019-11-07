@@ -24,6 +24,7 @@ global.Util = require(appRoot + '/my_libs/util.js');
 global.Const = require(appRoot + '/my_libs/const.js');
 global.Q = require('q');
 global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+global.Moment = require('moment');
 global.redis = cacheUtil.createRedisInstance();
 
 var app = express();

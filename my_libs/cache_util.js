@@ -38,6 +38,10 @@ function generateProductDetailHTMLCacheKey(productId) {
   return 'product_detail_html_' + productId;
 }
 
+function generateChartDataCacheKey(productId) {
+  return 'chart_data_' + productId;
+}
+
 // priority: memory cache > redis cache
 async function getCachedProductDataList(cacheKey) {
   var productDataList;
@@ -73,4 +77,5 @@ module.exports = {
   generateTweetDataListForProductDetailPageCacheKey: generateTweetDataListForProductDetailPageCacheKey,
   generateProductDetailHTMLCacheKey: generateProductDetailHTMLCacheKey,
   getProductDataListForDebugCacheKey: getProductDataListForDebugCacheKey,
+  generateChartDataCacheKey: generateChartDataCacheKey,
 }

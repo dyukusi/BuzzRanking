@@ -24,21 +24,16 @@ router.get('/detail/:product_id', async function (req, res, next) {
 
   console.log("cache miss: " + htmlCacheKey);
 
-  var [productModels, bookCaptionModels, tweetCountLogModels, twitterAltSearchWordModels] = await Promise.all([
+  var [productModels, bookCaptionModels, twitterAltSearchWordModels] = await Promise.all([
     Util.selectProductModels({
       productId: [productId],
     }),
     BookCaption.selectByProductIds([productId]),
-    TweetCountLog.selectByProductId(productId),
     TwitterAlternativeSearchWord.selectByProductIds([productId]),
   ]);
 
   var targetProductModel = productModels[0];
   var targetBookCaption = bookCaptionModels[0];
-
-  var sortedTweetCountLogModels = __.sortBy(tweetCountLogModels, m => {
-    return new Moment(m.createdAt).unix();
-  });
 
   var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
   var statModel = await Stat.selectByRankingDate(latestReleaseControlModel.getDateMoment());
@@ -56,7 +51,6 @@ router.get('/detail/:product_id', async function (req, res, next) {
     productModel: targetProductModel,
     bookCaptionModel: targetBookCaption,
     twitterAltSearchModels: twitterAltSearchWordModels,
-    tweetCountLogModels: sortedTweetCountLogModels,
     top3ProductDataList: top3ProductDataList,
 
     Moment: Moment,

@@ -54,16 +54,17 @@ var dataAttrStr = __.map(productData.tweetModels, function (tweetModel) {
                     <%
                     __.each(initialDisplayTweetModels, function(tweetModel) {
                     %>
-                    <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
-                        <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.id %>"><%= tweetModel.text %></a>
-                    </blockquote>
+                        <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
+                            <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.id %>"><%= tweetModel.text %></a>
+                        </blockquote>
 
-                    <% if (isAdmin) { %>
-                        <button class="btn btn-danger remove-tweet-button"
-                                data-tweet-id="<%= tweetModel.tweetId %>">
-                            (Admin)このツイートを無効化する
-                        </button>
-                    <% } %>
+                        <% if (isAdmin) { %>
+                            <button class="btn btn-danger remove-tweet-button"
+                                    data-tweet-id="<%= tweetModel.tweetId %>">
+                                (Admin)このツイートを無効化する
+                            </button>
+                        <% } %>
+                        <hr>
                     <% }); %>
                 </div>
             </div>

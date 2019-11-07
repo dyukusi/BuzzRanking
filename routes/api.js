@@ -6,6 +6,8 @@ const cacheUtil = require(appRoot + '/my_libs/cache_util.js');
 const Moment = require('moment');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 const BlockTwitterUser = require(appRoot + '/models/block_twitter_user');
+const Sequelize = require('sequelize');
+const sequelize = require(appRoot + '/db/sequelize_config');
 
 function isAdmin(req, res, next) {
   var email = req.user ? req.user.email : null;
@@ -17,6 +19,77 @@ function isAdmin(req, res, next) {
     res.redirect('/auth');
   }
 }
+
+router.get('/product/buzz_chart_data', async function (req, res, next) {
+  var q = req.query;
+  var productId = Number(q.productId);
+  var cacheKey = cacheUtil.generateChartDataCacheKey(productId);
+  var cache = await redis.get(cacheKey);
+
+  if (cache) {
+    res.send(cache);
+    return;
+  }
+
+  console.log("cache miss: " + cacheKey);
+
+  let tweetCountPerDayRows = (await sequelize.query(
+    "SELECT DATE(tweeted_at) AS date, COUNT(*) AS count FROM new_tweet WHERE product_id = :productId GROUP BY DATE(tweeted_at) ORDER BY date ASC",
+    {
+      replacements: {
+        productId: productId,
+      },
+      type: Sequelize.QueryTypes.SELECT,
+    }
+  ));
+
+  let buzzPerDayRows = (await sequelize.query(
+    "SELECT DATE(TweetCountLogA.created_at) AS date, TweetCountLogA.tweet_count, TweetCountLogA.buzz FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log WHERE product_id = :productId GROUP BY DATE(created_at)) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date ORDER BY created_at ASC",
+    {
+      replacements: {
+        productId: productId,
+      },
+      type: Sequelize.QueryTypes.SELECT,
+    }
+  ));
+
+  var startMoment = new Moment(buzzPerDayRows[0].date);
+  var endMoment = new Moment(buzzPerDayRows[buzzPerDayRows.length - 1].date);
+  var diffDayNum = Moment.duration(endMoment - startMoment).days();
+  var dates = [...Array(diffDayNum + 1).keys()].map(v => startMoment.clone().add(v, 'days'));
+
+  var rowDateLabels = __.map(dates, date => {
+    return date.format("YYYY-MM-DD");
+  });
+
+  // buzz (line chart)
+  var dateStrIntoBuzzRow = __.indexBy(buzzPerDayRows, row => {
+    return row.date;
+  });
+  var buzzChartData = __.map(rowDateLabels, rowLabelStr => {
+    return dateStrIntoBuzzRow[rowLabelStr] ?  dateStrIntoBuzzRow[rowLabelStr].buzz : null;
+  });
+
+  // tweet count (bar chart)
+  var dateStrIntoTweetCountRow = __.indexBy(tweetCountPerDayRows, row => {
+    return row.date;
+  });
+  var tweetCountChartData = __.map(rowDateLabels, rowLabelStr => {
+    return dateStrIntoTweetCountRow[rowLabelStr] ? dateStrIntoTweetCountRow[rowLabelStr].count : null;
+  });
+
+  var result = {
+    xLabels: rowDateLabels,
+    buzzChartData: buzzChartData,
+    tweetCountChartData: tweetCountChartData,
+  };
+
+  var stringifiedResult = JSON.stringify(result);
+
+  redis.set(cacheKey, stringifiedResult, "EX", (60 * 60) * 12); // 12 hours cache
+
+  return res.send(stringifiedResult);
+});
 
 router.get('/product/tweet_list', async function (req, res, next) {
   var q = req.query;

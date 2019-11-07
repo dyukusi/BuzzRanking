@@ -1,118 +1,360 @@
 .twitter-tweet {
-  width: 100% !important;
+    width: 100% !important;
 }
 
 .twitter-tweet-error {
-  display: none;
+    display: none;
 }
 
 .tweet-reference-block {
-  text-align: center;
+    text-align: center;
 }
 
 .product-basic-info {
-  margin-bottom: 1rem;
+    margin-bottom: 1rem;
 }
 
 h2 {
-  font-size: 1.3em;
+    font-size: 1.3em;
 }
 
 .product-basic-info {
-  margin-top: 1rem;
+    margin-top: 1rem;
 }
 
 /* smart device */
 @media (min-width: 0px) {
-  #content.container-fluid {
-    max-width: 100%;
-  }
+    #content.container-fluid {
+        max-width: 100%;
+    }
 
-  .top-3-ranking-product-img {
-    max-height: 100px;
-    width: auto;
-  }
+    .top-3-ranking-product-img {
+        max-height: 100px;
+        width: auto;
+    }
+
+    .large-header {
+        font-size: 1.5rem;
+    }
+
+    .sub-large-header {
+        font-size: 1.2rem;
+    }
+
+    .ranking-top-3-product-name {
+        font-size: 1.3rem;
+    }
+
+    .external-ranking-link {
+        font-size: 1.5rem;
+    }
 }
 
 /* pc */
 @media (min-width: 992px) {
-  #content.container-fluid {
-    max-width: 60%;
-  }
+    #content.container-fluid {
+        max-width: 60%;
+    }
 
-  .tweet-reference-block {
-    /*width: 75%;*/
-  }
+    .tweet-reference-block {
+        /*width: 75%;*/
+    }
 
-  .top-3-ranking-product-img {
-    max-height: 150px;
-    width: auto;
-  }
+    .top-3-ranking-product-img {
+        max-height: 150px;
+        width: auto;
+    }
 
-  .top-3-ranking-area {
-    width: 60%;
-  }
+    .top-3-ranking-area {
+        width: 60%;
+    }
+
+    .large-header {
+        font-size: 3rem;
+    }
+
+    .sub-large-header {
+        font-size: 1.7rem;
+    }
+
+    .ranking-top-3-product-name {
+        font-size: 1.5rem;
+    }
+
+    .external-ranking-link {
+        font-size: 2rem;
+    }
 }
 
 #buzz-chart {
-  min-height: 250px;
-  width: auto;
+    /*max-height: 300px;*/
+    /*min-height: 250px;*/
+    /*width: auto;*/
+    display: none;
 }
 
 .chart-desc {
-  padding: 0 1rem 0 1rem;
-  text-align: left;
-  font-size: 0.75rem;
+    padding: 0 1rem 0 1rem;
+    text-align: left;
+    font-size: 1rem;
 }
 
 .invalid-product-description {
-  font-size: 0.8rem;
+    font-size: 1rem;
 }
 
 .product-description {
-  font-size: 0.8rem;
+    font-size: 0.8rem;
 }
 
 .top-3-ranking-row {
-  padding-left: 1rem;
-  padding-right: 1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
 }
 
 blockquote.twitter-tweet {
-  display: inline-block;
-  font-family: "Helvetica Neue", Roboto, "Segoe UI", Calibri, sans-serif;
-  font-size: 12px;
-  font-weight: bold;
-  line-height: 16px;
-  border-color: #eee #ddd #bbb;
-  border-radius: 5px;
-  border-style: solid;
-  border-width: 1px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  margin: 10px 5px;
-  padding: 0 16px 16px 16px;
-  max-width: 468px;
-  text-align: center;
+    display: inline-block;
+    font-family: "Helvetica Neue", Roboto, "Segoe UI", Calibri, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 16px;
+    border-color: #eee #ddd #bbb;
+    border-radius: 5px;
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    margin: 10px 5px;
+    padding: 0 16px 16px 16px;
+    max-width: 468px;
+    text-align: center;
 }
 
 blockquote.twitter-tweet p {
-  font-size: 16px;
-  font-weight: normal;
-  line-height: 20px;
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 20px;
 }
 
 blockquote.twitter-tweet a {
-  color: inherit;
-  font-weight: normal;
-  text-decoration: none;
-  outline: 0 none;
+    color: inherit;
+    font-weight: normal;
+    text-decoration: none;
+    outline: 0 none;
 }
 
 blockquote.twitter-tweet a:hover,
 blockquote.twitter-tweet a:focus {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 .twitter-tweet {
-  margin: 0px !important;
+    margin: 0px !important;
+}
+
+.movie-poster-img {
+    box-shadow: -3px 3px 3px rgba(0, 0, 0, 0.6);
+    max-height: 500px;
+    max-width: 100%;
+}
+
+.product-title h1 {
+    font-size: 2rem;
+    padding-bottom: .3em;
+    border-bottom: 1px solid #ccc;
+}
+
+.product-title h1:first-letter {
+    margin-right: .1em;
+    font-size: 1.5em;
+}
+
+a {
+    overflow-wrap: break-word;
+}
+
+.product-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.product-detail-table tr {
+    border-bottom: solid 2px white;
+}
+
+.product-detail-table tr:last-child {
+    border-bottom: none;
+}
+
+.product-detail-table th {
+    position: relative;
+    text-align: left;
+    width: 30%;
+    background-color: #eb6e02;
+    color: white;
+    text-align: center;
+    padding: 8px 0;
+}
+
+.product-detail-table th:after {
+    display: block;
+    content: "";
+    width: 0px;
+    height: 0px;
+    position: absolute;
+    top: calc(50% - 10px);
+    right: -10px;
+    border-left: 10px solid #eb6e02;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+}
+
+.product-detail-table td {
+    text-align: left;
+    width: 70%;
+    text-align: center;
+    background-color: #eee;
+    padding: 8px 0;
+}
+
+.large-header {
+    text-align: center;
+    padding: 0.4em 0.5em;
+    color: #494949;
+    background: #f4f4f4;
+    border-left: solid 5px #f96d22;
+    border-bottom: solid 3px #d7d7d7;
+}
+
+#buzz-chart-load-div {
+    height: 200px;
+    place-content: center;
+    text-align: center;
+}
+
+.product-image-area a img {
+    width: auto;
+    max-width: 100%;
+    max-height: 300px;
+    min-height: 200px;
+    box-shadow: -3px 3px 3px rgba(0, 0, 0, 0.6);
+}
+
+.tweet-chunk {
+    visibility: hidden;
+}
+
+.display-none {
+    display: none !important;
+}
+
+/*.embedded-tweet {*/
+/*display: none;*/
+/*}*/
+
+.adsense-infeed {
+    min-height: 400px;
+    width: 100%;
+}
+
+.readmore-button {
+    /*visibility: hidden;*/
+    height: 7rem;
+    z-index: 2;
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    padding: .2em 0;
+    cursor: pointer;
+    transition: .2s ease;
+    right: 0px;
+    left: 0px;
+
+    display: table;
+    font-size: 1.1em;
+    color: #ff8700;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: solid 3px #ff8700;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.readmore-button:hover {
+    color: white;
+    /*background-image: initial;*/
+    background-color: #ff5200;
+}
+
+.readmore-text {
+    width: 100%;
+    position: absolute;
+    text-align: center;
+    font-size: 2rem;
+}
+
+.readmore-icon {
+    width: 100%;
+    text-align: right;
+    padding-right: 1rem;
+    font-size: 4rem;
+    font-weight: bold;
+}
+
+.related-tweet-area {
+    height: 260px;
+    overflow: hidden;
+}
+
+.ranking-top-3-ad {
+    text-align: center;
+    align-self: center;
+}
+
+.ranking-top-3-ad a img {
+    /*max-height: 100px;*/
+    /*border: 1px solid #ddd;*/
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 15px 15px 15px 15px;
+    box-shadow: -3px 3px 3px rgba(0, 0, 0, 0.6);
+}
+
+.rank-crown-img-area {
+    position: relative;
+    text-align: center;
+    width: 100%;
+}
+
+.rank-crown-img {
+    /*z-index: -100;*/
+    /*position: absolute;*/
+    max-height: 50px;
+    width: auto;
+    max-width: 100%;
+}
+
+.rank-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    z-index: 10;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%,-50%);
+    transform: translate(-50%,-50%);
+}
+
+.ranking-top-3-product-name {
+    align-self: center;
+    font-wight: bold;
+}
+
+.ranking-top-3-buzz-num {
+    color: #ff8700;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.external-ranking-link {
+    font-weight: bold;
 }

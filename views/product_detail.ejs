@@ -1,63 +1,21 @@
 <%
-var dataChartPlots = __.map(tweetCountLogModels, function (m) {
-    return '["' + m.createdAt + '",' + m.buzz + ']';
-}).join(',');
-
+var top3ProductDataList = top3ProductDataList || [];
+var productName = productModel.getProductName();
 var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
-var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
-var productModelName = productModel._modelOptions.name.singular;
-var productDetailTemplatePath = 'product_detail/' + productModelName + '.ejs';
 var twitterAltSearchWordsStr = __.chain(twitterAltSearchModels)
         .filter(m => {
-          return m.isValid();
+            return m.isValid();
         })
         .map(m => {
             return m.searchWord;
         })
         .value()
-        .join(', ') || productModel.title;
+        .join(', ') || productName;
 
-var TITLE_DEFAULT = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] + ' ' + productModel.title + 'のネットの評価、レビュー、反応【BuzzRanking】';
-var DESC_PRODUCT_DEFAULT = productModel.title + 'は本当に買いなのか？SNSから分かるリアルな評判をまとめてみました。' + productModel.title + 'が気になっている方、ご購入を考えている方は必見です！';
-
-var PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH = {
-    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['comic']]: {
-        title: '漫画 ' + productModel.title + 'を読むべき理由まとめ ネットの注目度、評判は？',
-        description: DESC_PRODUCT_DEFAULT,
-    },
-    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['novel']]: {
-        title: '小説 ' + productModel.title + 'を読むべき理由まとめ ネットの注目度、評判は？',
-        description: DESC_PRODUCT_DEFAULT,
-    },
-    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['it']]: {
-        title: '技術書 ' + productModel.title + 'を読むべき理由まとめ ネットの注目度、評判は？',
-        description: DESC_PRODUCT_DEFAULT,
-    },
-    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['console_game']]: {
-        title: productModel.title + 'をプレイすべき理由まとめ ネットの注目度、評判は？',
-        description: DESC_PRODUCT_DEFAULT,
-    },
-    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['portable_game']]: {
-        title: productModel.title + 'をプレイすべき理由まとめ ネットの注目度、評判は？',
-        description: DESC_PRODUCT_DEFAULT,
-    },
-    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['dating_service']]: {
-        title: productModel.title + 'が本当に出会える理由まとめ ネットの注目度、評判は？',
-        description: productModel.title + 'って本当に出会えるの？SNSから分かるリアルな評判をまとめてみました。' + productModel.title + 'が気になっている方、利用を考えている方は必見です！',
-    },
-    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['inn_reservation']]: {
-        title: 'ホテル・宿泊予約ならここ！' + productModel.title + 'で予約するべき理由まとめ ネットの注目度、評判は？',
-        description: productModel.title + 'で予約しておけば安心？SNSから分かるリアルな評判をまとめてみました。' + productModel.title + 'が気になっている方、利用を考えている方は必見です！',
-    },
-    [Const.PRODUCT_TYPE_NAME_TO_ID_HASH['anime']]: {
-        title: productModel.title + 'を観るべき理由まとめ ネットの注目度、評判は？',
-        description: productModel.title + 'は絶対に観ておくべき！？SNSから分かるリアルな評判をまとめてみました。' + productModel.title + 'が気になっている方は必見です！',
-    },
-};
-
-var target = PRODUCT_TYPE_ID_TO_ALT_TITLE_HASH[productModel.productTypeId];
-var title = target.title || TITLE_DEFAULT;
-var description = target.description || DESC_PRODUCT_DEFAULT;
+var texts = Const.PRODUCT_DETAIL_PAGE_TEXTS[productModel.productTypeId];
+var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
+var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
+var productTypeBudleNameJa = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId];
 %>
 
 <!DOCTYPE html>
@@ -71,61 +29,194 @@ var description = target.description || DESC_PRODUCT_DEFAULT;
 <html>
 <head>
     <title>
-        <%= title %>
+        <%= sprintf(texts.title, productName) %>
     </title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
-    <meta name="description" content="<%= description %>">
+    <meta name="description" content="<%= sprintf(texts.title, productName, productName) %>">
 </head>
 <body>
 
 <%- include('header.ejs') %>
 
 <div id="content" class="container-fluid">
-    <%- include(appRoot + '/public/ad/adsense/horizontal.html') %>
-
-    <%- include(productDetailTemplatePath, { dataChartPlots: dataChartPlots, twitterAltSearchWordsStr: twitterAltSearchWordsStr, }) %>
-
-    <div class="pt-3">
-        <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
+    <div class="row pt-3">
+        <div class="col-12">
+            <h1 class="large-header">
+                <%= productName %>
+                <span class="no-wrap sub-large-header"><%= texts.promo %> </span>
+                <span class="no-wrap sub-large-header">ネットの注目度、評判は？</span>
+            </h1>
+        </div>
     </div>
 
-    <% if (productModel.isValid()) { %>
-        <div class="row">
-            <div class="col-12 text-align-center">
-                <h2>
-                    <span class="no-wrap"><%= productModel.title + (productModel.subTitle ? ' ' + productModel.subTitle : '') %></span><span
-                            class="no-wrap">のネットの反応</span>
-                </h2>
-            </div>
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mid-header">
+                <%= productName %><span class="no-wrap">の基本情報</span>
+            </h2>
         </div>
+    </div>
 
-        <div class="row mx-auto tweet-reference-block">
-            <div class="col-12 text-align-center">
-                <span id="tweet-list-load-spin" class="spinner-border text-primary" role="status" aria-hidden="true"></span>
-                <div class="related-tweet">
-                    <!-- tweet list -->
+    <div class="row product-basic-info">
+        <div class="col-12 text-align-center">
+            <div class="row">
+                <div class="col-12 product-image-area">
+                    <%- include(appRoot + '/views/product_image/' + productModel.getProductClassName() + '.ejs',
+                    { productModel: productModel, linkTag: true, productTypeBundleName: productTypeBundleName, }) %>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="pt-3">
-            <%- include('product_detail/top_3_ranking_ad.ejs', { dataChartPlots: dataChartPlots, }) %>
+    <div class="row">
+        <div class="col-12">
+            <table class="product-detail-table">
+
+                <%- include(appRoot + '/views/product_detail/product_basic_info_table/' + productModel.getProductClassName() + '.ejs', {
+                twitterAltSearchWordsStr: twitterAltSearchWordsStr,
+                productTypeBundleName: productTypeBundleName,
+                }) %>
+
+            </table>
+
+            <div class="row pt-3">
+                <div class="col-12">
+                    <h2 class="mid-header">
+                        <%= productName %><span class="no-wrap">の注目度推移</span>
+                    </h2>
+                </div>
+            </div>
+
+            <% if (productModel.isValid()) { %>
+                <div class="row" id="buzz-chart-load-div">
+                    <div class="col-12">
+        <span id="buzz-chart-load-spin" class="spinner-border text-primary text-align-center" role="status"
+              aria-hidden="true"></span>
+                    </div>
+                </div>
+
+                <div class="row text-align-center">
+                    <div class="col-12">
+                        <canvas id="buzz-chart"></canvas>
+                    </div>
+                    <div class="chart-desc">
+                        ※
+                        <a href="/faq#buzz">
+                            Buzzとは？
+                        </a>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="row">
+                    <div class="col-12 invalid-product-description">
+                        こちらの商品は正確なBuzzの測定が困難であると判断されたため、注目度推移の表示対象外となっています。
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <h2 class="mid-header">
+                <%= productName + (productModel.subTitle ? ' ' + productModel.subTitle : '') %><span class="no-wrap">のネットの反応</span>
+            </h2>
+        </div>
+    </div>
+
+    <% if (productModel.isValid()) { %>
+        <div class="row mx-auto tweet-reference-block">
+            <div class="col-12 text-align-center">
+                <span id="tweet-list-load-spin" class="spinner-border text-primary" role="status"
+                      aria-hidden="true"></span>
+                <div class="related-tweet-area">
+                    <div class="related-tweet">
+                        <!-- tweet list -->
+                    </div>
+                    <button class="btn readmore-button display-none" type="button">
+                        <div class="relative">
+                            <p class="readmore-text">
+                                続きを読み込む
+                            </p>
+                            <i class="fas fa-angle-down fa-lg readmore-icon"></i>
+                        </div>
+                    </button>
+                </div>
+            </div>
         </div>
 
     <% } else { %>
         <div class="row">
             <div class="col-12 invalid-product-description">
-                ※こちらの商品は正確なBuzz度の測定が困難であると判断されたため、ランキング及び関連ツイート表示の対象外となっています。
+                こちらの商品は正確なBuzzの測定が困難であると判断されたため、ネットの反応欄の表示対象外となっています。
             </div>
         </div>
     <% } %>
 
+    <div class="row pt-3">
+        <div class="col-12">
+            <%- include(appRoot + '/public/ad/adsense/horizontal.html') %>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <h2 class="mid-header">
+                今日の<%= productTypeBudleNameJa %><span class="no-wrap">注目度ランキングTOP3</span>
+            </h2>
+        </div>
+    </div>
+
+    <%
+    __.times(top3ProductDataList.length, n => {
+        var rank = n + 1;
+        var productData = top3ProductDataList[n];
+    %>
+    <div class="row p-2">
+        <div class="col-7 align-self-center">
+            <div class="row">
+                <div class="col-12">
+                    <div class="rank-crown-img-area">
+                        <span class="rank-text"><%= rank %>位</span>
+                        <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 text-center">
+                    <a class="ranking-top-3-product-name"
+                       href="/product/detail/<%= productData.productModel.productId %>">
+                        <%= productData.productModel.getProductName() %><br>
+                    </a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 text-right">
+                    <span class="ranking-top-3-buzz-num"><%= productData.statDataModel.buzz %></span>Buzz
+                </div>
+            </div>
+        </div>
+        <div class="col-5 ranking-top-3-ad">
+            <a href="/product/detail/<%= productModel.productId %>">
+                <%- include(appRoot + '/views/product_image/' + productModel.getProductClassName() + '.ejs', { productModel: productData.productModel, linkTag: false, }) %>
+            </a>
+        </div>
+    </div>
+    <hr>
+    <% }); %>
+
+    <div class="row">
+        <div class="col-12 text-right external-ranking-link">
+            <a href="/ranking/<%= productTypeBundleName %>">
+                >>> <%= productTypeBudleNameJa %>ランキングはこちら
+            </a>
+        </div>
+    </div>
 </div>
 
 <%- include('footer.ejs') %>
 
+<script src="/js/compressed/product_detail.min.js" type="text/javascript"></script>
 </body>
 </html>
-
-<script src="/js/compressed/product_detail.min.js" type="text/javascript"></script>

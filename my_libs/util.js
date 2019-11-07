@@ -263,8 +263,12 @@ async function sortAndFilterTweetModels(tweetModels, options) {
       return m.searchWord;
     });
 
+    var regExpEscape = function(str) {
+      return str.replace(/[-\/\\^$*+?.()|\[\]{}]/g, '\\$&');
+    };
+
     var searchWordRegExps = __.map(__.flatten([options.productModel.title, altSearchWords]), searchWord => {
-      return new RegExp(searchWord);
+      return new RegExp(regExpEscape(searchWord));
     });
 
     var trimTextRegExp = new RegExp(/(https|http)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+)|@[-_.!~*\'()a-zA-Z0-9;\/?:…\@&=+\$,%#]+|…| |　/g);

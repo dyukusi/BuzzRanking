@@ -1,14 +1,5 @@
 <%
 var originalURL;
-var NAV_BUNDLE_ORDER = [
-    'all',
-    'book',
-    'game',
-    'anime',
-    'movie',
-    'inn',
-    'dating'
-];
 %>
 
 <link rel="icon" href="/favicon.ico">
@@ -52,8 +43,8 @@ var NAV_BUNDLE_ORDER = [
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav">
             <%
-            __.each(NAV_BUNDLE_ORDER, bName => {
-                var bId = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID[bName];
+            __.each(Const.NAV_BUNDLE_ID_ORDER, bId => {
+                var bName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[bId];
             %>
             <li id="nav-<%= bName %>" class="nav-item <%= originalURL && originalURL.match(bName) ? 'active' : '' %>">
 
@@ -75,138 +66,3 @@ var NAV_BUNDLE_ORDER = [
 </nav>
 
 <p id="PageTopBtn"><a href="#wrap"><i class="fas fa-angle-double-up"></i></a></p>
-
-<!-- description about the service modal -->
-<div class="modal fade" id="desc-modal" tabindex="-1" role="dialog" aria-labelledby="desc-modal-label"
-     aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <!--<h5 class="modal-title" id="desc-modal-label"></h5>-->
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-
-                <div role="tabpanel">
-
-                    <ul class="nav nav-tabs">
-                        <li class="nav-item tab-item">
-                            <a href="#faq-tab" class="nav-link active" aria-controls="uploadTab" role="tab"
-                               data-toggle="tab">FAQ</a>
-                        </li>
-                        <li class="nav-item tab-item">
-                            <a href="#privacy-policy-tab" class="nav-link" aria-controls="uploadTab" role="tab"
-                               data-toggle="tab">
-                                プライバシーポリシー
-                            </a>
-                        </li>
-                    </ul>
-
-                </div>
-
-                <div class="tab-content">
-                    <div role="tabpanel" class="tab-pane active" id="faq-tab">
-                        <h3 class="modal-item">
-                            BuzzRankingとは
-                        </h3>
-                        <p>
-                            インターネット上での注目度を基に、商品やサービスをランキング形式で紹介する一風変わった総合ランキングサイトです。
-                            新商品などのデータ収集、注目度の測定は365日24時間体制で行われ、これを基に全てのランキングが毎日更新されます。
-                        </p>
-
-                        <h3 class="modal-item">
-                            Buzz
-                        </h3>
-                        <p>
-                            商品の注目度の指標です。<br>
-                            その商品に関連したツイート数を基にして算出された注目度の指標を、インターネット上で話題になるさまを表す言葉(バズる)にちなんでBuzzと定義しています。<br>
-                            当サービスにおける全てのランキングは、Buzz基準でランクが決定されています。<br>
-                            Buzzの値は、以下に挙げる法則に従って計算されています。
-
-                        <ul>
-                            <li>
-                                ツイートの内容に当サービスで扱う商品の名称又は関連するワードが含まれているとき、その商品に最大1.0Buzzが加算されます。
-                            </li>
-                            <li>
-                                ツイートされた時点から時間が経てば経つほどそのツイートのBuzz寄与度は線形的に減少し、ツイートから1週間で+0Buzzとなります。
-                            </li>
-                            <li>
-                                同一Twitterアカウントによる同一商品に対する複数ツイートは、最新の1ツイートのみBuzzの計算に考慮されます。
-                            </li>
-                            <li>
-                                オリジナルのツイートを第一に考え、例え商品に関連するツイートのリツイートであっても集計から除外されます。(※リプライ, 引用ツイートは集計対象となります。)
-                            </li>
-                            <li>
-                                日本語以外のツイートは集計から除外されます。
-                            </li>
-                            <li>
-                                Botによるツイートは集計から除外されます。
-                            </li>
-                        </ul>
-
-                        </p>
-
-                        <h3 class="modal-item">
-                            ツイートの収集方法
-                        </h3>
-                        <p>
-                            <a href="https://developer.twitter.com/content/developer-twitter/ja.html" target="_blank">
-                                Twitter API
-                            </a>
-                            を用いてスクリプトで自動的に収集しています。<br>
-                            基本的には商品名によって本文検索を行うことにより商品に関連するツイートを収集していますが、商品によっては略名や別名などが多数存在するケースがあることを考慮し、多数のワードで収集されることもあります。<br>
-                            収集に用いられるワードに関しては、各プロダクトの詳細ページの検索ワード欄から確認することができます。<br>
-                        </p>
-
-                        <h3 class="modal-item">
-                            Buzzの集計頻度が商品によって差異がある理由
-                        </h3>
-                        <p>
-                            BuzzRankingは、プロダクトに対するBuzzの集計スクリプトを常に裏で実行しています。<br>
-                            ただし数万を超える全プロダクトに対して平等に毎日Buzz集計を行うだけのリソースは無いため、各プロダクトに対してはそれぞれ集計の優先度が設定されています。<br>
-                            まだ過去に一度も集計されたことがないプロダクトは、最高の優先度が設定されます。<br>
-                            過去数時間以内に集計されたプロダクトは、最低の優先度が設定されます。<br>
-                            その他のプロダクトは、前回の集計で得られたBuzzが高ければ高いほど、かつ前回の集計から時間が経っていれば経っているほど高い優先度が設定されます。<br>
-                        </p>
-
-                        <h3 class="modal-item">
-                            お問い合わせや要望、苦情などはどこに連絡すればいい？
-                        </h3>
-                        <p>
-                            フッター(ページ最下部)の運営者情報欄に記載されているEmailや、BuzzRanking公式ツイッターアカウントまでDMをお送りください。<br>
-                            サービスの感想や提案などもお気軽にお聞かせください。<br>
-                        </p>
-                    </div>
-
-                    <!-- プライバシーポリシー -->
-                    <div role="tabpanel" class="tab-pane" id="privacy-policy-tab">
-                        <h3 class="modal-item">広告</h3>
-                        <p>
-                            当サービスでは、第三者配信の広告サービスを利用しています。
-                            このような広告配信事業者は、ユーザーの興味に応じた商品やサービスの広告を表示するため、当サービスや他サイトへのアクセスに関する情報 『Cookie』(氏名、住所、メール
-                            アドレス、電話番号は含まれません) を使用することがあります。
-                        </p>
-
-                        <h3 class="modal-item">アクセス解析</h3>
-                        <p>
-                            当サービスでは、Googleによるアクセス解析ツール「Googleアナリティクス」を利用しています。
-                            Googleアナリティクスはトラフィックデータの収集のためにCookieを使用しています。
-                            このトラフィックデータは匿名で収集されており、個人を特定するものではありません。
-                            この機能はCookieを無効にすることで収集を拒否することができます。
-                            規約の詳細に関しましては次のリンクをご参照ください。
-                            <a href="https://www.google.com/analytics/terms/jp.html">https://www.google.com/analytics/terms/jp.html</a>
-                        </p>
-
-                        <h3 class="modal-item">免責事項</h3>
-                        <p class="text-align-left">
-                            当サービスに掲載する情報に関しては正しいものを提供するよう務めておりますが、提供している情報、リンク先などにより、いかなる損失や損害などの被害が発生しても責任を追いかねますのでご了承ください。
-                        </p>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>

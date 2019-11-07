@@ -1,0 +1,20 @@
+<tr>
+    <th>タイトル</th>
+    <td><%= productModel.getProductName() %></td>
+</tr>
+<tr>
+    <th>カテゴリ</th>
+    <td>
+        <a href="/ranking/<%= productTypeBundleName %>">
+            <%= productModel.getBelongedProductBundleJaName() %>
+        </a>
+    </td>
+</tr>
+<tr>
+    <th>公開日</th>
+    <td><%= new Moment(productModel.releaseDate).format("YYYY-MM-DD") %></td>
+</tr>
+<tr>
+    <th>注目度測定<span class="no-wrap">ワード</span></th>
+    <td><%= twitterAltSearchWordsStr %></td>
+</tr>

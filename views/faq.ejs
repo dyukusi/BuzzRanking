@@ -22,11 +22,10 @@
 
 <div id="content" class="container-fluid p-3">
     <h1 class="faq-header">
-        <i class="far fa-question-circle"></i>
         FAQ
     </h1>
 
-    <h3 class="header-article">
+    <h3 class="mid-header">
         BuzzRankingとは
     </h3>
     <p>
@@ -34,13 +33,13 @@
         新商品などのデータ収集、注目度の測定は365日24時間体制で行われ、これを基に全てのランキングが毎日更新されます。
     </p>
 
-    <h3 class="header-article">
+    <h3 class="mid-header" id="buzz">
         Buzz
     </h3>
     <p>
         商品の注目度の指標です。<br>
         その商品に関連したツイート数を基にして算出された注目度の指標を、インターネット上で話題になるさまを表す言葉(バズる)にちなんでBuzzと定義しています。<br>
-        当サービスにおける全てのランキングは、Buzz基準でランクが決定されています。<br>
+        当サービスにおける全てのランキングは、Buzz基準で順位が決定されます。<br>
         Buzzの値は、以下のルールに従って計算されています。
 
     <ul>
@@ -54,7 +53,7 @@
             同一Twitterアカウントによる同一商品に対する複数ツイートは、最新の1つのツイートのみBuzzの計算に考慮されます。
         </li>
         <li>
-            オリジナルのツイートを第一に考え、例え商品に関連するツイートのリツイートであっても集計対象から除外されます。(※商品に関連するリプライ, 引用ツイートは集計対象となります。)
+            例え商品に関連するツイートのリツイートであっても、リツイートは全て集計対象から除外されます。(※商品に関連するリプライ, 引用ツイートは集計対象となります。)
         </li>
         <li>
             日本語以外のツイートは集計から除外されます。
@@ -66,7 +65,7 @@
 
     </p>
 
-    <h3 class="header-article">
+    <h3 class="mid-header">
         ツイートの収集方法
     </h3>
     <p>
@@ -78,7 +77,7 @@
         収集に用いられるワードに関しては、各商品の詳細ページの検索ワード欄から確認することができます。<br>
     </p>
 
-    <h3 class="header-article">
+    <h3 class="mid-header">
         Buzzの集計頻度が商品によって差異がある理由
     </h3>
     <p>
@@ -99,21 +98,21 @@
 
     </p>
 
-    <h3 class="header-article">
-        運営者情報を知りたい
+    <h3 class="mid-header">
+        運営者情報
     </h3>
     <p>
         <a href="/profile">運営者情報ページはこちら</a>
     </p>
 
-    <h3 class="header-article">
-        プライバシーポリシーを知りたい
+    <h3 class="mid-header">
+        プライバシーポリシー
     </h3>
     <p>
         <a href="/privacy_policy">プライバシーポリシーページはこちら</a>
     </p>
 
-    <h3 class="header-article">
+    <h3 class="mid-header">
         お問い合わせ
     </h3>
     <p>
@@ -125,7 +124,6 @@
 
 <%- include(appRoot + '/views/footer.ejs') %>
 
+<script src="/js/compressed/index.min.js" type="text/javascript"></script>
 </body>
 </html>
-
-<script src="/js/compressed/index.min.js" type="text/javascript"></script>

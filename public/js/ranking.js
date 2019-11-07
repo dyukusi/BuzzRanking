@@ -212,7 +212,7 @@ function initReadMoreButtons() {
         '<blockquote class="twitter-tweet" data-lang="ja"> <a href="https://twitter.com/%s/status/%s"></a></blockquote>',
         tweet[0], // screen name
         tweet[1], // tweet id
-      );
+      ) + '<hr>';
 
       tweetReferenceAreaDiv.append(html);
     });

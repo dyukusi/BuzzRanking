@@ -9,15 +9,16 @@ global.Sequelize = require('sequelize');
 global.sequelize = require(appRoot + '/db/sequelize_config');
 global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 global.Moment = require('moment');
+let timeout = msec => new Promise(resolve => { setTimeout(() => {resolve('timeout')}, msec) });
 
 const NewTweet = require(appRoot + '/models/new_tweet'); // TEMP
 const TweetCountLog = require(appRoot + '/models/tweet_count_log');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 const TweetSource = require(appRoot + '/models/tweet_source');
 
-const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 12;
+const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 24;
 const WAITING_TIME_MSEC_PER_USING_TWITTER_API = 6500; // 6.5sec
-const ABNORMAL_THRESHOLD_ORIGINAL_TWEET_COUNT = 8000;
+const ABNORMAL_THRESHOLD_ORIGINAL_TWEET_COUNT = 10000;
 const SEARCH_TARGET_NUM_PER_EXECUTION = 10;
 const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
@@ -205,17 +206,13 @@ async function getSearchBaseData() {
   let latestTweetCountLogRows = (await sequelize.query('SELECT TweetCountLogA.product_id, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date'))[0];
 
   let newProductIdsPromises = _.map(CONST.PRODUCT_MODELS, modelClass => {
-    return sequelize.query('SELECT product_id FROM ' + modelClass.name + ' WHERE product_id NOT IN (SELECT product_id FROM tweet_count_log)');
+    return sequelize.query('SELECT product_id FROM ' + modelClass.name + ' WHERE validity_status IN (0,2) AND product_id NOT IN (SELECT product_id FROM tweet_count_log)');
   });
   let results = await Promise.all(newProductIdsPromises);
 
   let newProductIdsRows = _.flatten(_.map(results, result => {
     return result[0];
   }));
-
-  // let productIdIntoTweetCountLogRowHash = _.indexBy(latestTweetCountLogRows, row => {
-  //   return row.product_id;
-  // });
 
   let productIdsSortedByPriority = _.chain(latestTweetCountLogRows)
     .sortBy(row => {
@@ -281,11 +278,22 @@ async function collectTweets(task) {
   console.log('■ Processing... ' + task.api_param.q + " ProductId: " + task.product_id + " Since: " + task.api_param.since);
 
   let param = task.api_param;
-  let tweetJson = await BatchUtil.searchTweets(param);
-  let metaData = tweetJson['search_metadata'];
+  let result = await Promise.race([
+    timeout(WAITING_TIME_MSEC_PER_USING_TWITTER_API),
+    BatchUtil.searchTweets(param),
+  ]);
+
+  // timeout
+  if (result == 'timeout') {
+    console.log("TIMEOUT. added to task queue to retry");
+    taskQueue.push(task);
+    return;
+  }
+
+  let metaData = result['search_metadata'];
 
   let excludedTweetCount = 0;
-  let tweets = _.filter(tweetJson['statuses'], tweet => {
+  let tweets = _.filter(result['statuses'], tweet => {
     if (_.contains(STRICT_WORD_SEARCH_PRODUCT_TYPES, task.product_type)) {
       let searchWord = task.search_word;
       let text = tweet['text'];
@@ -346,7 +354,7 @@ async function collectTweets(task) {
   let totalOriginalTweetCount = tempOriginalTweetCountHash[task.product_id];
   if (ABNORMAL_THRESHOLD_ORIGINAL_TWEET_COUNT <= totalOriginalTweetCount) {
     console.log("too much user count. maybe this is invalid product. added to invalid product");
-    await updateProductValidityStatusByProductId(task.product_id, 1);
+    await updateProductValidityStatusByProductId(task.product_id, Const.VALIDITY_STATUS_NAME_TO_ID.overTweetCountLimit);
     return;
   }
 
@@ -420,8 +428,17 @@ async function findMissedTweetsAndInsert() {
 
   for (var i = 0; i < tweetsChunks.length; i++) {
     var tweetIds = tweetsChunks[i];
-    var infoArray = await BatchUtil.getTweetDetailInfoByTweetIds(tweetIds);
-    tweetInfoArray = _.union(tweetInfoArray, infoArray);
+
+    var result = await Promise.race([
+      timeout(WAITING_TIME_MSEC_PER_USING_TWITTER_API),
+      BatchUtil.getTweetDetailInfoByTweetIds(tweetIds),
+    ]);
+    if (result == 'timeout') {
+      console.log("TIMEOUT. failed to fetch missed tweets");
+      continue;
+    }
+
+    tweetInfoArray = _.union(tweetInfoArray, result);
 
     await sleep(3000);
   }

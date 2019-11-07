@@ -1,12 +1,12 @@
-const appRoot = require('app-root-path');
-const _ = require('underscore');
-const Util = require(appRoot + '/my_libs/util.js');
-const cacheUtil = require(appRoot + '/my_libs/cache_util.js');
-const Moment = require('moment');
-const Sequelize = require('sequelize');
-const Op = Sequelize.Op;
-const CONST = require(appRoot + '/my_libs/const.js');
-const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
+global.appRoot = require('app-root-path');
+global._ = require('underscore');
+global.Util = require(appRoot + '/my_libs/util.js');
+global.cacheUtil = require(appRoot + '/my_libs/cache_util.js');
+global.Moment = require('moment');
+global.Sequelize = require('sequelize');
+global.CONST = Const = require(appRoot + '/my_libs/const.js');
+global.TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
+var Op = Sequelize.Op;
 
 var redis = cacheUtil.createRedisInstance();
 
@@ -26,7 +26,7 @@ var redis = cacheUtil.createRedisInstance();
   console.log("fetching tweets...");
   var productDataList = await
     Util.buildProductDataListObject(sortedProductIds, {
-      excludeInvalidProduct: true,
+      // excludeInvalidProduct: true,
       tweetSelectOptions: {
         excludeInvalidTweets: true,
         // since: nowMoment.subtract(3, 'day').format("YYYY-MM-DD"),
@@ -43,7 +43,7 @@ async function getValiditySuspiciousProductModels() {
   console.log("----- Suspicious Products -----");
   var productModels = await Util.selectProductModels({
     validityStatus: {
-      [Op.notIn]: CONST.VALID_STATUS_IDS,
+      [Op.notIn]: _.flatten([CONST.VALID_STATUS_IDS, CONST.VALIDITY_STATUS_NAME_TO_ID.invalid]),
     },
   });
 
