@@ -3,16 +3,16 @@
     <td><%= productModel.getProductName() %></td>
 </tr>
 <tr>
+    <th>注目度測定<span class="no-wrap">ワード</span></th>
+    <td><%= twitterAltSearchWordsStr %></td>
+</tr>
+<tr>
     <th>カテゴリ</th>
     <td>
         <a href="/ranking/<%= productTypeBundleName %>">
             <%= productModel.getBelongedProductBundleJaName() %>
         </a>
     </td>
-</tr>
-<tr>
-    <th>注目度測定<span class="no-wrap">ワード</span></th>
-    <td><%= twitterAltSearchWordsStr %></td>
 </tr>
 <tr>
     <th>発売日</th>
