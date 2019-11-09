@@ -53,30 +53,33 @@ router.get('/product/buzz_chart_data', async function (req, res, next) {
     }
   ));
 
-  var startMoment = new Moment(buzzPerDayRows[0].date);
-  var endMoment = new Moment(buzzPerDayRows[buzzPerDayRows.length - 1].date);
-  var diffDayNum = Moment.duration(endMoment - startMoment).days();
-  var dates = [...Array(diffDayNum + 1).keys()].map(v => startMoment.clone().add(v, 'days'));
+  var rowDateLabels, buzzChartData, tweetCountChartData;
+  if (buzzPerDayRows.length) {
+    var startMoment = new Moment(buzzPerDayRows[0].date);
+    var endMoment = new Moment(buzzPerDayRows[buzzPerDayRows.length - 1].date);
+    var diffDayNum = Moment.duration(endMoment - startMoment).days();
+    var dates = [...Array(diffDayNum + 1).keys()].map(v => startMoment.clone().add(v, 'days'));
 
-  var rowDateLabels = __.map(dates, date => {
-    return date.format("YYYY-MM-DD");
-  });
+    rowDateLabels = __.map(dates, date => {
+      return date.format("YYYY-MM-DD");
+    });
 
-  // buzz (line chart)
-  var dateStrIntoBuzzRow = __.indexBy(buzzPerDayRows, row => {
-    return row.date;
-  });
-  var buzzChartData = __.map(rowDateLabels, rowLabelStr => {
-    return dateStrIntoBuzzRow[rowLabelStr] ?  dateStrIntoBuzzRow[rowLabelStr].buzz : null;
-  });
+    // buzz (line chart)
+    var dateStrIntoBuzzRow = __.indexBy(buzzPerDayRows, row => {
+      return row.date;
+    });
+    buzzChartData = __.map(rowDateLabels, rowLabelStr => {
+      return dateStrIntoBuzzRow[rowLabelStr] ? dateStrIntoBuzzRow[rowLabelStr].buzz : null;
+    });
 
-  // tweet count (bar chart)
-  var dateStrIntoTweetCountRow = __.indexBy(tweetCountPerDayRows, row => {
-    return row.date;
-  });
-  var tweetCountChartData = __.map(rowDateLabels, rowLabelStr => {
-    return dateStrIntoTweetCountRow[rowLabelStr] ? dateStrIntoTweetCountRow[rowLabelStr].count : null;
-  });
+    // tweet count (bar chart)
+    var dateStrIntoTweetCountRow = __.indexBy(tweetCountPerDayRows, row => {
+      return row.date;
+    });
+    tweetCountChartData = __.map(rowDateLabels, rowLabelStr => {
+      return dateStrIntoTweetCountRow[rowLabelStr] ? dateStrIntoTweetCountRow[rowLabelStr].count : null;
+    });
+  }
 
   var result = {
     xLabels: rowDateLabels,
