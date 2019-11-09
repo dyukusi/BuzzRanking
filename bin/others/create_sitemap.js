@@ -8,6 +8,8 @@ const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const sprintf = require('sprintf-js').sprintf;
 const Moment = require('moment');
+const Util = require(appRoot + '/my_libs/util.js');
+const Op = Sequelize.Op;
 
 // NOTE: GOOGLE IS NO LONGER CONSIDERS PRIORITY VALUE
 const PRIORITY_OF = {
@@ -27,9 +29,24 @@ main()
 
 async function main() {
   // for judge is popular
-  var ProductReferredByUsersRows = (await sequelize.query(
+  var productReferredByUsersRows = (await sequelize.query(
     "SELECT product_id FROM (SELECT product_id, count(*) AS count FROM new_tweet GROUP BY product_id) AS t2 WHERE count > 30",
   ))[0];
+
+  var allProductIds = _.map(productReferredByUsersRows, row => {
+    return row.product_id;
+  });
+
+  var productModels = await Util.selectProductModels({
+    productId: allProductIds,
+    validityStatus: {
+      [Op.in]: CONST.VALID_STATUS_IDS,
+    }
+  });
+
+  var targetProductIds = _.map(productModels, m => {
+    return m.productId;
+  });
 
   // var productIdToIsPopularHash = {};
   // _.each(rankInProductIdRows, rankInProductIdRow => {
@@ -56,9 +73,9 @@ async function main() {
   // }
 
   // set priority
-  var productDataset = _.map(ProductReferredByUsersRows, rankInProductIdRow => {
+  var productDataset = _.map(targetProductIds, productId => {
     return {
-      productId: rankInProductIdRow.product_id,
+      productId: productId,
       priority: PRIORITY_OF.POPULAR,
     };
   });
@@ -81,7 +98,3 @@ async function main() {
 
   return 0;
 }
-
-
-
-
