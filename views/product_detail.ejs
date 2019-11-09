@@ -88,7 +88,12 @@ var productTypeBudleNameJa = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[produc
                 </div>
             </div>
 
-            <% if (productModel.isValid()) { %>
+            <div id="buzz-data-not-found" class="invisible text-center">
+                この商品の情報を収集中です。<br>
+                しばらく経ってから再度ご確認ください。
+            </div>
+
+        <% if (productModel.isValid()) { %>
                 <div class="row" id="buzz-chart-load-div">
                     <div class="col-12">
         <span id="buzz-chart-load-spin" class="spinner-border text-primary text-align-center" role="status"
@@ -130,6 +135,10 @@ var productTypeBudleNameJa = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[produc
             <div class="col-12 text-align-center">
                 <span id="tweet-list-load-spin" class="spinner-border text-primary" role="status"
                       aria-hidden="true"></span>
+                <div id="tweet-not-found" class="invisible">
+                    この商品の情報を収集中です。<br>
+                    しばらく経ってから再度ご確認ください。
+                </div>
                 <div class="related-tweet-area">
                     <div class="related-tweet">
                         <!-- tweet list -->
@@ -198,7 +207,7 @@ var productTypeBudleNameJa = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[produc
             </div>
         </div>
         <div class="col-5 ranking-top-3-ad">
-            <a href="/product/detail/<%= productModel.productId %>">
+            <a href="/product/detail/<%= productData.productModel.productId %>">
                 <%- include(appRoot + '/views/product_image/' + productModel.getProductClassName() + '.ejs', { productModel: productData.productModel, linkTag: false, }) %>
             </a>
         </div>

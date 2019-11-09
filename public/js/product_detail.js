@@ -18,15 +18,10 @@ var tweetDataList = [];
 $(async () => {
   initBuzzChart();
   await initTwitterWidget();
-
-  // NOTE: widget.js do load every embedded tweets in html after random msec. wait 1 sec to avoid load all tweets at same time,
-  await sleep(1000);
   await fetchTweetDataListWithAjax();
 
   loadChunkTweets(true);
   initTweetReadMoreButton();
-
-  // initLazyChunkLoad();
 });
 
 function initTweetReadMoreButton() {
@@ -42,62 +37,18 @@ function initTweetReadMoreButton() {
   });
 }
 
-function initLazyChunkLoad() {
-  var $tweetChunks = $('.tweet-chunk');
-  var initLoadTweetChunks = [$tweetChunks[0], $tweetChunks[1]];
-  _.each(initLoadTweetChunks, tweetChunk => {
-    chunkLoad(tweetChunk);
-  });
-
-  $(window).on('scroll', function () {
-    var $tweetChunks = $('.tweet-chunk');
-
-    $tweetChunks.each(function () {
-      if (isScrolledIntoView(this)) {
-        chunkLoad(this);
-      }
-    });
-
-  });
-}
-
-function chunkLoad(chunkEle) {
-  var $chunk = $(chunkEle);
-  twttr.widgets.load(chunkEle);
-  $chunk.removeClass('tweet-chunk');
-
-  var pahToAdHTML = location.origin + '/ad/adsense/in_feed.html';
-  var $adDiv = $chunk.find('.adsense-infeed')
-  $adDiv.load(pahToAdHTML);
-  $adDiv.removeClass('adsense-infeed');
-
-}
-
-function initTweetAndAdsenseLoad() {
-  var tweetChunks = $('.tweet-chunk');
-
-  var initLoadTweetChunks = [tweetChunks[0], tweetChunks[1]];
-  _.each(initLoadTweetChunks, tweetChunk => {
-    twttr.widgets.load(tweetChunk);
-    $(tweetChunk).removeClass('tweet-chunk');
-  });
-}
-
-function isScrolledIntoView(elem) {
-  var docViewTop = $(window).scrollTop();
-  var docViewBottom = docViewTop + $(window).height();
-  var eleTop = $(elem).offset().top;
-  var eleBottom = eleTop + $(elem).height();
-
-  return docViewBottom < eleTop && (eleTop - TWEETS_LAZY_LOAD_OFFSET_HEIGHT_PX) <= docViewBottom
-    || docViewTop > eleBottom && eleBottom + TWEETS_LAZY_LOAD_OFFSET_HEIGHT_PX >= docViewTop;
-}
-
 function loadChunkTweets(isFirstLoad) {
   var targetTweetDataList = tweetDataList.splice(0, TWEET_NUM_PER_CHUNK);
   var relatedTweetDivElement = $('.related-tweet');
   var adsenseIndex = TWEET_NUM_PER_CHUNK / 2;
   var tweetBlockquotesHTML = '';
+
+  if (isFirstLoad && _.isEmpty(tweetDataList)) {
+    $('#tweet-not-found').removeClass('invisible');
+    $('.related-tweet-area').remove();
+    $('#tweet-list-load-spin').remove();
+    return;
+  }
 
   // add margin for readmore button
   $('.related-tweet-area').css('margin-bottom', sprintf('%dpx', ($('.readmore-button').height() / 2)));
@@ -125,41 +76,9 @@ function loadChunkTweets(isFirstLoad) {
 
   var tweetChunks = $('.tweet-chunk');
   _.each(tweetChunks, tweetChunk => {
-    var $adDiv = $('.related-tweet').find('.adsense-infeed');
-    $adDiv.load(pahToAdHTML);
-    $adDiv.removeClass('adsense-infeed');
     twttr.widgets.load(tweetChunk);
   });
 }
-
-function loadChunkBACKUP() {
-  var tweetDataListChunk = tweetDataList.splice(0, 10);
-  var relatedTweetDivElement = $('.related-tweet');
-
-  _.each(tweetDataListChunk, tweetDataList => {
-    var tweetBlockquotesHTML = '';
-
-    _.each(tweetDataList, tweetData => {
-      tweetBlockquotesHTML += sprintf(
-        '<div class="embedded-tweet">' +
-        '<blockquote class="twitter-tweet" data-lang="ja" data-cards="">' +
-        '<a href="https://twitter.com/%s/status/%s">%s</a>' +
-        '</blockquote>' +
-        '<hr>' +
-        '</div>'
-        ,
-        tweetData[0], tweetData[1], tweetData[2]
-      );
-    });
-
-    var tweetBlockquotesChunkHTML = '<div class=tweet-chunk>' + tweetBlockquotesHTML + '<div class="adsense-infeed"></div><hr></div>';
-
-    relatedTweetDivElement.append(tweetBlockquotesChunkHTML);
-  });
-
-  $('#tweet-list-load-spin').remove();
-}
-
 
 async function fetchTweetDataListWithAjax() {
   tweetDataList = await $.ajax({
@@ -228,11 +147,13 @@ function initTwitterWidget() {
           return;
         }
 
+        // tweet-error
         $embeddedTweet.addClass('rendered');
-
         if (isAllRendered($chunk)) {
           afterAllRendered($chunk);
         }
+        return;
+
       });
 
       resolve();
@@ -250,7 +171,19 @@ function afterAllRendered($chunk) {
     var $readMoreButton = $('.readmore-button');
     $readMoreButton.removeClass('disabled');
     $readMoreButton.html('<div class="relative"><p class="readmore-text">続きを読み込む</p><i class="fas fa-angle-down fa-lg readmore-icon"></i></div>');
+
+    var adDivs = $('.related-tweet').find('.adsense-infeed');
+    _.each(adDivs, adDiv => {
+      var $adDiv = $(adDiv);
+      $adDiv.load(pahToAdHTML);
+      $adDiv.removeClass('adsense-infeed');
+    });
   });
+
+  // delete readmore button if no more tweets
+  if (_.isEmpty(tweetDataList)) {
+    $('.readmore-button').remove();
+  }
 }
 
 function isAllRendered($chunk) {
@@ -258,28 +191,6 @@ function isAllRendered($chunk) {
     return $(embeddedTweet).hasClass('rendered');
   });
 }
-
-function getMinAndMaxMoment(tweetCountLogData) {
-  var minMoment = new Moment(tweetCountLogData[0][0]);
-  floorMoment(minMoment);
-
-  var maxMoment = new Moment(_.last(tweetCountLogData)[0]);
-  maxMoment.set('date', maxMoment.date() + 1);
-  maxMoment.set('millisecond', 0);
-  maxMoment.set('second', 0);
-  maxMoment.set('minute', 0);
-  maxMoment.set('hour', 0);
-
-  return [minMoment, maxMoment];
-}
-
-function floorMoment(moment) {
-  moment.set('millisecond', 0);
-  moment.set('second', 0);
-  moment.set('minute', 0);
-  moment.set('hour', 0);
-}
-
 
 async function initBuzzChart() {
   var buzzChartData = await $.ajax({
@@ -290,6 +201,12 @@ async function initBuzzChart() {
       productId: productId,
     },
   });
+
+  if (!buzzChartData.xLabels.length || buzzChartData.xLabels.length == 1 && buzzChartData.buzzChartData[0] == 0) {
+    $('#buzz-data-not-found').removeClass('invisible');
+    $('#buzz-chart-load-div').remove();
+    return;
+  }
 
   // x date label for display
   var previousYear = null;
@@ -431,3 +348,103 @@ async function initBuzzChart() {
     },
   });
 }
+
+// infinite scroll tweets load (deprecated function)
+// function initLazyChunkLoad() {
+//   var $tweetChunks = $('.tweet-chunk');
+//   var initLoadTweetChunks = [$tweetChunks[0], $tweetChunks[1]];
+//   _.each(initLoadTweetChunks, tweetChunk => {
+//     chunkLoad(tweetChunk);
+//   });
+//
+//   $(window).on('scroll', function () {
+//     var $tweetChunks = $('.tweet-chunk');
+//
+//     $tweetChunks.each(function () {
+//       if (isScrolledIntoView(this)) {
+//         chunkLoad(this);
+//       }
+//     });
+//
+//   });
+// }
+//
+// function chunkLoad(chunkEle) {
+//   var $chunk = $(chunkEle);
+//   twttr.widgets.load(chunkEle);
+//   $chunk.removeClass('tweet-chunk');
+//
+//   var pahToAdHTML = location.origin + '/ad/adsense/in_feed.html';
+//   var $adDiv = $chunk.find('.adsense-infeed')
+//   $adDiv.load(pahToAdHTML);
+//   $adDiv.removeClass('adsense-infeed');
+//
+// }
+//
+// function initTweetAndAdsenseLoad() {
+//   var tweetChunks = $('.tweet-chunk');
+//
+//   var initLoadTweetChunks = [tweetChunks[0], tweetChunks[1]];
+//   _.each(initLoadTweetChunks, tweetChunk => {
+//     twttr.widgets.load(tweetChunk);
+//     $(tweetChunk).removeClass('tweet-chunk');
+//   });
+// }
+//
+// function isScrolledIntoView(elem) {
+//   var docViewTop = $(window).scrollTop();
+//   var docViewBottom = docViewTop + $(window).height();
+//   var eleTop = $(elem).offset().top;
+//   var eleBottom = eleTop + $(elem).height();
+//
+//   return docViewBottom < eleTop && (eleTop - TWEETS_LAZY_LOAD_OFFSET_HEIGHT_PX) <= docViewBottom
+//     || docViewTop > eleBottom && eleBottom + TWEETS_LAZY_LOAD_OFFSET_HEIGHT_PX >= docViewTop;
+// }
+// function loadChunkBACKUP() {
+//   var tweetDataListChunk = tweetDataList.splice(0, 10);
+//   var relatedTweetDivElement = $('.related-tweet');
+//
+//   _.each(tweetDataListChunk, tweetDataList => {
+//     var tweetBlockquotesHTML = '';
+//
+//     _.each(tweetDataList, tweetData => {
+//       tweetBlockquotesHTML += sprintf(
+//         '<div class="embedded-tweet">' +
+//         '<blockquote class="twitter-tweet" data-lang="ja" data-cards="">' +
+//         '<a href="https://twitter.com/%s/status/%s">%s</a>' +
+//         '</blockquote>' +
+//         '<hr>' +
+//         '</div>'
+//         ,
+//         tweetData[0], tweetData[1], tweetData[2]
+//       );
+//     });
+//
+//     var tweetBlockquotesChunkHTML = '<div class=tweet-chunk>' + tweetBlockquotesHTML + '<div class="adsense-infeed"></div><hr></div>';
+//
+//     relatedTweetDivElement.append(tweetBlockquotesChunkHTML);
+//   });
+//
+//   $('#tweet-list-load-spin').remove();
+// }
+// function getMinAndMaxMoment(tweetCountLogData) {
+//   var minMoment = new Moment(tweetCountLogData[0][0]);
+//   floorMoment(minMoment);
+//
+//   var maxMoment = new Moment(_.last(tweetCountLogData)[0]);
+//   maxMoment.set('date', maxMoment.date() + 1);
+//   maxMoment.set('millisecond', 0);
+//   maxMoment.set('second', 0);
+//   maxMoment.set('minute', 0);
+//   maxMoment.set('hour', 0);
+//
+//   return [minMoment, maxMoment];
+// }
+//
+// function floorMoment(moment) {
+//   moment.set('millisecond', 0);
+//   moment.set('second', 0);
+//   moment.set('minute', 0);
+//   moment.set('hour', 0);
+// }
+// // --------------------------------------------------
