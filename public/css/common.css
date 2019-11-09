@@ -42,16 +42,6 @@ html {
     min-height: 100%;
 }
 
-.footer {
-    background-color: #6c757d 1 f;
-    position: absolute;
-    bottom: 0px;
-    width: 100%;
-    /* Set the fixed height of the footer here */
-    height: 1rem;
-    padding: 0px;
-}
-
 .copyright {
     font-size: 0.8rem;
     color: black;
@@ -230,6 +220,14 @@ h6 {
     #content.container-fluid {
         max-width: 100%;
     }
+
+    .footer-link-list li {
+        display: list-item;
+    }
+
+    .footer-link-text {
+        font-size: 1.5rem;
+    }
 }
 
 /* PC */
@@ -249,6 +247,14 @@ h6 {
 
     #content.container-fluid {
         max-width: 45%;
+    }
+
+    .footer-link-list li {
+        display: inline-block;
+    }
+
+    .footer-link-text {
+        font-size: 1rem;
     }
 }
 
@@ -452,16 +458,23 @@ html {
     position: relative;
     min-height: 100%;
 }
-body {
-    /* Margin bottom by footer height */
-    margin-bottom: 60px;
-}
 .footer {
+    text-align: center;
+    background-color: #eb6f00;
     position: absolute;
     bottom: 0;
     width: 100%;
     /* Set the fixed height of the footer here */
-    height: 60px;
+    /*height: 60px;*/
+}
+
+.footer-link-list {
+    margin-bottom: 0rem;
+}
+
+.footer-link-text {
+    /*color: #212529;*/
+    color: rgba(0,0,0,.7);
 }
 
 /* Custom page CSS

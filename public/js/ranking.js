@@ -6,8 +6,6 @@ const Accordion = require('accordion').Accordion;
 const Lazysizes = require('lazysizes');
 const isMobileDevice = 'ontouchstart' in window;
 const isAdmin = !!$('#is-admin-dummy-div')[0];
-
-
 var isFirstTwitterWigetsLoad = true;
 
 require('bootstrap');
