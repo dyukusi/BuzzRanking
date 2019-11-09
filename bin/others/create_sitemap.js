@@ -27,8 +27,8 @@ main()
 
 async function main() {
   // for judge is popular
-  var rankInProductIdRows = (await sequelize.query(
-    "SELECT product_id, count(*) FROM stat_data GROUP BY product_id;",
+  var ProductReferredByUsersRows = (await sequelize.query(
+    "SELECT product_id FROM (SELECT product_id, count(*) AS count FROM new_tweet GROUP BY product_id) AS t2 WHERE count > 30",
   ))[0];
 
   // var productIdToIsPopularHash = {};
@@ -56,7 +56,7 @@ async function main() {
   // }
 
   // set priority
-  var productDataset = _.map(rankInProductIdRows, rankInProductIdRow => {
+  var productDataset = _.map(ProductReferredByUsersRows, rankInProductIdRow => {
     return {
       productId: rankInProductIdRow.product_id,
       priority: PRIORITY_OF.POPULAR,
