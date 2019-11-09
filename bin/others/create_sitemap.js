@@ -7,6 +7,7 @@ const CONST = require(appRoot + '/my_libs/const.js');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const sprintf = require('sprintf-js').sprintf;
+const Moment = require('moment');
 
 // NOTE: GOOGLE IS NO LONGER CONSIDERS PRIORITY VALUE
 const PRIORITY_OF = {
@@ -14,6 +15,8 @@ const PRIORITY_OF = {
   NORMAL: 0.3,
   INVALID: 0.1,
 };
+
+const LAST_MOD_PRODUCT_DETIAIL_PAGE = new Moment('2019-11-07').format("YYYY-MM-DD");
 
 main()
   .then(() => {
@@ -62,6 +65,7 @@ async function main() {
 
   var sitemap = ejs.render(SiteMapBase, {
     productDataset: productDataset,
+    productDetailLastModStr: LAST_MOD_PRODUCT_DETIAIL_PAGE,
     CONST: CONST,
     _: _,
   });
