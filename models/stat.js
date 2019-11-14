@@ -33,7 +33,8 @@ class Stat extends Sequelize.Model {
       });
 
       await StatData.bulkCreate(insertObjectForStatData)
-        .then(insertedModels => {});
+        .then(insertedModels => {
+        });
     });
   }
 }

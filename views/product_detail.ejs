@@ -80,20 +80,38 @@ var productTypeBudleNameJa = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[produc
 
             </table>
 
-            <div class="row pt-3">
+            <% if (bookCaptionModel) { %>
+                <div class="row pt-3">
+                    <div class="col-12">
+                        <h2 class="small-header">あらすじ</h2>
+                        <%= bookCaptionModel.caption %>
+                    </div>
+                </div>
+            <% } %>
+
+            <% if (productModel.caption) { %>
+                <div class="row pt-3">
+                    <div class="col-12">
+                        <h2 class="small-header">商品説明</h2>
+                        <%- productModel.caption %>
+                    </div>
+                </div>
+            <% } %>
+
+            <div class="row pt-4">
                 <div class="col-12">
                     <h2 class="mid-header">
-                        <%= productName %><span class="no-wrap">の注目度推移</span>
+                        <%= productName %><span class="no-wrap">の注目度は？</span>
                     </h2>
                 </div>
             </div>
 
-            <div id="buzz-data-not-found" class="invisible text-center">
+            <div id="buzz-data-not-found" class="display-none text-center">
                 この商品の情報を収集中です。<br>
                 しばらく経ってから再度ご確認ください。
             </div>
 
-        <% if (productModel.isValid()) { %>
+            <% if (productModel.isValid()) { %>
                 <div class="row" id="buzz-chart-load-div">
                     <div class="col-12">
         <span id="buzz-chart-load-spin" class="spinner-border text-primary text-align-center" role="status"
@@ -101,17 +119,44 @@ var productTypeBudleNameJa = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[produc
                     </div>
                 </div>
 
-                <div class="row text-align-center">
-                    <div class="col-12">
-                        <canvas id="buzz-chart"></canvas>
+                <div class="hide" id="buzz-stat-div">
+                    <div class="row pt-1">
+                        <div class="col-12">
+                            <h2 class="small-header">Buzzランキング ランクイン実績</h2>
+                            <table class="table rank-hist-table">
+                                <tbody id="rank-hist-table-body">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="chart-desc">
-                        ※
-                        <a href="/faq#buzz">
-                            Buzzとは？
-                        </a>
+
+                    <div class="row pt-2">
+                        <div class="col-12">
+                            <h2 class="small-header">Buzzと関連ツイート数推移</h2>
+                        </div>
                     </div>
+
+                    <div class="row text-align-center">
+                        <div class="col-12">
+                            <canvas id="buzz-chart"></canvas>
+                        </div>
+                        <div class="chart-desc">
+                            ※
+                            <a href="/faq#buzz">
+                                Buzzとは？
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <ul class="buzz-chart-info-ul">
+                            </ul>
+                        </div>
+                    </div>
+
                 </div>
+
             <% } else { %>
                 <div class="row">
                     <div class="col-12 invalid-product-description">
@@ -122,7 +167,7 @@ var productTypeBudleNameJa = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[produc
         </div>
     </div>
 
-    <div class="row pt-3">
+    <div class="row pt-4">
         <div class="col-12">
             <h2 class="mid-header">
                 <%= productName + (productModel.subTitle ? ' ' + productModel.subTitle : '') %><span class="no-wrap">のネットの反応</span>
@@ -225,6 +270,10 @@ var productTypeBudleNameJa = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[produc
 </div>
 
 <%- include('footer.ejs') %>
+
+<!-- data bridge from server -->
+<div id="hidden-div"
+     data-value='{"productId":<%= productModel.productId %>,"productTypeId":<%= productModel.productTypeId %>,"bundleName":"<%= productTypeBundleName %>","bundleNameJA":"<%= productTypeBudleNameJa %>"}'></div>
 
 <script src="/js/compressed/product_detail.min.js" type="text/javascript"></script>
 </body>
