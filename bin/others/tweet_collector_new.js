@@ -16,7 +16,7 @@ const TweetCountLog = require(appRoot + '/models/tweet_count_log');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
 const TweetSource = require(appRoot + '/models/tweet_source');
 
-const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 24;
+const PRIORITY_ZERO_THRESHOLD_HOURS_SINCE_LAST_UPDATED_LTE = 12;
 const WAITING_TIME_MSEC_PER_USING_TWITTER_API = 6500; // 6.5sec
 const ABNORMAL_THRESHOLD_ORIGINAL_TWEET_COUNT = 10000;
 const SEARCH_TARGET_NUM_PER_EXECUTION = 10;
@@ -24,9 +24,9 @@ const STRICT_WORD_SEARCH_PRODUCT_TYPES = [
   2, // dating
 ];
 
-let DEFAULT_TWITTER_SEARCH_OPTION_BASE = 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App';
+let DEFAULT_TWITTER_SEARCH_OPTION_BASE = 'OR @kslghahfs source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App exclude:retweets';
 let TWITTER_SEARCH_OPTION_BASE_BY_PRODUCT_TYPE_ID = {
-  2: 'OR @kslghahfs -filter:links source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App',
+  2: 'OR @kslghahfs -filter:links source:Twitter_for_iPhone OR source:Twitter_for_Android OR source:Twitter_Web_Client OR source:Twitter_Web_App exclude:retweets',
 };
 
 let tempOriginalTweetCountHash = {};
@@ -76,10 +76,10 @@ async function main() {
     } catch (e) {
       console.log(e);
       taskQueue.push(task);
-      continue;
     }
 
     await sleep(WAITING_TIME_MSEC_PER_USING_TWITTER_API);
+
     console.log("NEXT");
   }
 
@@ -150,26 +150,27 @@ async function createTaskQueue() {
       .value();
 
     let searchWords = !_.isEmpty(altSearchWords) ? altSearchWords : [productModel.getProductName()];
+    let joinedSearchWord = searchWords.join(" OR ");
 
     var hasInvalidSearchWord = _.some(searchWords, word => {
       return isMaybeInvalidProduct(word) || !Util.checkSearchWordValidity(word);
-    });
+    }) || isMaybeInvalidProduct(joinedSearchWord) ;
 
     if (!productModel.isProtected() && hasInvalidSearchWord) {
       await productModel.update({
-        validityStatus: 1,
+        validityStatus: CONST.VALIDITY_STATUS_NAME_TO_ID.suspicious,
       });
+
+      console.log("suspicious product detected. status has been updated to suspicious and skipped search process. name: " + productModel.title + " productId: " + productModel.productId);
       continue;
     }
-
-    let joinedSearchWord = searchWords.join(" OR ");
 
     // NOTE: since param is really important to prevent duplicate search
     let since = null;
     if (productIdToLatestTweetedAtRow[productModel.productId]) {
-      var tweetedAt = productIdToLatestTweetedAtRow[productModel.productId].tweeted_at;
+      var tweetedAt = productIdToLatestTweetedAtRow[productModel.productId].latest_date;
       var sinceMoment = new Moment(tweetedAt);
-      since = sinceMoment.utc().format("YYYY-MM-DD");
+      since = sinceMoment.format("YYYY-MM-DD_HH:mm:ss[_JST]");
     }
 
     taskQueue.push(createTask(productModel.productTypeId, productModel.productId, joinedSearchWord, since));
@@ -367,6 +368,7 @@ async function collectTweets(task) {
     // NOTE: dont need to set since arg becauze next_results is already considering since param
     let newTask = createTask(task.product_type_id, task.product_id, task.search_word, task.api_param.since);
     newTask.api_param = QueryString.parse(metaData['next_results']);
+    // newTask.api_param.since = task.api_param.since;
     taskQueue.push(newTask);
     return;
   }
@@ -385,7 +387,7 @@ async function updateProductValidityStatusByProductId(productId, status) {
 }
 
 function isMaybeInvalidProduct(productName) {
-  if (productName.length <= 3) return true;
+  if (productName.length <= 3 || 50 <= productName.length) return true;
   return false;
 }
 
@@ -479,6 +481,6 @@ function tweetJSONIntoInsertObject(tweet, productId, tweetSourceId) {
     sourceId: tweetSourceId,
     text: tweet['text'],
     isInvalid: 0,
-    tweetedAt: Util.convertDateObjectIntoMySqlReadableString(new Date(tweet['created_at'])),
+    tweetedAt: new Moment(tweet['created_at']).format("YYYY-MM-DD HH:mm:ss"),
   };
 }

@@ -14,6 +14,14 @@ class StatData extends Sequelize.Model {
       },
     });
   }
+
+  static selectByProductId(productId) {
+    return this.findAll({
+      where: {
+        productId: productId,
+      },
+    });
+  }
 }
 
 StatData.init({
@@ -22,6 +30,16 @@ StatData.init({
       allowNull: false,
       field: 'stat_id',
       primaryKey: true,
+    },
+    rank: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: true,
+      field: 'rank'
+    },
+    categoryRank: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: true,
+      field: 'category_rank'
     },
     productId: {
       type: Sequelize.INTEGER(11).UNSIGNED,

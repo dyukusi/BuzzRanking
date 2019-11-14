@@ -89,24 +89,71 @@ async function main() {
     return m.productId;
   });
 
-  var productIdIntoInsertObjectBaseForStatData = {};
+  var productIdIntoInsertObjectsForStatData = {};
 
   console.log("creating stat data objects");
   for (var i = 0; i < candidateProductIds.length; i++) {
     var productId = candidateProductIds[i];
     var tweetModels = productIdIntoTweetModels[productId] || [];
-    var tweetCount = _.reduce(tweetModels, (memo, model) => {
-      return memo + (1 + model.retweetCount);
-    }, 0);
     var buzz = BatchUtil.calcBuzzByTweetModels(tweetModels, tweetUntilMoment);
 
     if (!isNoBuzzThresholdProductIdHash[productId] && buzz < RANK_IN_BUZZ_THRESHOLD) continue;
-    productIdIntoInsertObjectBaseForStatData[productId] = createInsertObjectBaseForStatData(productId, tweetCount, buzz);
+    productIdIntoInsertObjectsForStatData[productId] = createInsertObjectBaseForStatData(productId, tweetModels.length, buzz);
   }
 
-  console.log("creating ranking");
+  var calcRank = function(insertObjects) {
+    var sortedInsertObjects = _.sortBy(insertObjects, obj => {
+      return -1 * obj.buzz;
+    });
 
-  await Stat.createRankingData(rankingMoment, tweetSinceMoment, tweetUntilMoment, _.values(productIdIntoInsertObjectBaseForStatData));
+    var rank = 0;
+    var previousBuzz = null;
+    var productIdIntoRank = {};
+    for (var i = 0; i < sortedInsertObjects.length; i++) {
+      var insertObject = sortedInsertObjects[i];
+      var buzz = insertObject.buzz;
+
+      if (previousBuzz != buzz) {
+        rank = (i + 1);
+      }
+
+      productIdIntoRank[insertObject.productId] = rank;
+      previousBuzz = buzz;
+    }
+
+    return productIdIntoRank;
+  };
+
+  console.log("assigning rank");
+  var targetProductIds = _.keys(productIdIntoInsertObjectsForStatData);
+  var productModels = await Util.selectProductModels({
+    productId: targetProductIds,
+  });
+
+  // all ranking
+  var productIdIntoRank = calcRank(_.values(productIdIntoInsertObjectsForStatData));
+  _.each(productIdIntoRank, (rank, productId) => {
+    productIdIntoInsertObjectsForStatData[productId].rank = rank;
+  });
+
+  // category ranking
+  var productTypeBundleIdIntoProductModels = _.groupBy(productModels, m => {
+    return CONST.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[m.productTypeId];
+  });
+
+  _.each(productTypeBundleIdIntoProductModels, (productModels, productTypeBundleId) => {
+    var insertObjects = _.map(productModels, m => {
+      return productIdIntoInsertObjectsForStatData[m.productId];
+    });
+
+    var productIdIntoRank = calcRank(insertObjects);
+    _.each(productIdIntoRank, (rank, productId) => {
+      productIdIntoInsertObjectsForStatData[productId].categoryRank = rank;
+    });
+  });
+
+  console.log("creating records");
+  await Stat.createRankingData(rankingMoment, tweetSinceMoment, tweetUntilMoment, _.values(productIdIntoInsertObjectsForStatData));
 
   console.log("finish!");
 }
@@ -133,6 +180,7 @@ function createInsertObjectBaseForStatData(productId, tweetCount, buzz) {
     productId: productId,
     tweetCount: tweetCount,
     buzz: buzz,
+    rank: null,
     isInvalid: 0,
   };
 }

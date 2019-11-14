@@ -44,6 +44,12 @@ WebService.init({
       allowNull: false,
       field: 'validity_status'
     },
+    createdAt: {
+      type: Sequelize.DATE,
+      allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+      field: 'created_at'
+    },
   }, {
     freezeTableName: true,
     underscored: true,

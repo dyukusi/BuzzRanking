@@ -6,9 +6,14 @@ const MyUtil = require('./util.js');
 const sprintf = require('sprintf-js').sprintf;
 const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 
+var hiddenData = $('#hidden-div').data('value');
 var TWEETS_LAZY_LOAD_OFFSET_HEIGHT_PX = $(window).height();
 var TWEET_NUM_PER_CHUNK = 10;
-var productId = Number(location.pathname.replace('/product/detail/', '').replace(/\?.*/, ''));
+// var productId = Number(location.pathname.replace('/product/detail/', '').replace(/\?.*/, ''));
+var productId = hiddenData.productId;
+var productTypeId = hiddenData.productTypeId;
+var productTypeBundleName = hiddenData.bundleName;
+var productTypeBundleNameJA = hiddenData.bundleNameJA;
 var pahToAdHTML = location.origin + '/ad/adsense/in_feed.html';
 var tempYear = 0;
 var isFirstChartRender = true;
@@ -193,8 +198,8 @@ function isAllRendered($chunk) {
 }
 
 async function initBuzzChart() {
-  var buzzChartData = await $.ajax({
-    url: MyUtil.getLocationOrigin() + '/api/product/buzz_chart_data',
+  var buzzStat = await $.ajax({
+    url: MyUtil.getLocationOrigin() + '/api/product/buzz_stat',
     type: 'GET',
     dataType: 'json',
     data: {
@@ -202,15 +207,86 @@ async function initBuzzChart() {
     },
   });
 
-  if (!buzzChartData.xLabels.length || buzzChartData.xLabels.length == 1 && buzzChartData.buzzChartData[0] == 0) {
-    $('#buzz-data-not-found').removeClass('invisible');
+  $('#buzz-stat-div').removeClass('hide');
+
+  if (!buzzStat.xLabels.length || buzzStat.xLabels.length == 1 && buzzStat.buzzChartData[0] == 0) {
+    $('#buzz-data-not-found').removeClass('display-none');
     $('#buzz-chart-load-div').remove();
     return;
   }
 
+  // append rank history data
+  if (buzzStat.rankHistoryData) {
+    // latest history
+    var latestHistData = buzzStat.rankHistoryData.latest;
+    $('#rank-hist-table-body').append(
+      sprintf(
+        '<tr class="rank-hist-row">' +
+        '<td rowspan="2">直近</td>' +
+        '<td rowspan="2">%s</td>' +
+        '<td>%s</td>' +
+        '<td>%s位</td>' +
+        '</tr>',
+        new Moment(latestHistData.date).format("YYYY年MM月MM日"),
+        sprintf('<a href="/ranking/%s">%s</a>', productTypeBundleName, productTypeBundleNameJA),
+        latestHistData.categoryRank
+        // latestHistData.categoryProductCount || '??',
+      )
+    );
+
+    $('#rank-hist-table-body').append(
+      sprintf(
+        '<tr class="rank-hist-row">' +
+        '<td>%s</td>' +
+        '<td>%s位</td>' +
+        '</tr>',
+        sprintf('<a href="/ranking/%s">%s</a>', 'all', '総合'),
+        latestHistData.allRank
+      )
+    );
+
+    // peak history
+    var peakAllHistData = buzzStat.rankHistoryData.peak.category;
+    var peakCategoryHistData = buzzStat.rankHistoryData.peak.all;
+    $('#rank-hist-table-body').append(
+      sprintf(
+        '<tr class="rank-hist-row">' +
+        '<td rowspan="2">ピーク</td>' +
+        '<td>%s</td>' +
+        '<td>%s</td>' +
+        '<td>%s位</td>' +
+        '</tr>',
+        new Moment(peakAllHistData.date).format("YYYY年MM月MM日"),
+        sprintf('<a href="/ranking/%s">%s</a>', productTypeBundleName, productTypeBundleNameJA),
+        peakAllHistData.categoryRank
+      )
+    );
+
+    $('#rank-hist-table-body').append(
+      sprintf(
+        '<tr class="rank-hist-row">' +
+        '<td>%s</td>' +
+        '<td>%s</td>' +
+        '<td>%s位</td>' +
+        '</tr>',
+        new Moment(peakCategoryHistData.date).format("YYYY年MM月MM日"),
+        sprintf('<a href="/ranking/%s">%s</a>', 'all', '総合'),
+        peakCategoryHistData.allRank
+      )
+    );
+  }
+
+  // append check point texts
+  _.each(buzzStat.checkPointTexts, text => {
+    $('.buzz-chart-info-ul').append(sprintf(
+      '<li>%s</li>',
+      text
+    ));
+  });
+
   // x date label for display
   var previousYear = null;
-  var dispDateLabels = _.map(buzzChartData.xLabels, date => {
+  var dispDateLabels = _.map(buzzStat.xLabels, date => {
     var moment = new Moment(date);
     var formatStr = "MM/DD";
     if (previousYear != moment.year()) {
@@ -233,7 +309,7 @@ async function initBuzzChart() {
       datasets: [{
         type: 'line',
         label: 'Buzz',
-        data: buzzChartData.buzzChartData,
+        data: buzzStat.buzzChartData,
         borderColor: "#eb6f00",
         borderWidth: "2",
         pointBackgroundColor: "red",
@@ -247,7 +323,7 @@ async function initBuzzChart() {
       }, {
         type: 'bar',
         label: 'ツイート数',
-        data: buzzChartData.tweetCountChartData,
+        data: buzzStat.tweetCountChartData,
         borderWidth: "2",
         borderColor: "#abdfff",
         backgroundColor: "#c3eeff",
@@ -336,7 +412,7 @@ async function initBuzzChart() {
           position: "right",
           ticks: {
             display: false,
-            max: _.max(buzzChartData.tweetCountChartData) + (_.max(buzzChartData.tweetCountChartData) / 10),
+            max: _.max(buzzStat.tweetCountChartData) + (_.max(buzzStat.tweetCountChartData) / 10),
             beginAtZero: true,
             fontColor: "black",
           },

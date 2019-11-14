@@ -28,6 +28,7 @@ var texts = Const.RANKING_PAGE_META[productTypeBundleId] || DEFAULT_TEXT;
 var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
 var productTypeIds = Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
 var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, Const.EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS));
+var isAllCategory = productTypeBundleId == 999;
 %>
 
 <!DOCTYPE html>
@@ -97,12 +98,19 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
     <%
     __.times(productDataListForThisPage.length, function(n) {
         var productData = productDataListForThisPage[n];
-        var productId = productData.productModel.productId;
-        var rank = (start + 1) + n;
+        var productModel = productData.productModel;
+        var statDataModel = productData.statDataModel;
+        var productId = productModel.productId;
         var productModelName = productData.productClassName;
         var productInfoTemplatePath = 'product_info/' + productModelName + '.ejs';
         var buzz = productData.statDataModel ? productData.statDataModel.buzz : 0;
         var progressBarPercentage = ((buzz / rank1Buzz) * 100) || 0;
+        var belongeProductBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
+        var bundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[belongeProductBundleId];
+        var bundleNameJA = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[belongeProductBundleId];
+
+        var rank = statDataModel.rank;
+        var categoryRank = statDataModel.categoryRank;
     %>
 
     <div class="row product-row-block">
@@ -115,11 +123,21 @@ var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, C
                 <span class="product-block-border-title relative">
                     <% if (buzz) { %>
                         <span class="d-flex align-items-end no-wrap">
-                            <% if (0 <= rank && rank <= 3) { %>
-                                <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
+                            <% if (isAllCategory) { %>
+                                <% if (0 <= rank && rank <= 3) { %>
+                                    <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
+                                <% } %>
+
+                                <%= rank %>位&nbsp;
+                                <span class="category-rank-text">
+                                    (<a href="/ranking/<%= bundleName %>"><%= bundleNameJA %>カテゴリ</a> <%= statDataModel.categoryRank %>位)
+                                </span>
+                            <% } else { %>
+                                <% if (0 <= categoryRank && categoryRank <= 3) { %>
+                                    <img src="/img/ranking/rank_<%= categoryRank %>_crown.png" class="rank-crown-img">
+                                <% } %>
+                                <%= categoryRank %>位
                             <% } %>
-                            <%= rank %>位
-                            <!--<span class="buzz-count-text">(<%= buzz %>Buzz)</span>-->
                         </span>
                     <% } %>
                 </span>

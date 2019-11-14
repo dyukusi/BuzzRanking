@@ -48,6 +48,10 @@ h2 {
     .external-ranking-link {
         font-size: 1.5rem;
     }
+
+    .rank-hist-row {
+        font-size: 3.5vmin;
+    }
 }
 
 /* pc */
@@ -84,6 +88,10 @@ h2 {
     .external-ranking-link {
         font-size: 2rem;
     }
+
+    .rank-hist-row {
+        font-size: 1rem;
+    }
 }
 
 #buzz-chart {
@@ -95,7 +103,8 @@ h2 {
 
 .chart-desc {
     padding: 0 1rem 0 1rem;
-    text-align: left;
+    width: 100%;
+    text-align: right;
     font-size: 1rem;
 }
 
@@ -243,10 +252,6 @@ a {
     visibility: hidden;
 }
 
-.display-none {
-    display: none !important;
-}
-
 /*.embedded-tweet {*/
 /*display: none;*/
 /*}*/
@@ -361,4 +366,54 @@ a {
 
 .invisible {
     display: none;
+}
+
+.rank-history-header {
+}
+
+#hidden-div {
+    display: none;
+}
+
+.rank-hist-rank-text {
+    font-weight: bold;
+}
+
+.rank-hist-table {
+    text-align: center;
+}
+
+.rank-hist-row td {
+    padding: 0.3rem;
+}
+
+.rank-hist-row th {
+    padding: 0.3rem;
+}
+
+
+.buzz-chart-info-ul {
+    /*border: solid 2px #ffb03f;*/
+    padding: 0.5em 1em 0.5em 2.3em;
+    position: relative;
+}
+
+.buzz-chart-info-ul li {
+    line-height: 1.5;
+    padding: 0.5em 0;
+    list-style-type: none!important;
+}
+
+.buzz-chart-info-ul li:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f00c";
+    font-weight: 900;
+    position: absolute;
+    left : 1em;
+    color: #ffb03f;
+}
+
+.rank-hist-table > tbody > tr > td {
+    text-align: center;
+    vertical-align: middle;
 }
