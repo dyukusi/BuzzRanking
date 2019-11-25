@@ -9,12 +9,17 @@ const ProductBase = require(appRoot + '/models/product_base');
 
 class Book extends ProductBase {
   // ------------------- Instance Methods -------------------
+  getImageURL() {
+    return this.imageUrlBase;
+  }
+
   generateProductImageHtmlForProductDetailPage() {
     return sprintf(
       '<a href="%s"><img class="product-image" src="%s"></a>',
       this.affiliateItemUrl, this.imageUrlBase
     );
   }
+
   // ------------------- Class Methods -------------------
 }
 
@@ -29,6 +34,11 @@ Book.init({
       type: Sequelize.INTEGER(11),
       allowNull: false,
       field: 'product_type_id'
+    },
+    productBundleId: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: true,
+      field: 'product_bundle_id'
     },
     isbnCode: {
       type: Sequelize.STRING(255),

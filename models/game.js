@@ -7,6 +7,9 @@ const ProductBase = require(appRoot + '/models/product_base');
 
 class Game extends ProductBase {
   // ------------------- Instance Methods -------------------
+  getImageURL() {
+    return this.imageUrlBase;
+  }
 
   // ------------------- Class Methods -------------------
 }
@@ -23,6 +26,11 @@ Game.init({
       type: Sequelize.INTEGER(10).UNSIGNED,
       allowNull: false,
       field: 'product_type_id'
+    },
+    productBundleId: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: true,
+      field: 'product_bundle_id'
     },
     janCode: {
       type: Sequelize.STRING(255),

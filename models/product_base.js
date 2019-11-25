@@ -10,6 +10,10 @@ class ProductBase extends Sequelize.Model {
     return this.title.trim();
   }
 
+  getImageURL() {
+    throw new Error('implement this');
+  }
+
   isValid() {
     return Util.isValidByStatus(this.validityStatus);
   }

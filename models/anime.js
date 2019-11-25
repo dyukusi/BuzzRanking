@@ -7,6 +7,13 @@ const ProductBase = require(appRoot + '/models/product_base');
 
 class Anime extends ProductBase {
   // ------------------- Instance Methods -------------------
+  getImageURL() {
+    var ogpImageURL = this.ogpImageUrl;
+    var siteThumbnailURL = "http://capture.heartrails.com/300x300?" + this.publicUrl;
+    // var siteThumbnailURL = "https://blinky.nemui.org/shot/large?" + officialSiteURL;
+
+    return ogpImageURL || siteThumbnailURL;
+  }
 
   // ------------------- Class Methods -------------------
 }
@@ -23,6 +30,11 @@ Anime.init({
       allowNull: false,
       primaryKey: true,
       field: 'product_type_id'
+    },
+    productBundleId: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: true,
+      field: 'product_bundle_id'
     },
     shangrilaId: {
       type: Sequelize.INTEGER(11).UNSIGNED,

@@ -6,6 +6,9 @@ const ProductBase = require(appRoot + '/models/product_base');
 
 class WebService extends ProductBase {
   // ------------------- Instance Methods -------------------
+  getAffiliateHTML() {
+    return this.affiliateHtml;
+  }
 
   // ------------------- Class Methods -------------------
 }
@@ -22,6 +25,11 @@ WebService.init({
       type: Sequelize.INTEGER(11),
       allowNull: true,
       field: 'product_type_id'
+    },
+    productBundleId: {
+      type: Sequelize.INTEGER(11).UNSIGNED,
+      allowNull: true,
+      primaryKey: true,
     },
     title: {
       type: Sequelize.STRING(255),
