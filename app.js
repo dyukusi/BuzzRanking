@@ -1,33 +1,21 @@
-process.on('uncaughtException', function (err) {
-  console.log(err);
-});
+const appRoot = require('app-root-path');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const passport = require('passport');
+const session = require('express-session');
+const rfs = require("rotating-file-stream");
+const redirectToHTTPS = require('express-http-to-https').redirectToHTTPS;
 
-var appRoot = require('app-root-path');
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var passport = require('passport');
-var session = require('express-session');
-var rfs = require("rotating-file-stream");
-var redirectToHTTPS = require('express-http-to-https').redirectToHTTPS;
-var cacheUtil = require(appRoot + '/my_libs/cache_util.js');
-
-// global vars
-global.Config = require('config');
-global.appRoot = require('app-root-path');
-global.__ = require('underscore');
-global.sprintf = require('sprintf-js').sprintf;
-global.async = require('async');
-global.Util = require(appRoot + '/my_libs/util.js');
-global.Const = require(appRoot + '/my_libs/const.js');
-global.Q = require('q');
-global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
-global.Moment = require('moment');
-global.redis = cacheUtil.createRedisInstance();
+const __ = require('underscore');
+const CONST = require(appRoot + '/lib/const.js');
 
 var app = express();
+
+// import modules used in client side from node_modules directory
+// app.use("/amcharts4", express.static(__dirname + "/node_modules/@amcharts/amcharts4/"));
 
 var accessLogStream = rfs('access.log', {
   size:'10MB',
@@ -69,17 +57,41 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// add 'require' function in ejs template code
+app.use(function (req, res, next) {
+  var _render = res.render;
+  res.render = function (view, options, fn) {
+    // extend config and continue with original render
+    options = options || {};
+    options.require = require;
+
+    // options.config = config;
+    // options.moment = moment;
+    // if (req.user && req.user.toJSON) {
+    //   options.user = req.user.toJSON();
+    // }
+    _render.call(this, view, options, fn);
+  }
+  next();
+});
+
 app.use('/', require('./routes/index.js'));
+app.use('/', require('./routes/ranking.js'));
+
 app.use('/product', require('./routes/product.js'));
-app.use('/ranking', require('./routes/ranking.js'));
+app.use('/product-bundle', require('./routes/product-bundle.js'));
+app.use('/twitter', require('./routes/twitter.js'));
 app.use('/auth', require('./routes/auth.js'));
 app.use('/admin', require('./routes/admin.js'));
 app.use('/api', require('./routes/api.js'));
 
+// for redirect
+app.use('/', require('./routes/old_url_redirector.js'));
+
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(__.extend(createError(404), {
-    dispMessage: Const.ERROR_MESSAGE["404"],
+    dispMessage: CONST.ERROR_TYPE_NAME_TO_MESSAGE_HASH["404"],
   }));
 });
 
@@ -102,8 +114,12 @@ app.use(function (err, req, res, next) {
   res.status(status);
   res.render('error', {
     status: status,
-    dispMessage: err.dispMessage || Const.ERROR_MESSAGE.DEFAULT,
+    dispMessage: err.dispMessage || CONST.ERROR_TYPE_NAME_TO_MESSAGE_HASH.DEFAULT,
   });
+});
+
+process.on('uncaughtException', function (err) {
+  console.log(err);
 });
 
 module.exports = app;

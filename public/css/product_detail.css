@@ -10,39 +10,19 @@
     text-align: center;
 }
 
-.product-basic-info {
-    margin-bottom: 1rem;
-}
-
 h2 {
     font-size: 1.3em;
 }
 
-.product-basic-info {
-    margin-top: 1rem;
-}
-
 /* smart device */
 @media (min-width: 0px) {
-    #content.container-fluid {
-        max-width: 100%;
-    }
+    /*#content.container-fluid {*/
+    /*    max-width: 100%;*/
+    /*}*/
 
     .top-3-ranking-product-img {
         max-height: 100px;
         width: auto;
-    }
-
-    .large-header {
-        font-size: 1.5rem;
-    }
-
-    .sub-large-header {
-        font-size: 1.2rem;
-    }
-
-    .ranking-top-3-product-name {
-        font-size: 1.3rem;
     }
 
     .external-ranking-link {
@@ -52,13 +32,17 @@ h2 {
     .rank-hist-row {
         font-size: 3.5vmin;
     }
+
+    .product-image {
+        max-height: 250px;
+    }
 }
 
 /* pc */
 @media (min-width: 992px) {
-    #content.container-fluid {
-        max-width: 60%;
-    }
+    /*#content.container-fluid {*/
+    /*    max-width: 60%;*/
+    /*}*/
 
     .tweet-reference-block {
         /*width: 75%;*/
@@ -73,24 +57,16 @@ h2 {
         width: 60%;
     }
 
-    .large-header {
-        font-size: 3rem;
-    }
-
-    .sub-large-header {
-        font-size: 1.7rem;
-    }
-
-    .ranking-top-3-product-name {
-        font-size: 1.5rem;
-    }
-
     .external-ranking-link {
         font-size: 2rem;
     }
 
     .rank-hist-row {
         font-size: 1rem;
+    }
+
+    .product-image {
+        max-height: 300px;
     }
 }
 
@@ -121,41 +97,6 @@ h2 {
     padding-right: 1rem;
 }
 
-blockquote.twitter-tweet {
-    display: inline-block;
-    font-family: "Helvetica Neue", Roboto, "Segoe UI", Calibri, sans-serif;
-    font-size: 12px;
-    font-weight: bold;
-    line-height: 16px;
-    border-color: #eee #ddd #bbb;
-    border-radius: 5px;
-    border-style: solid;
-    border-width: 1px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-    margin: 10px 5px;
-    padding: 0 16px 16px 16px;
-    max-width: 468px;
-    text-align: center;
-}
-
-blockquote.twitter-tweet p {
-    font-size: 16px;
-    font-weight: normal;
-    line-height: 20px;
-}
-
-blockquote.twitter-tweet a {
-    color: inherit;
-    font-weight: normal;
-    text-decoration: none;
-    outline: 0 none;
-}
-
-blockquote.twitter-tweet a:hover,
-blockquote.twitter-tweet a:focus {
-    text-decoration: underline;
-}
-
 .twitter-tweet {
     margin: 0px !important;
 }
@@ -183,6 +124,7 @@ a {
 
 .product-detail-table {
     width: 100%;
+    font-size: 0.9rem;
     border-collapse: collapse;
 }
 
@@ -195,13 +137,12 @@ a {
 }
 
 .product-detail-table th {
-    position: relative;
-    text-align: left;
-    width: 30%;
-    background-color: #eb6e02;
-    color: white;
     text-align: center;
-    padding: 8px 0;
+    font-weight: normal;
+    position: relative;
+    width: 30%;
+    background-color: #fbd989;;
+    padding: 3px 0;
 }
 
 .product-detail-table th:after {
@@ -212,26 +153,16 @@ a {
     position: absolute;
     top: calc(50% - 10px);
     right: -10px;
-    border-left: 10px solid #eb6e02;
+    border-left: 10px solid #fbd989;
     border-top: 10px solid transparent;
     border-bottom: 10px solid transparent;
 }
 
 .product-detail-table td {
-    text-align: left;
     width: 70%;
-    text-align: center;
     background-color: #eee;
-    padding: 8px 0;
-}
-
-.large-header {
-    text-align: center;
-    padding: 0.4em 0.5em;
-    color: #494949;
-    background: #f4f4f4;
-    border-left: solid 5px #f96d22;
-    border-bottom: solid 3px #d7d7d7;
+    padding: 3px 0 3px 1rem;
+    text-align: left;
 }
 
 #buzz-chart-load-div {
@@ -243,9 +174,22 @@ a {
 .product-image-area a img {
     width: auto;
     max-width: 100%;
-    max-height: 300px;
-    min-height: 200px;
     box-shadow: -3px 3px 3px rgba(0, 0, 0, 0.6);
+}
+
+.product-image {
+    /*max-height: 400px;*/
+    min-height: 300px;
+    margin: 0 30px 10px 30px;
+    box-shadow: -3px 3px 3px rgba(0, 0, 0, 0.6);
+}
+
+.slick-next::before {
+    color: darkgray;
+}
+
+.slick-prev::before {
+    color: darkgray;
 }
 
 .tweet-chunk {
@@ -276,9 +220,9 @@ a {
 
     display: table;
     font-size: 1.1em;
-    color: #ff8700;
+    color: #007bff;
     background-color: rgba(255, 255, 255, 0.8);
-    border: solid 3px #ff8700;
+    border: solid 3px #007bff;
     border-radius: 8px;
     font-weight: bold;
 }
@@ -286,7 +230,7 @@ a {
 .readmore-button:hover {
     color: white;
     /*background-image: initial;*/
-    background-color: #ff5200;
+    background-color: #007bff;
 }
 
 .readmore-text {
@@ -339,7 +283,7 @@ a {
 }
 
 .rank-text {
-    font-size: 1.5rem;
+    font-size: 1rem;
     font-weight: bold;
     z-index: 10;
     position: absolute;
@@ -347,11 +291,12 @@ a {
     left: 50%;
     -webkit-transform: translate(-50%,-50%);
     transform: translate(-50%,-50%);
+    white-space: nowrap;
 }
 
 .ranking-top-3-product-name {
+    font-size: 1rem;
     align-self: center;
-    font-wight: bold;
 }
 
 .ranking-top-3-buzz-num {
@@ -417,3 +362,189 @@ a {
     text-align: center;
     vertical-align: middle;
 }
+
+
+#chartdiv {
+    width: 100%;
+    height: 500px;
+}
+
+.chart-last-updated-at-text {
+    text-align: right;
+    color: gray;
+}
+
+.point-box {
+    position: relative;
+    /*margin: 1rem 0;*/
+    padding: 25px 10px 7px;
+    border: solid 2px #ffa337;
+}
+.point-box .point-box-title {
+    position: absolute;
+    display: inline-block;
+    top: -2px;
+    left: -2px;
+    padding: 0 9px;
+    height: 25px;
+    line-height: 25px;
+    font-size: 1rem;
+    background: #ffa337;
+    color: #ffffff;
+    font-weight: bold;
+}
+.point-box p {
+    margin: 0;
+    padding: 0;
+}
+
+.swiper-product-images {
+    padding-bottom: 2rem;
+}
+
+.swiper-lazy-preloader-blue {
+    --swiper-preloader-color: #4098ff
+}
+
+.swiper-slide {
+    text-align: center;
+    font-size: 18px;
+    background: #fff;
+
+    /* Center slide text vertically */
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    flex-direction: column;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+
+    width: auto;
+    /*height: auto;*/
+}
+
+.swiper-product-image-title-text {
+    font-size: 0.85rem;
+    max-width: 17rem;
+}
+
+.swiper-container .swiper-slide .swiper-slide-content {
+    position: absolute;
+    top: -3rem;
+    text-align: left;
+    height: 2rem;
+}
+
+
+.swiper-product-info-table {
+    width: 100%;
+}
+
+.swiper-pagination-bullet {
+    opacity: 0.4;
+}
+
+.swiper-pagination-bullet-active {
+    opacity: 1.0;
+}
+
+/*.product-filter-button {*/
+/*    padding: 3px;*/
+/*    margin: 2px;*/
+/*    cursor: pointer;*/
+/*    font-size: 1em;*/
+/*    !*color: #ff8700;*!*/
+/*    !*border: solid 3px #ff8700;*!*/
+/*    background-color: rgba(255, 255, 255, 0.1);*/
+
+/*    color: #007bff;*/
+/*    border: solid 2px #007bff;*/
+
+/*    border-radius: 8px;*/
+/*    !*font-weight: bold;*!*/
+/*    text-decoration: none;*/
+/*}*/
+
+/*.product-filter-button:hover, .product-filter-button.active {*/
+/*    color: white;*/
+/*    font-weight: bold;*/
+/*    background-color: #007bff;*/
+/*    text-decoration: none;*/
+/*}*/
+
+.product-filter-button:focus {
+    outline:0;
+}
+
+.rakuten-buy-button {
+    font-weight: bold;
+    transition: initial;
+}
+
+.swiper-custom-button{
+    background-image: none !important;
+    /*background: blue;*/
+    color: #007bff;
+    font-size: 80px;
+    text-align: center;
+    width: 30px !important;
+    height: 64px !important;
+    line-height: 64px;
+}
+.swiper-custom-button .fa{
+    line-height: 62px;
+}
+
+.swiper-button-prev:after, .swiper-button-next:after {
+    display: none;
+}
+
+
+.swiper-button-next, .swiper-button-prev {
+    top: 40%;
+}
+
+#twitter-search-words-ul li {
+    margin: 5px 0;
+}
+
+.alt-search-word-created-at-text {
+    font-size: 0.8rem;
+    color: dimgray;
+}
+
+.spinner-add-alt-search-word {
+    width: 1rem;
+    height: 1rem;
+}
+
+#add-alt-search-word-button {
+    min-width: 5rem;
+}
+
+.stat-count {
+    font-size: 1.4rem;
+}
+
+.web-service-image-link {
+    width: 100%;
+    min-height: 200px;
+    max-height: 300px;
+    text-align: center;
+}
+
+.web-service-image-link img {
+    width: initial;
+    height: 100%;
+}
+
+/*.swiper-wrapper {*/
+/*    justify-content: center !important;*/
+/*}*/

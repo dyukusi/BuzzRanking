@@ -1,5 +1,5 @@
 const appRoot = require('app-root-path');
-const Util = require(appRoot + '/my_libs/util.js');
+const Util = require(appRoot + '/lib/util.js');
 const Tweet = require(appRoot + '/models/tweet');
 const _ = require('underscore');
 const Moment = require('moment');

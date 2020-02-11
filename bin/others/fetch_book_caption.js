@@ -5,10 +5,11 @@ const fs = require('fs');
 const _ = require('underscore');
 const request = require('request');
 const Q = require('q');
-const Util = require(appRoot + '/my_libs/util.js');
+const Util = require(appRoot + '/lib/util.js');
+const ProductUtil = require(appRoot + '/lib/product_util.js');
 const QueryString = require('query-string');
 const async = require('async');
-const con = require(appRoot + '/my_libs/db.js');
+const con = require(appRoot + '/lib/db.js');
 
 const BookCaptionModel = require(appRoot + '/models/book_caption.js');
 const StatModel = require(appRoot + '/models/stat.js');
@@ -48,7 +49,7 @@ async.waterfall([
           return m.productId;
         });
 
-        Util.selectProductModels({
+        ProductUtil.selectProductModels({
           productId: productIds,
         })
           .then(productModels => {

@@ -1,25 +1,25 @@
-global.appRoot = require('app-root-path');
-global.Util = require(appRoot + '/my_libs/util.js');
-global.Const = require(appRoot + '/my_libs/const.js');
-global._ = require('underscore');
-global.ReleaseControl = require(appRoot + '/models/release_control.js');
-global.Stat = require(appRoot + '/models/stat.js');
-global.StatData = require(appRoot + '/models/stat_data.js');
-global.Poller = require(appRoot + '/my_libs/poller.js');
-global.cacheUtil = require(appRoot + '/my_libs/cache_util.js');
-global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
-global.Moment = require('moment');
+const appRoot = require('app-root-path');
+const Util = require(appRoot + '/lib/util.js');
+const Const = require(appRoot + '/lib/const.js');
+const _ = require('underscore');
+const ReleaseControl = require(appRoot + '/models/release_control.js');
+const Poller = require(appRoot + '/lib/poller.js');
+const CacheKeyGenerator = require(appRoot + '/lib/cache_key_generator.js');
+const CacheUtil = require(appRoot + '/lib/cache_util.js');
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+const ProductUtil = require(appRoot + '/lib/product_util.js');
+const Moment = require('moment');
 
 const argDateStr = process.argv[2];
 var isForceBuild = !!Number(process.argv[3]);
-var redis = cacheUtil.createRedisInstance();
+var redis = CacheUtil.getRedisInstance();
 
-var buildLatestRankingPoller = new Poller(3000);
+var buildLatestRankingPoller = new Poller(500);
 buildLatestRankingPoller.onPoll(async () => {
-  var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
-  var targetMoment = argDateStr ? new Moment(argDateStr) : latestReleaseControlModel.getDateMoment();
-  var statModel = await Stat.selectByRankingDate(targetMoment);
-  var cacheKey = cacheUtil.generateProductDataListCacheKeyByStatId(statModel.id);
+  var latestReleaseControlModel = await ReleaseControl.selectLatest();
+  var targetMoment = argDateStr ? new Moment(argDateStr) : latestReleaseControlModel.getMoment();
+  var statModel = await Stat.selectByMoment(targetMoment);
+  var cacheKey = CacheKeyGenerator.generateRankedProductsCacheKeyByStatId(statModel.id);
   var productDataListCache = await redis.get(cacheKey);
 
   if (productDataListCache && !isForceBuild) {
@@ -27,47 +27,24 @@ buildLatestRankingPoller.onPoll(async () => {
   }
   isForceBuild = false;
 
-  console.log("building latest ranking object... statId: " + statModel.id + " date: " + statModel.rankingDate);
-  var statDataModels = await StatData.selectByStatId(statModel.id);
-  var productIdIntoStatDataModelHash = _.indexBy(statDataModels, m => {
-    return m.productId;
-  });
-  var sortedProductIds = _.chain(statDataModels)
-    .sortBy(m => {
-      return -1 * m.buzz;
-    })
-    .map(m => {
-      return m.productId;
-    })
-    .value();
-
+  console.log("building product data caches... statId: " + statModel.id + " date: " + statModel.statDate);
   // TODO: too heavy calc time. need optimization
-  var productDataList = await Util.buildProductDataListObject(sortedProductIds, {
-    excludeInvalidProduct: true,
+  var productBundleIdIntoRelatedDataHash = await ProductUtil.buildProductBundleIdIntoRelatedDataHashByStatId(statModel.id, {
     selectTweetNumPerGroup: 200,
-    tweetSelectOptions: {
-      excludeInvalidTweets: true,
-      // since: targetMoment.subtract(3, 'day').format("YYYY-MM-DD"),
-      until: targetMoment.add(1, 'day').format("YYYY-MM-DD"),
-    },
   });
 
-  _.each(productDataList, productData => {
-    var productId = productData.productModel.productId;
-    productData.statDataModel = productIdIntoStatDataModelHash[productId];
-  });
+  redis.set(cacheKey, JSON.stringify(productBundleIdIntoRelatedDataHash));
 
-  redis.set(cacheKey, JSON.stringify(productDataList));
-
+  // TODO
   // create top3 productDataList per product type id
-  var productTypeIdIntoProductDataList = _.groupBy(productDataList, productData => {
-    return productData.productModel.productTypeId;
-  });
-  _.each(productTypeIdIntoProductDataList, (productDataList, productTypeId) => {
-    var key = cacheUtil.generateTop3RankProductDataListCacheKey(statModel.id, productTypeId);
-    var top3ProductDataList = _.first(productDataList, 3);
-    redis.set(key, JSON.stringify(top3ProductDataList));
-  });
+  // var productTypeIdIntoProductDataList = _.groupBy(productBundleIdIntoRelatedDataHash, productData => {
+  //   return productData.productModel.productTypeId;
+  // });
+  // _.each(productTypeIdIntoProductDataList, (productDataList, productTypeId) => {
+  //   var key = CacheKeyGenerator.generateTop3RankProductDataListCacheKey(statModel.id, productTypeId);
+  //   var top3ProductDataList = _.first(productDataList, 3);
+  //   redis.set(key, JSON.stringify(top3ProductDataList));
+  // });
 
   console.log("Ranking object have been successfully built and cached!!! cache key: " + cacheKey);
 

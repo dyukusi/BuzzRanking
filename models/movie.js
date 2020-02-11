@@ -3,11 +3,27 @@ const __ = require('underscore');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const ProductBase = require(appRoot + '/models/product_base');
+const Moment = require('moment');
 
 class Movie extends ProductBase {
   // ------------------- Instance Methods -------------------
   getImageURL() {
     return this.posterUrl;
+  }
+
+  getReleaseDateMoment() {
+    return new Moment(this.releaseDate);
+  }
+
+  isNewReleasedProductByMoment(moment) {
+    var baseMoment = moment.clone();
+
+    var releaseMoment = this.getReleaseDateMoment();
+    var thresholdMoment = releaseMoment.clone().subtract(7, 'day');
+
+    // normally 1 cour Anime = 3 months. +1 for extra evaluation term
+    return thresholdMoment.unix() <= baseMoment.unix() &&
+      baseMoment.unix() <= releaseMoment.add(60, 'day').unix();
   }
 
   // ------------------- Class Methods -------------------
@@ -49,12 +65,12 @@ Movie.init({
     },
     posterUrl: {
       type: Sequelize.TEXT,
-      allowNull: false,
+      allowNull: true,
       field: 'poster_url'
     },
     backdropUrl: {
       type: Sequelize.TEXT,
-      allowNull: false,
+      allowNull: true,
       field: 'backdrop_url'
     },
     originalLang: {
@@ -82,11 +98,12 @@ Movie.init({
     updatedAt: {
       type: Sequelize.DATE,
       allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
       field: 'updated_at'
     },
     createdAt: {
       type: Sequelize.DATE,
-      allowNull: true,
+      allowNull: false,
       defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
       field: 'created_at'
     }

@@ -1,13 +1,33 @@
+<%
+// arguments
+var productModel;
+var twitterSearchWords;
+%>
+
 <tr>
-    <th>注目度測定<span class="no-wrap">ワード</span></th>
-    <td><%= twitterAltSearchWordsStr %></td>
+    <th>タイトル</th>
+    <td><%= productModel.getProductName() %></td>
 </tr>
+
+<% if (productModel.productCompany) { %>
+<tr>
+    <th>制作会社</th>
+    <td><%= productModel.productCompany %></td>
+</tr>
+<% } %>
+
 <tr>
     <th>カテゴリ</th>
     <td>
-        <a href="/ranking/<%= productTypeBundleName %>">
-            <%= productModel.getBelongedProductBundleJaName() %>
+        <a href="/ranking/">
+            <%= productModel.getBelongedProductTypeBundleJaName() %>
         </a>
+    </td>
+</tr>
+<tr>
+    <th>放送開始</th>
+    <td>
+        <%= productModel.getReleaseDateMoment().format('YYYY年M月') %> (第<%= productModel.cours %>クール)
     </td>
 </tr>
 <tr>
@@ -16,3 +36,15 @@
         <a href="<%= productModel.publicUrl %>"><%= productModel.publicUrl %></a>
     </td>
 </tr>
+
+<% if (productModel.twitterAccount) { %>
+    <tr>
+        <th>公式Twitterアカウント</th>
+        <td>
+            <a href="https://twitter.com/<%= productModel.twitterAccount %>">
+                @<%= productModel.twitterAccount %>
+            </a>
+        </td>
+    </tr>
+<% } %>
+

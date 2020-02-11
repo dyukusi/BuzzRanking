@@ -1,34 +1,79 @@
 <%
-<!-- possible args -->
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const Moment = require('moment');
+const CONST = require(appRoot + '/lib/const.js');
+const UrlGenerator = require(appRoot + '/lib/url_generator.js');
+const Pagination = require('pagination');
+const ProductUtil = require(appRoot + '/lib/product_util.js');
+
+// arguments
 var isAdmin;
 var targetPage;
-var productDataList;
-var lastUpdateMoment;
+var totalRankedNum;
+var rankingTypeId;
 var productTypeBundleId;
-var targetProductTypeId;
-var isDateSpecified;
-var originalURL;
-var productIdToIsNewProductHash;
-var productIdIntoTwitterAltSearchWordModelsHash;
+var productTypeId;
+var rankingModels;
+// var productBundleIdIntoRelatedDataHash;
+var productBundleIdIntoProductDataHash;
+var productBundleIdIntoTweetModelsHash;
+var productBundleIdIntoProductTweetStatModelHash;
+var productBundleIdIntoSearchWordsHash;
+var adDataList;
+var debugData;
 
-const Ctype = Const.PRODUCT_TYPE_NAME_TO_ID_HASH;
-const Cbundle = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID;
+var paginator = new Pagination.SearchPaginator({
+    prelink: UrlGenerator.generateRankingPageURL({rankingTypeId, productTypeBundleId}),
+    current: targetPage,
+    rowsPerPage: CONST.PRODUCT_NUM_PER_PAGE,
+    totalResult: totalRankedNum,
+});
+var paginationData = paginator.getPaginationData();
 
-const DEFAULT_TEXT = {
-    title: 'タイトルが指定されていません',
-    desc: 'descriptionが指定されていません',
-};
+var rankingTypeName = CONST.RANKING_TYPE_NAME_TO_ID_HASH[rankingTypeId];
+var productTypeBundleName = CONST.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
+var productTypeIds = CONST.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
 
-// slice for pagination
-var start = (targetPage - 1) * Const.PRODUCT_NUM_PER_PAGE;
-var end = start + Const.PRODUCT_NUM_PER_PAGE;
-var productDataListForThisPage = productDataList.slice(start, end);
-var rank1Buzz = productDataList[0] && productDataList[0].statDataModel ? productDataList[0].statDataModel.buzz : 0;
-var texts = Const.RANKING_PAGE_META[productTypeBundleId] || DEFAULT_TEXT;
-var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
-var productTypeIds = Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
-var isNoBuzzThresholdProductType = !__.isEmpty(__.intersection(productTypeIds, Const.EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS));
-var isAllCategory = productTypeBundleId == 999;
+const META_TEXT_HASH = (() => {
+    const base = {
+        [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL]: {
+            TITLE: '1000万以上のネットの声を基にしたリアルなランキングを毎日お届け！総合ランキングサイト | バズランキング',
+            DESCRIPTION: '世論を100%反映した、リアルなランキングをユーザーの声と共に毎日お届けします。あなたの知りたかった色んなあれこれの世間の評価・感想を、恣意的操作一切無しでありのままご紹介！',
+        },
+        [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.BOOK]: {
+            TITLE: '本・書籍の最新人気ランキング 1000万以上のネットでの評判を基にリアルなランキングを毎日お届け！ | バズランキング',
+            DESCRIPTION: '世論を100%反映した、今注目されている本・書籍ランキングをユーザーの声と共に毎日お届けします。あなたの知りたかったあの本・書籍の世間の評価・感想を、恣意的操作一切無しでありのままご紹介！',
+        },
+        [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.GAME]: {
+            TITLE: 'ゲームの最新人気ランキング 1000万以上のネットでの評判を基にリアルなランキングを毎日お届け！ | バズランキング',
+            DESCRIPTION: '世論を100%反映した、今注目されているゲームランキングをユーザーの声と共に毎日お届けします。あなたの知りたかったあのゲームの世間の評価・感想を、恣意的操作一切無しでありのままご紹介！',
+        },
+        [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.INN]: {
+            TITLE: '旅行・宿泊予約サービスの最新人気ランキング 1000万以上のネットでの評判を基にリアルなランキングを毎日お届け！ | バズランキング',
+            DESCRIPTION: '世論を100%反映した、今注目されている宿泊・旅行予約サービスランキングをユーザーの声と共に毎日お届けします。あなたの知りたかったあの予約サービスの世間の評価・感想を、恣意的操作一切無しでありのままご紹介！',
+        },
+        [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.DATING]: {
+            TITLE: '出会い・マッチングサービスの最新人気ランキング 1000万以上のネットでの評判を基にリアルなランキングを毎日お届け！ | バズランキング',
+            DESCRIPTION: '世論を100%反映した、今注目されている出会い・マッチングサービスランキングをユーザーの声と共に毎日お届けします。あなたの知りたかったあのサービスの評価・利用者によるレビューを、恣意的操作一切無しでありのままご紹介！',
+        },
+        [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ANIME]: {
+            TITLE: 'アニメの最新人気ランキング 1000万以上のネットでの評判を基にリアルなランキングを毎日お届け！ | バズランキング',
+            DESCRIPTION: '世論を100%反映した、今注目されているアニメランキングをユーザーの声と共に毎日お届けします。あなたの知りたかったあのアニメの評価・感想を、恣意的操作一切無しでありのままご紹介！',
+        },
+        [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.MOVIE]: {
+            TITLE: '映画の最新人気ランキング 1000万以上のネットでの評判を基にリアルなランキングを毎日お届け！ | バズランキング',
+            DESCRIPTION: '世論を100%反映した、今注目されている映画ランキングをユーザーの声と共に毎日お届けします。あなたの知りたかったあの映画の評価・感想を、恣意的操作一切無しでありのままご紹介！',
+        },
+    };
+
+    var targetMetaTextHash = base[productTypeBundleId];
+    if (!targetMetaTextHash) {
+        throw new Error('could not get meta text info. productTypeBundleId: ' + productTypeBundleId)
+    }
+
+    return base[productTypeBundleId];
+})();
 %>
 
 <!DOCTYPE html>
@@ -38,232 +83,262 @@ var isAllCategory = productTypeBundleId == 999;
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
       integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
 <link href="/css/accordion.css" rel="stylesheet">
+
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/gh/kenwheeler/slick@1.8.1/slick/slick.css"/>
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/gh/kenwheeler/slick@1.8.1/slick/slick-theme.css"/>
+
 <link href="/css/common.css" rel="stylesheet">
 <link href="/css/ranking.css" rel="stylesheet">
 
 <html>
 <head>
-    <title><%- texts.title %></title>
+    <title><%- META_TEXT_HASH.TITLE %></title>
 
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
 
-    <meta name="description" content=<%= texts.desc %>>
+    <meta name="description" content=<%= META_TEXT_HASH.DESCRIPTION %>>
 
-    <% if (1 < targetPage) { %>
+    <% if (paginationData.previous) { %>
         <link rel=”prev”
-              href=”https://www.buzzranking.net/ranking/<%= productTypeBundleName %>?page=<%= targetPage - 1 %>”>
+              href="<%= UrlGenerator.generateRankingPageURL({
+                  productTypeBundleId,
+                  page: paginationData.previous,
+              }) %>">
     <% } %>
 
-    <% if (targetPage < pageMax) { %>
+    <% if (paginationData.next) { %>
         <link rel=”next”
-              href=”https://www.buzzranking.net/ranking/<%= productTypeBundleName %>?page=<%= targetPage + 1 %>”>
+              href="<%= UrlGenerator.generateRankingPageURL({
+                  productTypeBundleId,
+                  page: paginationData.next,
+              }) %>">
     <% } %>
-
 </head>
 <body>
+<%- include(appRoot + '/views/header.ejs', { productTypeBundleId: productTypeBundleId, }) %>
 
-<%- include(appRoot + '/views/header.ejs') %>
+<div id="content" class="container-fluid p-0">
 
-<div id="content" class="container-fluid">
+    <div class="row">
+        <!-- ======== MAIN CONTENTS COL ======== -->
+        <div class="col-12 col-lg-8 p-0 mt-0 main-content-col">
 
-    <% if (lastUpdateMoment) { %>
-        <div class="row">
-            <div class="col-12">
-                <div class="text-align-left">
-                    <span class="last-updated-at"><%= lastUpdateMoment.locale('ja').format("YYYY年MMMDo") %></span>
-                    最終更新
+            <% if (isAdmin) { %>
+                <div class="row pl-4 pr-4">
+                    <div class="col-12">
+                        ProductBundle検索
+                        <input id="input-admin-bundle-search" class="form-control" type="text" autocomplete="off"
+                               placeholder="">
+                    </div>
                 </div>
-            </div>
-        </div>
-    <% } %>
+            <% } %>
 
-    <% if (productTypeBundleId && productTypeBundleId != Cbundle.all && 2 <= productTypeIds.length) { %>
-        <ul class="nav nav-tabs">
-            <li class="nav-item tab-item"><a href="/ranking/<%= productTypeBundleName %>"
-                                             class="nav-link <%= targetProductTypeId ? '' : 'active' %>">総合</a></li>
+            <!-- TODO ランキングタイトル -->
+            <!--            <div class="row m-3">-->
+            <!--                <div class="col-12">-->
+            <!--                    総合-->
+            <!--                </div>-->
+            <!--            </div>-->
+
             <%
-            __.each(Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId], productTypeId => {
-                var productTypeName = Const.PRODUCT_TYPE_ID_TO_NAME_HASH[productTypeId];
-                var productTypeJapaneseName = Const.PRODUCT_TYPE_ID_TO_JA_NAME_HASH[productTypeId];
-                var isTargetType = productTypeId == targetProductTypeId;
+            // TODO: productTypeIdが機能していないので削除するか、改善する必要あり
+            if (false) {
+            if (
+                    productTypeBundleId &&
+                    productTypeBundleId != CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL &&
+                    2 <= productTypeIds.length
+            ) { %>
+                <ul class="nav nav-tabs">
+                    <%
+                        var tabProductTypeIds = __.flatten([
+                            CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL,
+                            CONST.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId],
+                        ]);
+
+                    __.each(tabProductTypeIds, tabProductTypeId => {
+                        var productTypeJapaneseName = CONST.PRODUCT_TYPE_ID_TO_JA_NAME_HASH[tabProductTypeId];
+                        var isTargetType = tabProductTypeId == productTypeId;
+                    %>
+                    <li class="nav-item tab-item">
+                        <a href="<%= UrlGenerator.generateRankingPageURL({rankingTypeId, productTypeBundleId}) %>"
+                           class="nav-link <%= isTargetType ? 'active' : '' %>">
+                            <%= productTypeJapaneseName %>
+                        </a>
+                    </li>
+                    <% }); %>
+                </ul>
+            <%
+            }
+            }
             %>
-            <li class="nav-item tab-item"><a href="/ranking/<%= productTypeBundleName %>?type=<%= productTypeName %>"
-                                             class="nav-link <%= isTargetType ? 'active' : '' %>"><%= productTypeJapaneseName %></a>
-            </li>
-            <% }); %>
-        </ul>
-    <% } %>
 
-    <%
-    __.times(productDataListForThisPage.length, function(n) {
-        var productData = productDataListForThisPage[n];
-        var productModel = productData.productModel;
-        var statDataModel = productData.statDataModel;
-        var productId = productModel.productId;
-        var productModelName = productData.productClassName;
-        var productInfoTemplatePath = 'product_info/' + productModelName + '.ejs';
-        var buzz = productData.statDataModel ? productData.statDataModel.buzz : 0;
-        var progressBarPercentage = ((buzz / rank1Buzz) * 100) || 0;
-        var belongeProductBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
-        var bundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[belongeProductBundleId];
-        var bundleNameJA = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[belongeProductBundleId];
+            <%
+            __.times(rankingModels.length, function(n) {
+                var rankingModel = rankingModels[n];
+                var productBundleId = rankingModel.productBundleId;
+                var productData = productBundleIdIntoProductDataHash[productBundleId];
+                var productBundleModel = productData.productBundleModel;
+                var productModels = productData.productModels;
 
-        var rank = statDataModel.rank;
-        var categoryRank = statDataModel.categoryRank;
-    %>
+                if (!productModels.length) return;
 
-    <div class="row product-row-block">
-        <!--<div class="col-md-12 col-lg-6">-->
-        <div class="col-md-12">
-            <!--<div class="product-block shadow bg-white rounded"-->
-            <div class="product-block product-block-border"
-                 data-product-id="<%= productId %>">
+                var dispProductModel = ProductUtil.findDispProductModel(productModels);
 
-                <span class="product-block-border-title relative">
-                    <% if (buzz) { %>
-                        <span class="d-flex align-items-end no-wrap">
-                            <% if (isAllCategory) { %>
-                                <% if (0 <= rank && rank <= 3) { %>
-                                    <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
-                                <% } %>
+                var productTweetStatModel = productBundleIdIntoProductTweetStatModelHash[productBundleId] || {};
+                var buzz = productTweetStatModel.buzz || 0;
+                var tweetCount = productTweetStatModel.tweetCount || 0;
+                // var progressBarPercentage = ((buzz / rank1Buzz) * 100) || 0;
+                var rank = rankingModel.rank;
+                var tweetModels = productBundleIdIntoTweetModelsHash[productBundleId] || [];
+                var linkURL = UrlGenerator.generateProductBundleDetailPageURL(productBundleId);
 
-                                <%= rank %>位&nbsp;
-                                <span class="category-rank-text">
-                                    (<a href="/ranking/<%= bundleName %>"><%= bundleNameJA %>カテゴリ</a> <%= statDataModel.categoryRank %>位)
+                // TODO
+                // ・カテゴリランキングの順位表示
+                // 　　複数カテゴリでランクインしてる場合の考慮が必要
+            %>
+
+            <div class="row m-1 m-lg-0 product-row-block">
+                <div class="col-12 p-lg-0">
+                    <div class="product-block product-block-border"
+                         data-product-bundle-id="<%= productBundleModel.id %>">
+
+                        <span class="product-block-border-title relative">
+                            <% if (buzz) { %>
+                                <span class="d-flex align-items-end no-wrap">
+                                    <% if (0 <= rank && rank <= 3) { %>
+                                        <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
+                                    <% } %>
+                                    <%= rank %>位&nbsp;
                                 </span>
-                            <% } else { %>
-                                <% if (0 <= categoryRank && categoryRank <= 3) { %>
-                                    <img src="/img/ranking/rank_<%= categoryRank %>_crown.png" class="rank-crown-img">
-                                <% } %>
-                                <%= categoryRank %>位
                             <% } %>
                         </span>
-                    <% } %>
-                </span>
 
-                <div class="product-detail-icon">
-                    <a href="/product/detail/<%= productId %>">
-                        <i class="fas fa-file-contract"></i>
-                    </a>
-                </div>
+                        <div class="row d-flex align-items-center product-block-header">
+                            <div class="col-12 d-flex align-items-center justify-content-center">
+                                <h2 class="product-title">
+                                    <a href="<%= linkURL %>">
+                                        <%= productBundleModel.name %>
+                                    </a>
+                                </h2>
+                            </div>
+                        </div>
 
-                <div class="row d-flex align-items-center product-block-header">
-                    <div class="col-12 d-flex align-items-center justify-content-center">
-                        <h2 class="product-title">
-                            <a href="/product/detail/<%= productId %>">
-                                <%= productData.productModel.title %>
-                            </a>
+                        <div class="row">
+                            <div class="col-4 product-col">
+                                <div class="product-info-block my-sticky">
+                                    <div class="row">
+                                        <div class="col-12 product-image-col">
+                                            <% if (dispProductModel.getProductClassName() == 'web_service') { %>
+                                                <div class="affiliate-html">
+                                                    <%- dispProductModel.getAffiliateHTML() %>
+                                                </div>
+                                            <%
+                                            } else {
+                                            %>
+                                                <div>
+                                                    <img src="<%= dispProductModel.getImageURL() %>"
+                                                         class="img-fluid product-image">
+                                                </div>
+                                            <% } %>
+                                        </div>
+                                    </div>
 
-                            <% if (isAdmin && productIdToIsNewProductHash && productIdToIsNewProductHash[productId]) { %>
-                                （！新商品！)
-                            <% } %>
+                                    <div class="row justify-content-center pt-2">
+                                        <div class="col-lg-6 col-12 no-wrap">
+                                            <i class="fas fa-fire-alt fa-fw buzz-icon"></i>
+                                            <span class="stat-count"><%= buzz %></span>
+                                        </div>
 
-                        </h2>
-                    </div>
-                </div>
+                                        <div class="col-lg-6 col-12 no-wrap">
+                                            <i class="fab fa-twitter fa-fw twitter-icon"></i>
+                                            <span class="stat-count"><%= tweetCount %></span>
+                                        </div>
+                                    </div>
 
-                <!--<i class="fas fa-fire progress-bar-buzz-icon"></i>-->
-                <div class="row">
-                    <div class="col-12">
-                        <a href="/product/detail/<%= productId %>">
-                            <div class="progress-bar-area">
-                                <div class="progress">
-                                <span class="progress-bar progress-bar-striped bg-danger" aria-valuenow="75"
-                                      aria-valuemin="0"
-                                      aria-valuemax="100" style="width: <%= progressBarPercentage %>%">
-                                    <%= buzz %> Buzz
-                                </span>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <img class="simple-buzz-chart-img"
+                                                 src="/img/simple_buzz_chart_dummy.png">
+                                        </div>
+                                    </div>
+                                    <a class="product-info-block-link" href="<%= linkURL %>"></a>
                                 </div>
                             </div>
-                        </a>
+
+                            <div class="col-8 tweet-reference-block-col">
+                                <%- include(appRoot + '/views/compact_tweet_list.ejs', { tweetModels: tweetModels, }) %>
+                            </div>
+                        </div>
+
+                        <%
+                        if (isAdmin) {
+                        var args = {
+                            productBundleId,
+                            debugData,
+                            productBundleModel,
+                            productModels,
+                        };
+                        %>
+                            <%- include(appRoot + '/views/ranking_admin_product_options.ejs', args) %>
+                        <% } %>
+
                     </div>
                 </div>
+            </div>
 
-                <%- include(productInfoTemplatePath, { productData: productData, }) %>
+            <% if ((n + 1) % 4 == 0) { %>
+                <%- include(appRoot + '/public/ad/adsense/in_feed.html') %>
+            <% } %>
 
-                <%
-                if (isAdmin) {
-                    var altSearchModels = productIdIntoTwitterAltSearchWordModelsHash ? productIdIntoTwitterAltSearchWordModelsHash[productId] : [];
-                %>
-                <br>
-                <p class="text-align-center">Admin用</p>
-                <p>validityStatus: <%= productData.productModel.validityStatus %></p>
+            <% }); %>
 
-                <% __.each(altSearchModels, altSearchModel => { %>
-                    <div class="row">
-                        <div class="col-6">
-                            <%= altSearchModel.searchWord %>
-                        </div>
-                        <div class="col-6">
-                            <button type="button" class="btn btn-danger update-alt-search-word-validity-status"
-                                    data-search-word="<%= altSearchModel.searchWord %>"
-                                    value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.invalid %>">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                <% }); %>
+            <% if (rankingModels.length % 4 != 0 && rankingModels.length < CONST.PRODUCT_NUM_PER_PAGE) { %>
+                <%- include(appRoot + '/public/ad/adsense/in_feed.html') %>
+            <% } %>
 
+            <% if (!rankingModels.length) { %>
                 <div class="row">
-                    <div class="col-4">
-                        <button type="button" class="btn btn-danger update-product-validity-status"
-                                value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.invalid %>">
-                            ブロック<i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                    <div class="col-4">
-                        <button type="button" class="btn btn-warning delete-tweet-and-tweet-count-log"
-                                value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.invalid %>">
-                            この商品に関連する全てのツイートとTweetCountLogを削除
-                        </button>
-                    </div>
-                    <div class="col-4">
-                        <button type="button" class="btn btn-success update-product-validity-status"
-                                value="<%= Const.VALIDITY_STATUS_NAME_TO_ID.protected %>">
-                            保護ステータスに更新
-                        </button>
+                    <div class="col-12 text-align-center p-5">
+                        該当カテゴリでランキング内の商品はありません
                     </div>
                 </div>
-                <% } %>
-            </div>
+            <% } %>
 
+            <% if (targetPage == null) { %>
+                <div class="threshold-buzz-count-description">
+                    ※ 特定の一部商品を除いて、Buzzが<%= CONST.THRESHOLD_BUZZ_FOR_RANK_IN %>
+                    未満の商品・サービスはランキングには表示されません
+                </div>
+            <% } %>
+
+            <%- include(appRoot + '/views/pagination.ejs', { paginationData: paginationData, }); %>
         </div>
+        <!-- ======================================== -->
+
+        <!-- ========== SUB CONTENTS ROW ========= -->
+        <div class="col-12 col-lg-4">
+            <div class="col-12 pl-1 pr-1 pl-lg-0 pr-lg-0 sub-content-col">
+                <%- include(appRoot + '/views/sub_content_search_tweet_by_account_name.ejs', {}) %>
+                <%- include(appRoot + '/views/sub_content_ad_official_twitter_account.ejs', {}) %>
+                <%- include(appRoot + '/views/sub_content_simple_rankings.ejs', { adDataList: adDataList, }) %>
+            </div>
+        </div>
+        <!-- ======================================== -->
     </div>
-
-    <% if ((n + 1) % 4 == 0) { %>
-        <%- include(appRoot + '/public/ad/adsense/in_feed.html') %>
-    <% } %>
-
-    <% }); %>
-
-    <% if (productDataListForThisPage.length % 4 != 0 && productDataListForThisPage.length < Const.PRODUCT_NUM_PER_PAGE) { %>
-        <%- include(appRoot + '/public/ad/adsense/in_feed.html') %>
-    <% } %>
-
-    <% if (!productDataListForThisPage.length) { %>
-        <div class="row">
-            <div class="col-12 text-align-center p-5">
-                該当カテゴリでランキング内の商品はありません
-            </div>
-        </div>
-    <% } %>
-
-    <% if (!isNoBuzzThresholdProductType && targetPage == pageMax) { %>
-        <div class="threshold-buzz-count-description">
-            ※ Buzzが<%= Const.THRESHOLD_COUNT_OF_OUT_OF_RANGE_USER_COUNT %>未満の商品・サービスはランキングには表示されません
-        </div>
-    <% } %>
-
-    <%- include('ranking_pagination.ejs', { pageMax: pageMax, }) %>
 </div>
 
 <%- include(appRoot + '/views/footer.ejs') %>
 
-<% if (isAdmin) { %>
-    <div id="is-admin-dummy-div" style="display: none;"></div>
-<% } %>
+<script>
+  var isAdmin = !!'<%- isAdmin ? 'admin' : null %>';
+  var productBundleIdIntoSearchWordsHash = JSON.parse('<%- JSON.stringify(productBundleIdIntoSearchWordsHash) %>');
+</script>
 
-<script src="/js/compressed/ranking.min.js" type="text/javascript"></script>
+<% if (isAdmin) { %>
+    <script src="/js/compressed/admin.min.js" type="text/javascript" async></script>
+<% } %>
+<script src="/js/compressed/ranking.min.js" type="text/javascript" async></script>
+
 </body>
 </html>

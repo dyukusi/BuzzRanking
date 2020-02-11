@@ -1,19 +1,15 @@
 const appRoot = require('app-root-path');
-const Config = require('config');
-const CONST = require(appRoot + '/my_libs/const.js');
+const CONST = require(appRoot + '/lib/const.js');
 const {JSDOM} = require('jsdom');
 const $ = jQuery = require('jquery')(new JSDOM().window);
-const fs = require('fs');
-const _ = require('underscore');
-const request = require('request');
-const Q = require('q');
-const Util = require(appRoot + '/my_libs/util.js');
-const async = require('async');
-const con = require(appRoot + '/my_libs/db.js');
-const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
-const sprintf = require('sprintf-js').sprintf;
-const Anime = require(appRoot + '/models/anime');
-const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
+
+global._ = require('underscore');
+global.request = require('request');
+global.sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+global.sprintf = require('sprintf-js').sprintf;
+global.Anime = require(appRoot + '/models/anime');
+global.TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
+global.DBUtil = require(appRoot + '/lib/db_util.js');
 
 const COURS_URL = "http://api.moemoe.tokyo/anime/v1/master/cours";
 const ANIME_LIST_API_BASE = "http://api.moemoe.tokyo/anime/v1/master/%s/%s";
@@ -52,7 +48,7 @@ async function fetchAndInsertProductData(task) {
   var animeDataArray = JSON.parse(json);
   var animeTableInsertObjects = _.map(animeDataArray, data => {
     return {
-      productTypeId: CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['anime'],
+      productTypeId: CONST.PRODUCT_TYPE_NAME_TO_ID_HASH['ANIME'],
       shangrilaId: data.id,
       year: task.year,
       cours: task.cours,
@@ -69,7 +65,7 @@ async function fetchAndInsertProductData(task) {
     };
   });
 
-  var insertedAnimeModels = await Anime.bulkInsert(animeTableInsertObjects);
+  var insertedAnimeModels = await DBUtil.insertProductsUpdateOnDuplicate(Anime, animeTableInsertObjects);
 
   var shangrilaIdIntoAnimeModelHash = _.indexBy(insertedAnimeModels, model => {
     return model.shangrilaId;
@@ -77,11 +73,13 @@ async function fetchAndInsertProductData(task) {
 
   _.each(animeDataArray, data => {
     var shangrilaId = data.id;
-    var productId = shangrilaIdIntoAnimeModelHash[shangrilaId].productId;
+    var productBundleId = shangrilaIdIntoAnimeModelHash[shangrilaId].productBundleId;
+    if (!productBundleId) return;
+
     var shortTitles = _.compact([data.title_short1, data.title_short2, data.title_short3]);
 
     _.each(shortTitles, shortTitle => {
-      TwitterAlternativeSearchWord.insertIfValid(productId, shortTitle);
+      TwitterAlternativeSearchWord.insertIfValid(productBundleId, shortTitle);
     });
   });
 
@@ -92,8 +90,6 @@ async function fetchAndInsertProductData(task) {
 
   for (var i=0; i<fetchOgpImageUrlTargetModels.length; i++) {
     var model = fetchOgpImageUrlTargetModels[i];
-
-
     var body = await doRequest({
       url: model.publicUrl,
       timeout: 3000,
@@ -118,10 +114,7 @@ async function fetchAndInsertProductData(task) {
     } else {
       console.log("og:image not found: " + model.publicUrl);
     }
-
-
   }
-
 }
 
 function doRequest(options) {

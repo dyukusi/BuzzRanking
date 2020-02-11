@@ -5,10 +5,10 @@ const fs = require('fs');
 const _ = require('underscore');
 const request = require('request');
 const Q = require('q');
-const Util = require(appRoot + '/my_libs/util.js');
+const Util = require(appRoot + '/lib/util.js');
 const QueryString = require('query-string');
 const Twitter = require('twitter');
-const con = require(appRoot + '/my_libs/db.js');
+const con = require(appRoot + '/lib/db.js');
 const async = require('async');
 
 const ReleaseControlModel = require(appRoot + '/models/release_control.js');

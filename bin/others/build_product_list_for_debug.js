@@ -1,17 +1,19 @@
 global.appRoot = require('app-root-path');
 global._ = require('underscore');
-global.Util = require(appRoot + '/my_libs/util.js');
-global.cacheUtil = require(appRoot + '/my_libs/cache_util.js');
+global.Util = require(appRoot + '/lib/util.js');
+global.CacheKeyGenerator = require(appRoot + '/lib/cache_key_generator.js');
+global.CacheUtil = require(appRoot + '/lib/cache_util.js');
 global.Moment = require('moment');
 global.Sequelize = require('sequelize');
-global.CONST = Const = require(appRoot + '/my_libs/const.js');
+global.CONST = Const = require(appRoot + '/lib/const.js');
 global.TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
+const ProductUtil = require(appRoot + '/lib/product_util.js');
 var Op = Sequelize.Op;
 
-var redis = cacheUtil.createRedisInstance();
+var redis = CacheUtil.getRedisInstance();
 
 (async () => {
-  var cacheKey = cacheUtil.getProductDataListForDebugCacheKey();
+  var cacheKey = CacheKeyGenerator.getProductDataListForDebugCacheKey();
   var nowMoment = new Moment();
 
   var sortedProductIds = _.chain(await getValiditySuspiciousProductModels())
@@ -25,12 +27,8 @@ var redis = cacheUtil.createRedisInstance();
 
   console.log("fetching tweets...");
   var productDataList = await
-    Util.buildProductDataListObject(sortedProductIds, {
+    Util.buildProductBundleIdIntoRelatedDataHashByProductBundleIds(sortedProductIds, {
       // excludeInvalidProduct: true,
-      tweetSelectOptions: {
-        excludeInvalidTweets: true,
-        // since: nowMoment.subtract(3, 'day').format("YYYY-MM-DD"),
-      },
     });
 
   redis.set(cacheKey, JSON.stringify(productDataList));
@@ -41,9 +39,9 @@ var redis = cacheUtil.createRedisInstance();
 // NOTE: except 0 status
 async function getValiditySuspiciousProductModels() {
   console.log("----- Suspicious Products -----");
-  var productModels = await Util.selectProductModels({
+  var productModels = await ProductUtil.selectProductModels({
     validityStatus: {
-      [Op.notIn]: _.flatten([CONST.VALID_STATUS_IDS, CONST.VALIDITY_STATUS_NAME_TO_ID.invalid]),
+      [Op.notIn]: _.flatten([CONST.VALID_STATUS_IDS, CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.INVALID]),
     },
   });
 

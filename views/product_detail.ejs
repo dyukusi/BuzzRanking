@@ -1,280 +1,724 @@
 <%
-var top3ProductDataList = top3ProductDataList || [];
-var productName = productModel.getProductName();
-var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
-var twitterAltSearchWordsStr = __.chain(twitterAltSearchModels)
-        .filter(m => {
-            return m.isValid();
-        })
-        .map(m => {
-            return m.searchWord;
-        })
-        .value()
-        .join(', ') || productName;
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const Moment = require('moment');
+const sprintf = require('sprintf-js').sprintf;
+const CONST = require(appRoot + '/lib/const.js');
+const UrlGenerator = require(appRoot + '/lib/url_generator.js');
 
-var texts = Const.PRODUCT_DETAIL_PAGE_TEXTS[productModel.productTypeId];
-var productTypeBundleId = Const.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
-var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
-var productTypeBudleNameJa = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId];
+// arguments
+var productData;
+var focusProductId;
+var rankingModels;
+var productTweetStatModels;
+var tweetModels;
+var twitterSearchWords;
+var searchWordIntoCreatedAtMomentHash;
+var tweetCountLogModel;
+var adDataList;
+var productTypeBundleIdForAd;
+
+var productBundleModel = productData.productBundleModel;
+var productModels = productData.productModels;
+var hasMultipleProducts = 2 <= productModels.length;
+var suffixedProductBundleName = productBundleModel.name + (hasMultipleProducts ? 'シリーズ' : '');
+var initialSlideIndex = (() => {
+    if (focusProductId) {
+        var focusIndex = __.findIndex(productModels, m => {
+            return m.productId == focusProductId;
+        })
+
+        if (focusIndex != -1) {
+            return focusIndex;
+        }
+    }
+
+    var index = __.findIndex(productModels, productModel => {
+        return productModel.isNewReleasedProductByMoment(new Moment());
+    });
+
+    if (index == -1) {
+        index = 0;
+    }
+
+    return index;
+})();
+
+var rankingModelsListRecentGroupByDate = __.chain(rankingModels)
+        .filter(m => {
+            // NOTE: ignoring prduct-type and only considering product-type-bundle
+            return m.productTypeId == CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL;
+        })
+        .groupBy(m => {
+            return m.productTypeBundleId;
+        })
+        .map((rankingModels, productBundleId) => {
+            var latestRankingModel = __.max(rankingModels, m => {
+                return new Moment(m.date).unix();
+            });
+            return latestRankingModel;
+        })
+        .groupBy(m => {
+            return m.date;
+        })
+        .sortBy((rankingModels, statDate) => {
+            return -1 * new Moment(statDate).unix(); // DESC
+        })
+        .value();
+
+var rankingModelsPeakGroupByDate = __.chain(rankingModels)
+        .filter(m => {
+            // NOTE: ignoring prduct-type and only considering product-type-bundle
+            return m.productTypeId == CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL;
+        })
+        .groupBy(m => {
+            return m.productTypeBundleId;
+        })
+        .map((rankingModels, productBundleId) => {
+            var topRankingModel = __.min(rankingModels, m => {
+                return m.rank;
+            });
+            return topRankingModel;
+        })
+        .groupBy(m => {
+            return m.date;
+        })
+        .sortBy((rankingModels, statDate) => {
+            return -1 * new Moment(statDate).unix(); // DESC
+        })
+        .value();
+
+var chartDataList = __.map(productTweetStatModels, m => {
+    return {
+        date: m.date,
+        tweetCount: m.tweetCount,
+        userCount: m.userCount,
+        buzz: m.buzz,
+    };
+});
+
+var compactTweetInfoListJSON = {
+    list: __.map(tweetModels, m => {
+        return [m.screenName, m.id, m.text];
+    }),
+};
+
+var JSON_ESCAPE_CHAR = /\W/g;
+var JSON_ESCAPE_FUNC = function (c) {
+    return "\\u" + ("000" + c.charCodeAt(0).toString(16)).slice(-4);
+};
+
+var TEXTS = {
+    title: sprintf(
+            '%(suffixedProductBundleName)sの最新の評判、注目度を1000万以上の世間の声を基にご紹介 | バズランキング',
+            {
+                suffixedProductBundleName: suffixedProductBundleName,
+            },
+    ),
+    description: sprintf(
+            '%(suffixedProductBundleName)sは今バズっている？！最新の世間のリアルな評判、注目度をご紹介。%(suffixedProductBundleName)sの "今" を知りたいならここ！',
+            {
+                suffixedProductBundleName: suffixedProductBundleName,
+            },
+    ),
+};
 %>
 
 <!DOCTYPE html>
+<!-- bootstrap -->
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
       integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+<!-- fontawesome -->
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
       integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+<!-- slick -->
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/gh/kenwheeler/slick@1.8.1/slick/slick.css"/>
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/gh/kenwheeler/slick@1.8.1/slick/slick-theme.css"/>
+
+<!-- Swiper -->
+<link href="/css/swiper.min.css" rel="stylesheet">
+
+<!-- my css -->
 <link href="/css/common.css" rel="stylesheet">
 <link href="/css/product_detail.css" rel="stylesheet">
 
 <html>
 <head>
+    <link rel="canonical" href="<%= UrlGenerator.generateProductBundleDetailPageURL(productBundleModel.id) %>">
     <title>
-        <%= sprintf(texts.title, productName) %>
+        <%= TEXTS.title %>
     </title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
-    <meta name="description" content="<%= sprintf(texts.title, productName, productName) %>">
+    <meta name="description" content="<%= TEXTS.description %>">
 </head>
 <body>
 
 <%- include('header.ejs') %>
 
 <div id="content" class="container-fluid">
-    <div class="row pt-3">
-        <div class="col-12">
-            <h1 class="large-header">
-                <%= productName %>
-                <span class="no-wrap sub-large-header"><%= texts.promo %> </span>
-                <span class="no-wrap sub-large-header">ネットの注目度、評判は？</span>
-            </h1>
-        </div>
-    </div>
 
     <div class="row">
-        <div class="col-12">
-            <h2 class="mid-header">
-                <%= productName %><span class="no-wrap">の基本情報</span>
-            </h2>
-        </div>
-    </div>
 
-    <div class="row product-basic-info">
-        <div class="col-12 text-align-center">
-            <div class="row">
-                <div class="col-12 product-image-area">
-                    <%- include(appRoot + '/views/product_image/' + productModel.getProductClassName() + '.ejs',
-                    { productModel: productModel, linkTag: true, productTypeBundleName: productTypeBundleName, }) %>
+        <!-- ======== MAIN CONTENTS COL ======== -->
+        <div class="col-12 col-lg-8 main-content-col background-white">
+
+            <div class="row pt-3">
+                <div class="col-12">
+                    <h1 class="large-header">
+                        <%= productBundleModel.name %>
+                        <span class="no-wrap sub-large-header">世間の注目度、評判は？</span>
+                    </h1>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="row">
-        <div class="col-12">
-            <table class="product-detail-table">
-
-                <%- include(appRoot + '/views/product_detail/product_basic_info_table/' + productModel.getProductClassName() + '.ejs', {
-                twitterAltSearchWordsStr: twitterAltSearchWordsStr,
-                productTypeBundleName: productTypeBundleName,
-                }) %>
-
-            </table>
-
-            <% if (bookCaptionModel) { %>
-                <div class="row pt-3">
-                    <div class="col-12">
-                        <h2 class="small-header">あらすじ</h2>
-                        <%= bookCaptionModel.caption %>
-                    </div>
-                </div>
-            <% } %>
-
-            <% if (productModel.caption) { %>
-                <div class="row pt-3">
-                    <div class="col-12">
-                        <h2 class="small-header">商品説明</h2>
-                        <%- productModel.caption %>
-                    </div>
-                </div>
-            <% } %>
-
-            <div class="row pt-4">
+            <div class="row">
                 <div class="col-12">
                     <h2 class="mid-header">
-                        <%= productName %><span class="no-wrap">の注目度は？</span>
+                        <%= suffixedProductBundleName %>
+                        <span class="no-wrap">
+                    の基本情報
+                </span>
                     </h2>
                 </div>
             </div>
 
-            <div id="buzz-data-not-found" class="display-none text-center">
-                この商品の情報を収集中です。<br>
-                しばらく経ってから再度ご確認ください。
-            </div>
-
-            <% if (productModel.isValid()) { %>
-                <div class="row" id="buzz-chart-load-div">
-                    <div class="col-12">
-        <span id="buzz-chart-load-spin" class="spinner-border text-primary text-align-center" role="status"
-              aria-hidden="true"></span>
-                    </div>
-                </div>
-
-                <div class="hide" id="buzz-stat-div">
-                    <div class="row pt-1">
-                        <div class="col-12">
-                            <h2 class="small-header">Buzzランキング ランクイン実績</h2>
-                            <table class="table rank-hist-table">
-                                <tbody id="rank-hist-table-body">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="row pt-2">
-                        <div class="col-12">
-                            <h2 class="small-header">Buzzと関連ツイート数推移</h2>
-                        </div>
-                    </div>
-
-                    <div class="row text-align-center">
-                        <div class="col-12">
-                            <canvas id="buzz-chart"></canvas>
-                        </div>
-                        <div class="chart-desc">
-                            ※
-                            <a href="/faq#buzz">
-                                Buzzとは？
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-12">
-                            <ul class="buzz-chart-info-ul">
-                            </ul>
-                        </div>
-                    </div>
-
-                </div>
-
-            <% } else { %>
+            <% if (hasMultipleProducts) { %>
                 <div class="row">
-                    <div class="col-12 invalid-product-description">
-                        こちらの商品は正確なBuzzの測定が困難であると判断されたため、注目度推移の表示対象外となっています。
+                    <div class="col-12">
+                        <h2 class="small-header m-0">
+                            関連商品/作品一覧
+                        </h2>
                     </div>
                 </div>
             <% } %>
-        </div>
-    </div>
 
-    <div class="row pt-4">
-        <div class="col-12">
-            <h2 class="mid-header">
-                <%= productName + (productModel.subTitle ? ' ' + productModel.subTitle : '') %><span class="no-wrap">のネットの反応</span>
-            </h2>
-        </div>
-    </div>
+            <div class="row product-basic-info pt-2">
 
-    <% if (productModel.isValid()) { %>
-        <div class="row mx-auto tweet-reference-block">
-            <div class="col-12 text-align-center">
-                <span id="tweet-list-load-spin" class="spinner-border text-primary" role="status"
-                      aria-hidden="true"></span>
-                <div id="tweet-not-found" class="invisible">
+                <% if (hasMultipleProducts) { %>
+                    <div class="col-12 mb-1">
+                        <button class="common-button product-filter-button active"
+                                data-product-type-bundle-id="0">
+                            全て(<%= productModels.length %>)
+                        </button>
+                        <%
+                            var productTypeBundleIds = __.chain(productModels)
+                                    .pluck('productTypeId')
+                                    .unique()
+                                    .map(productTypeId => {
+                                        return CONST.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productTypeId];
+                                    })
+                                    .unique()
+                                    .value();
+
+                        __.each(productTypeBundleIds, productTypeBundleId => {
+                            var count = __.filter(productModels, m => {
+                                return productTypeBundleId == CONST.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[m.productTypeId];
+                            }).length;
+                        %>
+                        <button class="common-button product-filter-button"
+                                data-product-type-bundle-id="<%= productTypeBundleId %>">
+                            <%= CONST.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] %>(<%= count %>)
+                        </button>
+                        <% }); %>
+                    </div>
+                <% } %>
+
+                <div class="col-12">
+                    <div class="swiper-container swiper-product-images">
+                        <div class="swiper-wrapper">
+                            <%
+                            __.each(productModels, productModel => {
+                                var productTypeBundleId = CONST.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
+                            %>
+
+                            <% if (productModel.getProductClassName() == 'web_service' ) { %>
+                                <div class="web-service-image-link">
+                                    <%- productModel.getAffiliateHTML() %>
+                                </div>
+                            <% } else { %>
+                                <div class="swiper-slide" data-product-type-bundle-id="<%= productTypeBundleId %>">
+                                    <img src="<%= productModel.getImageURL() %>" class="img-fluid product-image">
+                                    <span class="swiper-product-image-title-text">
+                                        <%= productModel.getProductName() %>
+                                    </span>
+                                </div>
+                            <% } %>
+
+                            <% }); %>
+                        </div>
+                        <div class="swiper-pagination"></div>
+                        <div class="swiper-button-next swiper-custom-button">
+                            <i class="fa fa-angle-right"></i>
+                        </div>
+                        <div class="swiper-button-prev swiper-custom-button">
+                            <i class="fa fa-angle-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="swiper-container swiper-product-info-table">
+                        <div class="swiper-wrapper">
+                            <%
+                            __.each(productModels, productModel => {
+                                var productTypeBundleId = CONST.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productModel.productTypeId];
+                            %>
+                            <div class="swiper-slide" data-product-type-bundle-id="<%= productTypeBundleId %>">
+                                <table class="product-detail-table">
+                                    <%- include(appRoot + '/views/product_detail/product_basic_info_table/' + productModel.getProductClassName() + '.ejs', {
+                                    productModel: productModel,
+                                    twitterSearchWords: twitterSearchWords,
+                                    }) %>
+                                </table>
+                            </div>
+                            <% }); %>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="row pt-4">
+                <div class="col-12">
+                    <h2 class="mid-header">
+                        <%= suffixedProductBundleName %><span class="no-wrap">の注目度は？</span>
+                    </h2>
+                </div>
+            </div>
+
+            <%
+            var hasStatData = !__.isEmpty(productTweetStatModels);
+            %>
+
+            <% if (!productBundleModel.isValid()) { %>
+                <div class="mt-3 mb-3">
+                    こちらの作品/商品は、正確なBuzzの測定が困難であると判断されたため、ネットの反応欄の表示対象外となっています。
+                </div>
+            <% } else if (!hasStatData) { %>
+                <div id="buzz-data-not-found" class="text-center mt-3 mb-3">
                     この商品の情報を収集中です。<br>
                     しばらく経ってから再度ご確認ください。
                 </div>
-                <div class="related-tweet-area">
-                    <div class="related-tweet">
-                        <!-- tweet list -->
+
+                <% if (tweetCountLogModel) { %>
+                    <div class="chart-last-updated-at-text">
+                        (直近の測定日 <%= new Moment(tweetCountLogModel.createdAt).format('YYYY年M月D日') %>)
                     </div>
-                    <button class="btn readmore-button display-none" type="button">
-                        <div class="relative">
-                            <p class="readmore-text">
-                                続きを読み込む
-                            </p>
-                            <i class="fas fa-angle-down fa-lg readmore-icon"></i>
+                <% } %>
+            <% } else { %>
+                <div class="row">
+                    <div class="col-12">
+                        <h2 class="small-header m-0">最新</h2>
+                    </div>
+                </div>
+
+                <%
+                    var latestTweetStatModel = __.last(productTweetStatModels);
+                %>
+                <div class="row justify-content-center pt-2">
+                    <div class="mr-3">
+                        <i class="fas fa-fire-alt fa-2x buzz-icon"></i>
+                        <span class="stat-count"><%= latestTweetStatModel.buzz %></span>
+                        Buzz
+                    </div>
+                    <div class="mr-3">
+                        <i class="fab fa-twitter fa-2x twitter-icon"></i>
+                        <span class="stat-count"><%= latestTweetStatModel.tweetCount %></span>
+                        ツイート
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-align-right chart-last-updated-at-text">
+                        (<%= new Moment(latestTweetStatModel.date).format('YYYY年M月D日') %>)
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h2 class="small-header m-0">推移</h2>
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="col-12 p-0">
+
+                        <div id="chartdiv"></div>
+                        <div class="chart-last-updated-at-text">
+                            (<%= new Moment(tweetCountLogModel.createdAt).format('YYYY年M月D日') %> 最終更新)
                         </div>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-    <% } else { %>
-        <div class="row">
-            <div class="col-12 invalid-product-description">
-                こちらの商品は正確なBuzzの測定が困難であると判断されたため、ネットの反応欄の表示対象外となっています。
-            </div>
-        </div>
-    <% } %>
-
-    <div class="row pt-3">
-        <div class="col-12">
-            <%- include(appRoot + '/public/ad/adsense/horizontal.html') %>
-        </div>
-    </div>
-
-    <div class="row pt-3">
-        <div class="col-12">
-            <h2 class="mid-header">
-                今日の<%= productTypeBudleNameJa %><span class="no-wrap">注目度ランキングTOP3</span>
-            </h2>
-        </div>
-    </div>
-
-    <%
-    __.times(top3ProductDataList.length, n => {
-        var rank = n + 1;
-        var productData = top3ProductDataList[n];
-    %>
-    <div class="row p-2">
-        <div class="col-7 align-self-center">
-            <div class="row">
-                <div class="col-12">
-                    <div class="rank-crown-img-area">
-                        <span class="rank-text"><%= rank %>位</span>
-                        <img src="/img/ranking/rank_<%= rank %>_crown.png" class="rank-crown-img">
                     </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-12 text-center">
-                    <a class="ranking-top-3-product-name"
-                       href="/product/detail/<%= productData.productModel.productId %>">
-                        <%= productData.productModel.getProductName() %><br>
-                    </a>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12 text-right">
-                    <span class="ranking-top-3-buzz-num"><%= productData.statDataModel.buzz %></span>Buzz
-                </div>
-            </div>
-        </div>
-        <div class="col-5 ranking-top-3-ad">
-            <a href="/product/detail/<%= productData.productModel.productId %>">
-                <%- include(appRoot + '/views/product_image/' + productModel.getProductClassName() + '.ejs', { productModel: productData.productModel, linkTag: false, }) %>
-            </a>
-        </div>
-    </div>
-    <hr>
-    <% }); %>
 
-    <div class="row">
-        <div class="col-12 text-right external-ranking-link">
-            <a href="/ranking/<%= productTypeBundleName %>">
-                >>> <%= productTypeBudleNameJa %>ランキングはこちら
-            </a>
+                <div class="row">
+                    <div class="col-12">
+                        <%
+                            var checkPointTexts = [];
+                            var latestChartData = __.last(chartDataList);
+                            var recentChartDataList = __.last(chartDataList, 7);
+                            var peakChartData = __.max(chartDataList, chartData => {
+                                return chartData.buzz;
+                            });
+                            var avgUserCount = (() => {
+                                if (__.isEmpty(recentChartDataList)) return 0;
+                                var avg = __.reduce(__.pluck(recentChartDataList, 'userCount'), (userCount, memo) => {
+                                    return userCount + memo;
+                                }) / recentChartDataList.length;
+                                return Math.floor(avg);
+                            })();
+
+                            if (recentChartDataList.length) {
+                                checkPointTexts.push((() => {
+                                            var baseText = '直近1週間で、1日平均<span class="highlighted-text">' + avgUserCount + '人</span>のユーザーにツイートされています。';
+
+                                            if (8000 <= avgUserCount) {
+                                                return baseText + '未曾有クラスのバズリ方をしています。もはや日本人なら知らない人はいない？！';
+                                            } else if (5000 <= avgUserCount) {
+                                                return baseText + 'を愛する人なら誰もが知っている勢いでバズっています。';
+                                            } else if (1000 <= avgUserCount) {
+                                                return baseText + '非常に注目されている水準に達しています。';
+                                            } else if (500 <= avgUserCount) {
+                                                return baseText + '比較的注目されている水準に達しています。';
+                                            } else if (100 <= avgUserCount) {
+                                                return baseText + '現時点では知る人ぞ知るレベルで注目されています。';
+                                            } else if (30 <= avgUserCount) {
+                                                return baseText + '現時点ではあまり話題にはなっていないようです。';
+                                            } else {
+                                                return baseText + '現時点ではその存在すらほぼ知られていないようです。';
+                                            }
+                                        }
+                                )());
+
+                                if (peakChartData.buzz >= 10) {
+                                    checkPointTexts.push((() => {
+                                        if (peakChartData.date == latestChartData.date) return '現在<span class="highlighted-text">Buzz最高記録を更新中</span>です！';
+
+                                        var buzzGrowthPercentage = Math.floor((latestChartData.buzz / peakChartData.buzz) * 100);
+
+                                        if (85 <= buzzGrowthPercentage) {
+                                            return sprintf(
+                                                    '%sに注目度のピーク%dBuzzを達成しましたが、直近でもほぼ同等の%dBuzzを維持しています。',
+                                                    new Moment(peakChartData.date).format('YYYY年M月D日'),
+                                                    peakChartData.buzz,
+                                                    latestChartData.buzz
+                                            );
+
+                                        } else {
+                                            return sprintf(
+                                                    '%sに注目度のピーク<span class="highlighted-text">%dBuzz</span>を達成後、現在は%dBuzzに落ち着いています。',
+                                                    new Moment(peakChartData.date).format('YYYY年M月D日'),
+                                                    peakChartData.buzz,
+                                                    latestChartData.buzz
+                                            );
+                                        }
+                                    })());
+                                }
+                            }
+                        %>
+                        <ul class="buzz-chart-info-ul">
+                            <% __.each(checkPointTexts, text => { %>
+                                <li><%- text %></li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="row text-align-center">
+                    <div class="col-12">
+                        <canvas id="buzz-chart"></canvas>
+                    </div>
+                    <div class="chart-desc">
+                        ※
+                        <a href="/faq#buzz">
+                            Buzzとは
+                        </a>
+                        ※
+                        <a href="/faq#user-num">
+                            発信者数とは
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row pt-1">
+                    <div class="col-12">
+                        <h2 class="small-header">ランキング実績</h2>
+
+                        <% if (__.isEmpty(rankingModelsPeakGroupByDate)) { %>
+                            <div class="text-align-center pt-3 pb-3">
+                                まだランクインの実績がありません。
+                            </div>
+                        <% } else { %>
+                            <table class="table rank-hist-table">
+                                <tbody id="rank-hist-table-body">
+
+                                <!-- ピーク -->
+                                <%
+                                    var shouldWriteRankingRange = true;
+                                __.each(rankingModelsPeakGroupByDate, (rankingModels) => {
+                                    var sortedRankingModels = __.sortBy(rankingModels, m => {
+                                        return m.rank;
+                                    });
+                                    var statDate = sortedRankingModels[0].date;
+                                    var shouldWriteStatDate = true;
+                                __.each(sortedRankingModels, rankingModel => {
+                                %>
+                                    <tr class="rank-hist-row">
+                                        <%
+                                        if (shouldWriteRankingRange) {
+                                            shouldWriteRankingRange = false;
+                                        %>
+                                        <td rowspan="<%= __.flatten(rankingModelsPeakGroupByDate).length %>">
+                                            ピーク
+                                        </td>
+                                        <% } %>
+
+                                        <%
+                                        if (shouldWriteStatDate) {
+                                            shouldWriteStatDate = false;
+                                        %>
+                                        <td rowspan="<%= rankingModels.length %>">
+                                            <%= new Moment(statDate).format('YYYY年M月D日') %>
+                                        </td>
+                                        <% } %>
+
+                                        <td>
+                                            <a href="<%= UrlGenerator.generateRankingPageURL({
+                                                productTypeBundleId: rankingModel.productTypeBundleId,
+                                            }) %>">
+                                                <%= CONST.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[rankingModel.productTypeBundleId] %>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <%= rankingModel.rank %>位
+                                        </td>
+                                    </tr>
+                                <% }); }); %>
+
+                                <!-- 直近 -->
+                                <%
+                                    var shouldWriteRankingRange = true;
+                                __.each(rankingModelsListRecentGroupByDate, (rankingModels) => {
+                                    var sortedRankingModels = __.sortBy(rankingModels, m => {
+                                        return m.rank;
+                                    });
+                                    var statDate = sortedRankingModels[0].date;
+                                    var shouldWriteStatDate = true;
+                                __.each(sortedRankingModels, rankingModel => {
+                                %>
+                                    <tr class="rank-hist-row">
+                                        <%
+                                        if (shouldWriteRankingRange) {
+                                            shouldWriteRankingRange = false;
+                                        %>
+                                        <td rowspan="<%= __.flatten(rankingModelsListRecentGroupByDate).length %>">
+                                            直近
+                                        </td>
+                                        <% } %>
+
+                                        <%
+                                        if (shouldWriteStatDate) {
+                                            shouldWriteStatDate = false;
+                                        %>
+                                        <td rowspan="<%= rankingModels.length %>">
+                                            <%= new Moment(statDate).format('YYYY年M月D日') %>
+                                        </td>
+                                        <% } %>
+
+                                        <td>
+                                            <a href="/">
+                                                <%= CONST.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[rankingModel.productTypeBundleId] %>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <%= rankingModel.rank %>位
+                                        </td>
+                                    </tr>
+                                <% }); }); %>
+
+                                </tbody>
+                            </table>
+
+                        <% } %>
+
+                    </div>
+                </div>
+
+            <% } %>
+
+            <% if (productBundleModel.isValid()) { %>
+
+                <div class="row">
+                    <div class="col-12">
+                        <h2 class="small-header m-0">
+                            注目度測定ワード
+                        </h2>
+                    </div>
+                </div>
+
+                <ul id="twitter-search-words-ul">
+                    <li>
+                        <%= productBundleModel.name %>
+                        <% if (hasStatData) { %>
+                            <span class="alt-search-word-created-at-text">
+                            (<%= new Moment(__.first(productTweetStatModels).createdAt).format('YYYY年M月D日') %>〜)
+                        </span>
+                        <% } %>
+                    </li>
+                    <%
+                        var twitterAltSearchWords = __.chain(twitterSearchWords)
+                                .filter(word => {
+                                    return word != productBundleModel.name;
+                                })
+                                .sortBy(word => {
+                                    return -1 * word.length; // DESC
+                                })
+                                .value();
+
+                    __.each(twitterAltSearchWords, word => {
+                        var createdAtMoment = searchWordIntoCreatedAtMomentHash[word];
+                    %>
+                    <li>
+                        <%= word %> <span
+                                class="alt-search-word-created-at-text">(<%= createdAtMoment.format('YYYY年M月D日') %>〜)</span>
+                    </li>
+                    <% }); %>
+                    <li>
+                        <div class="d-inline-flex w-100">
+                            <input class="form-control input-add-alt-search-word" type="text" autocomplete="off"
+                                   placeholder="略称, 別名を入力">
+                            <button class="btn common-button add-alt-search-word-button">追加申請</button>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="point-box">
+                    <span class="point-box-title">応援するには？</span>
+                    <p>
+                        <%
+                            var highlightedBuzzSearchWords = __.map(twitterSearchWords, word => {
+                                return '<span class="highlighted-text">' + word + '</span>';
+                            });
+                        %>
+                        <%- highlightedBuzzSearchWords.join(', ') %>を含むツイートをするか、下の<span
+                                class="highlighted-text">シェアボタン</span>からシェアすることで直接的に注目度に貢献することができます。
+                        積極的に発信して、あなたの好きなものをより多くの人に知ってもらいましょう！
+                        具体的な感想やレビューが含まれた良質なツイートは、このページのネットの反応欄にて掲載されることがあります。
+                        また、注目度測定ワードの欄にまだ登録されていない<span class="highlighted-text">略称や別名等の追加</span>にご協力頂くことによっても、ツイートの収集漏れ防止に繋がり、貢献することができます。
+                    </p>
+                </div>
+
+            <% } %>
+
+            <%-
+            include(appRoot + '/views/sns_share.ejs', {
+            shareTargetName: productBundleModel.name,
+            shareURL: UrlGenerator.generateProductBundleDetailPageURL(productBundleModel.id),
+            shareText: productBundleModel.name + "は今バズってる？！最新の世間の注目度、評判をまとめてお届け！",
+            mainShareButtonSuffix: 'のバズっぷりをシェアする',
+            })
+            %>
+
+            <div class="row pt-4">
+                <div class="col-12">
+                    <h2 class="mid-header">
+                        <%= productBundleModel.name + (productModels.length >= 2 ? 'シリーズ' : '') %><span class="no-wrap">のネットの反応</span>
+                    </h2>
+                </div>
+            </div>
+
+            <% if (productBundleModel.isValid()) { %>
+
+                <%
+                if (__.isEmpty(tweetModels)) {
+                %>
+
+                    <div id="tweet-not-found" class="text-align-center pt-3 pb-3">
+                        情報を収集中です。<br>
+                        しばらく経ってから再度ご確認ください。
+                    </div>
+
+                <% } else { %>
+
+                    <div class="row mx-auto tweet-reference-block">
+                        <div class="col-12 text-align-center">
+                <span id="tweet-list-load-spin" class="spinner-border text-primary" role="status"
+                      aria-hidden="true"></span>
+
+                            <div class="related-tweet-area">
+                                <div class="related-tweet">
+                                    <!-- tweet list -->
+                                </div>
+                                <button class="btn readmore-button display-none" type="button">
+                                    <div class="relative">
+                                        <p class="readmore-text">
+                                            続きを読み込む
+                                        </p>
+                                        <i class="fas fa-angle-down fa-lg readmore-icon"></i>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <%-
+                    include(appRoot + '/views/sns_share.ejs', {
+                    shareTargetName: productBundleModel.name,
+                    shareURL: UrlGenerator.generateProductBundleDetailPageURL(productBundleModel.id),
+                    shareText: productBundleModel.name + "は今バズってる？！最新の世間の注目度、評判をまとめてお届け！",
+                    mainShareButtonSuffix: 'のバズっぷりをシェアする',
+                    })
+                    %>
+
+                    <div class="row pt-3">
+                        <div class="col-12">
+                            <%- include(appRoot + '/public/ad/adsense/horizontal.html') %>
+                        </div>
+                    </div>
+                <% } %>
+
+            <% } else { %>%>
+            <div class="row">
+                <div class="col-12 invalid-product-description p-3">
+                    こちらの作品/商品は、正確なBuzzの測定が困難であると判断されたため、ネットの反応欄の表示対象外となっています。
+                </div>
+            </div>
+            <% } %>
+        </div>
+        <!-- ======================================== -->
+
+        <!-- ========== SUB CONTENTS ROW ========= -->
+        <div class="col-12 pl-1 pr-1 col-lg-4 pl-lg-3 pr-lg-0">
+            <div class="col-12 sub-content-col mt-lg-3">
+                <%- include(appRoot + '/views/sub_content_search_tweet_by_account_name.ejs', {}) %>
+                <%- include(appRoot + '/views/sub_content_ad_official_twitter_account.ejs', {}) %>
+                <%- include(appRoot + '/views/sub_content_simple_rankings.ejs', { adDataList: adDataList, }) %>
+            </div>
         </div>
     </div>
+    <!-- ========================================================= -->
+
 </div>
 
 <%- include('footer.ejs') %>
 
-<!-- data bridge from server -->
-<div id="hidden-div"
-     data-value='{"productId":<%= productModel.productId %>,"productTypeId":<%= productModel.productTypeId %>,"bundleName":"<%= productTypeBundleName %>","bundleNameJA":"<%= productTypeBudleNameJa %>"}'></div>
+<!-- AmChart -->
+<script src="https://www.amcharts.com/lib/4/core.js"></script>
+<script src="https://www.amcharts.com/lib/4/charts.js"></script>
 
-<script src="/js/compressed/product_detail.min.js" type="text/javascript"></script>
+<!-- data bridge from server to client-->
+<script>
+  var productBundleId = +'<%= productBundleModel.id %>';
+  var productNum = +'<%= productModels.length %>';
+  var chartDataList = JSON.parse('<%- JSON.stringify(chartDataList) %>');
+  var compactTweetInfoList = JSON.parse('<%- JSON.stringify(compactTweetInfoListJSON).replace(JSON_ESCAPE_CHAR, JSON_ESCAPE_FUNC) %>').list;
+  var twitterSearchWords = JSON.parse('<%- JSON.stringify(twitterSearchWords) %>');
+  var initialSlideIndex = +'<%= initialSlideIndex %>';
+</script>
+
+<script src="/js/compressed/product_detail.min.js" type="text/javascript" async></script>
 </body>
 </html>
+
+

@@ -1,92 +1,110 @@
-module.exports = function(grunt) {
+const grunt = require('grunt');
+const __ = require('underscore');
+
+module.exports = function (grunt) {
   grunt.initConfig({
-    browserify : {
-      header: {
-        src : 'public/js/header.js',
-        dest : 'public/js/compressed/header.min.js',
+    browserify: {
+      exec: {
+        src: ['__temp__'],
+        dest: ['__temp__'],
       },
+    },
 
-      index : {
-        src : ['public/js/index.js', 'public/js/header.js'],
-        dest : 'public/js/compressed/index.min.js',
-      },
-
-      control : {
-        src : ['public/js/control.js', 'public/js/header.js'],
-        dest : 'public/js/compressed/control.min.js',
-      },
-
-      product_detail : {
-        src : ['public/js/product_detail.js', 'public/js/header.js'],
-        dest : 'public/js/compressed/product_detail.min.js',
-      },
-
-      ranking : {
-        src : ['public/js/ranking.js', 'public/js/header.js'],
-        dest : 'public/js/compressed/ranking.min.js',
-      },
-
-      product_list : {
-        src : ['public/js/product_list.js', 'public/js/header.js'],
-        dest : 'public/js/compressed/product_list.min.js',
-      },
+    'closure-compiler': {
+      my_target: {
+        files: {
+          '__output_path_temp__': ['__target_file_temp__']
+        },
+        options: {
+          compilation_level: 'SIMPLE',
+          // create_source_map: 'dest/output.min.js.map',
+          // output_wrapper: '(function(){\n%output%\n}).call(this)\n//# sourceMappingURL=output.min.js.map'
+        }
+      }
     },
 
     sass: {
       dist: {
         files: {
-          'public/css/common.css' : 'public/sass/common.sass'
+          'public/css/common.css': 'public/sass/common.sass'
         }
       }
     },
 
-    watch: {
-      header : {
-        files : ['public/js/header.js'],
-        tasks : ['browserify:header', 'browserify:index', 'browserify:ranking', 'browserify:product_detail', 'browserify:product_list', 'browserify:control'],
-      },
-
-      index : {
-        files : ['public/js/index.js'],
-        tasks : ['browserify:index'],
-      },
-
-      control : {
-        files : ['public/js/control.js'],
-        tasks : ['browserify:control'],
-      },
-
-      product_detail : {
-        files : ['public/js/product_detail.js'],
-        tasks : ['browserify:product_detail'],
-      },
-
-      ranking : {
-        files : ['public/js/ranking.js'],
-        tasks : ['browserify:ranking'],
-      },
-
-      product_list : {
-        files : ['public/js/product_list.js'],
-        tasks : ['browserify:product_list'],
-      },
-
-      // css: {
-      //   files: 'public/sass/common.sass',
-      //   tasks: ['sass'],
-      // }
+    ejslint: {
+      src: ['__temp__'],
     },
 
-  });
+    esteWatch: {
+      options: {
+        dirs: ['views/**', 'public/js'],
+        livereload: false,
+      },
 
-  // plugins
+      'ejs': function (filepath) {
+        grunt.config(['ejslint', 'src'], filepath);
+        return ['ejslint'];
+      },
+
+      'js': function (filepath) {
+        var isBrowserifyTargetJSregex = new RegExp(/public\/js\/([a-z_]+)\.js$/);
+        var result = isBrowserifyTargetJSregex.exec(filepath);
+        var isHeader = !!filepath.match(/public\/js\/header.js/);
+        var fileName = result ? result[1] : null;
+        var outputFilePath = 'public/js/compressed/' + fileName + '.min.js';
+
+        if (!fileName) return null;
+
+        var dependencyHash = {
+          'public/js/index.js': ['public/js/header.js'],
+          'public/js/product_detail.js': ['public/js/header.js'],
+          'public/js/ranking.js': ['public/js/header.js'],
+          'public/js/twitter_account.js': ['public/js/header.js'],
+          'public/js/product_list_for_admin.js': ['public/js/header.js'],
+        };
+
+        var execList = [];
+        for (var i = 0; i < __.keys(dependencyHash).length; i++) {
+          var modifiedFilePath = __.keys(dependencyHash)[i];
+          var dependingFilePaths = dependencyHash[modifiedFilePath];
+          var bundleFiles = __.flatten([modifiedFilePath, dependingFilePaths]);
+
+          var modifiedJSName = isBrowserifyTargetJSregex.exec(modifiedFilePath)[1];
+          var outputPath = 'public/js/compressed/' + modifiedJSName + '.min.js';
+
+          if (__.contains(bundleFiles, filepath)) {
+            execList.push(modifiedFilePath);
+            grunt.config(['browserify', modifiedFilePath, 'src'], bundleFiles);
+            grunt.config(['browserify', modifiedFilePath, 'dest'], outputPath);
+          }
+        }
+
+        if (__.isEmpty(execList)) {
+          grunt.config(['browserify', 'exec', 'src'], filepath);
+          grunt.config(['browserify', 'exec', 'dest'], outputFilePath);
+          execList.push('exec');
+        }
+
+        console.log("exec list: " + execList.toString());
+
+        return __.map(execList, execName => {
+          return 'browserify:' + execName;
+        });
+      },
+    },
+  })
+  ;
+
+// plugins
+  require('google-closure-compiler').grunt(grunt, {
+    platform: ['javascript']
+  });
   grunt.loadNpmTasks('grunt-contrib-sass');
   grunt.loadNpmTasks('grunt-browserify');
-  grunt.loadNpmTasks('grunt-contrib-cssmin');
-  grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-este-watch');
 
-  // tasks
-  grunt.registerTask('default', ['cssmin', 'br', 'sass']);
+  grunt.task.loadTasks('grunt_task_module');
+  grunt.registerTask('default', ['br', 'sass']);
   grunt.registerTask('br', ['browserify']);
-};
+}
+;

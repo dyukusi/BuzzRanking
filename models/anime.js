@@ -1,9 +1,10 @@
 const appRoot = require('app-root-path');
 const __ = require('underscore');
-const DBUtil = require(appRoot + '/my_libs/db_util.js');
+const Moment = require('moment');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const ProductBase = require(appRoot + '/models/product_base');
+const CONST = require(appRoot + '/lib/const.js');
 
 class Anime extends ProductBase {
   // ------------------- Instance Methods -------------------
@@ -15,6 +16,22 @@ class Anime extends ProductBase {
     return ogpImageURL || siteThumbnailURL;
   }
 
+  getReleaseDateMoment() {
+    var month = CONST.ANIME_COUR_INTO_MONTH_HASH[this.cours];
+    var dateStr = this.year + '-' + ('0' + month).slice(-2);
+    return new Moment(dateStr);
+  }
+
+  isNewReleasedProductByMoment(moment) {
+    var baseMoment = moment.clone();
+
+    var releaseMoment = this.getReleaseDateMoment();
+    var thresholdMoment = releaseMoment.clone().subtract(7, 'day');
+
+    // normally 1 cour Anime = 3 months. +1 for extra evaluation term
+    return thresholdMoment.unix() <= baseMoment.unix() &&
+        baseMoment.unix() <= releaseMoment.add(120, 'day').unix();
+  }
   // ------------------- Class Methods -------------------
 }
 
@@ -65,7 +82,7 @@ Anime.init({
     },
     ogpImageUrl: {
       type: Sequelize.TEXT,
-      allowNull: false,
+      allowNull: true,
       field: 'ogp_image_url'
     },
     twitterAccount: {
@@ -115,6 +132,7 @@ Anime.init({
     updatedAt: {
       type: Sequelize.DATE,
       allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
       field: 'updated_at'
     },
     createdAt: {

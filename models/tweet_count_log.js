@@ -7,30 +7,32 @@ class TweetCountLog extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
 
   // ------------------- Class Methods -------------------
-  static selectByProductId(productId) {
-    return this.findAll({
-      where: {
-        productId: productId,
-      }
-    });
-  }
+  // static selectLatestPerDayByProductBundleId(productBundleId) {
+  //   return sequelize.query(
+  //     "SELECT TweetCountLogA.product_bundle_id, TweetCountLogA.tweet_count, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_bundle_id, MAX(created_at) AS latest_date FROM tweet_count_log WHERE product_bundle_id = :productBundleId GROUP BY DATE(created_at)) AS TweetCountLogB ON TweetCountLogA.product_bundle_id = TweetCountLogB.product_bundle_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date ORDER BY created_at ASC",
+  //     {
+  //       model: this,
+  //       replacements: {
+  //         productBundleId: productBundleId,
+  //       },
+  //       type: Sequelize.QueryTypes.SELECT,
+  //     }
+  //   );
+  // }
+
+
 }
 
 TweetCountLog.init({
-    productId: {
+    productBundleId: {
       type: Sequelize.INTEGER(11).UNSIGNED,
       allowNull: false,
-      field: 'product_id'
+      field: 'product_bundle_id'
     },
     tweetCount: {
       type: Sequelize.INTEGER(11),
       allowNull: false,
       field: 'tweet_count'
-    },
-    buzz: {
-      type: Sequelize.INTEGER(11),
-      allowNull: false,
-      field: 'buzz'
     },
     createdAt: {
       type: Sequelize.DATE,

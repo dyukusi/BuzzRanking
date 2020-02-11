@@ -3,11 +3,24 @@ const __ = require('underscore');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const ProductBase = require(appRoot + '/models/product_base');
+const Moment = require('moment');
 
 class WebService extends ProductBase {
   // ------------------- Instance Methods -------------------
   getAffiliateHTML() {
     return this.affiliateHtml;
+  }
+
+  getReleaseDateMoment() {
+    return new Moment(this.createdAt);
+  }
+
+  isNewReleasedProductByMoment(moment) {
+    return true; // considering all web services are always maintained til end
+  }
+
+  getImageURL() {
+    return null;
   }
 
   // ------------------- Class Methods -------------------
@@ -29,7 +42,6 @@ WebService.init({
     productBundleId: {
       type: Sequelize.INTEGER(11).UNSIGNED,
       allowNull: true,
-      primaryKey: true,
     },
     title: {
       type: Sequelize.STRING(255),
@@ -50,6 +62,7 @@ WebService.init({
     validityStatus: {
       type: Sequelize.INTEGER(11).UNSIGNED,
       allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
       field: 'validity_status'
     },
     createdAt: {

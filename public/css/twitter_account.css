@@ -1,0 +1,29 @@
+.contributed-tweet-list ul {
+    list-style: none;
+}
+
+.contributed-tweet-list ul li:before {
+    font-family: "Font Awesome 5 Free";
+    content: '\f00c';
+    font-size: 1.2rem;
+    font-weight: 900;
+    position: absolute;
+    left : 2rem;
+    color: #ffb03f;
+}
+
+.contributed-tweet-list ul li ul li:before {
+    display: none;
+}
+
+.contributed-tweet-list ul li ul {
+    padding-left: 0;
+}
+
+.product-bundle-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    background: linear-gradient(transparent 70%, #ffc85c 0%);
+    display: inline;
+    padding: 5px 2px 4px;
+}

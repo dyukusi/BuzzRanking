@@ -1,0 +1,25 @@
+<%
+const appRoot = require('app-root-path');
+const UrlGenerator = require(appRoot + '/lib/url_generator.js');
+%>
+
+<div class="sub-content-div div-ranking-ad">
+    <div class="sub-content-title">
+        <div class="sub-content-title-icon">
+            <i class="fab fa-twitter"></i>
+        </div>
+        あなたのアカウントを検索
+    </div>
+    <div class="p-3">
+        あなたのTwitterアカウントで、注目度に貢献しているツイートを一覧表示します。
+    </div>
+
+    <div class="row">
+        <div class="col-2 p-0 pl-3 at-mark">@</div>
+        <div class="col-10 p-0 pr-4">
+            <input id="input-search-twitter-account" class="form-control" type="text" autocomplete="off"
+                    placeholder="あなたのTwitterIDを入力" data-base-url="<%= UrlGenerator.generateTwitterAccountPageURL() %>">
+            </span>
+        </div>
+    </div>
+</div>

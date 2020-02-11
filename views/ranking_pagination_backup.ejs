@@ -1,0 +1,79 @@
+<%
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const CONST = require(appRoot + '/lib/const.js');
+const sprintf = require('sprintf-js').sprintf;
+
+var productTypeBundleName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[productTypeBundleId];
+var rankingName = originalURL.replace('/ranking/', '').replace(/\?.*/, '');
+var generateURL = (page) => {
+    var url = sprintf(
+            "/ranking/%s?page=%d",
+            rankingName,
+            page
+    );
+
+    if (productTypeId) {
+        var productTypeName = Const.PRODUCT_TYPE_ID_TO_NAME_HASH[productTypeId];
+        url += sprintf("&type=%s", productTypeName);
+    }
+
+    return url;
+};
+
+%>
+
+<div class="pager pt-3">
+    <ul class="my-pagination">
+        <li class="pre">
+            <a href=<%= generateURL(targetPage - 1) %> class="<%= targetPage <= 1 ? 'disabled-link' : '' %>">
+                <span>«</span>
+            </a>
+        </li>
+
+        <% __.each(__.range(1, pageMax + 1), page => { %>
+            <li>
+                <a href=<%= generateURL(page) %> class="<%= targetPage == page ? 'active' : '' %>">
+                    <span>
+                        <%= page %>
+                    </span>
+                </a>
+            </li>
+        <% }); %>
+
+        <li class="next">
+            <a href=<%= generateURL(targetPage + 1) %> class="<%= pageMax <= targetPage ? 'disabled-link' : '' %>">
+                <span>»</span>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<!--<ul class="pagination">-->
+<!--    <% if (paginationData.first) { %>-->
+<!--        <li><a href="<%= paginationData.prelink + paginationData.first %>">&laquo;&laquo;</a></li>-->
+<!--    <% } %>-->
+
+<!--    <% if (paginationData.previous) { %>-->
+<!--        <li><a href="<%= paginationData.prelink + paginationData.previous %>">&laquo;</a></li>-->
+<!--    <% } %>-->
+
+<!--    <% for ( var i = 0; i < paginationData.range.length; i++ ) { -->
+<!--    if (i == paginationData.current) { %>-->
+<!--        <li class="active"><a-->
+<!--                    href="<%= paginationData.prelink %><%= paginationData.range[i] %>"><%= paginationData.range[i] %></a>-->
+<!--        </li>-->
+<!--    <% } else { %>-->
+<!--        <li>-->
+<!--            <a href="<%= paginationData.prelink %><%= paginationData.range[i] %>"><%= paginationData.range[i] %></a>-->
+<!--        </li>-->
+<!--    <% } } %>-->
+
+<!--    <% if (paginationData.next) { %>-->
+<!--        <li><a href="<%= paginationData.prelink + paginationData.next %>">&raquo;</a></li>-->
+<!--    <% } %>-->
+
+<!--    <% if (paginationData.last) { %>-->
+<!--        <li><a href="<%= paginationData.prelink + paginationData.last %>">&raquo;&raquo;</a></li>-->
+<!--    <% } %>-->
+<!--</ul>-->

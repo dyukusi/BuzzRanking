@@ -1,6 +1,9 @@
 <%
-
-  %>
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const CONST = require(appRoot + '/lib/const.js');
+const ProductUtil = require(appRoot + '/lib/product_util.js');
+%>
 
 <!DOCTYPE html>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
@@ -8,27 +11,124 @@
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
       integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
 <link href="/css/common.css" rel="stylesheet">
-
 <html>
 <head>
     <title>CONTROL ROOM</title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <style>
+        td, th {
+            padding: 0 !important;
+        }
+
+        .container-fluid {
+            max-width: 950px;
+        }
+
+    </style>
 </head>
 <body>
 
 <%- include(appRoot + '/views/header.ejs') %>
 
-<div class="container-fluid p-3">
+<div class="container-fluid p-3 mb-5">
+<!--    <div class="row">-->
+<!--        <div class="col-12">-->
+<!--            <a href="/ranking/testing">デバッグ用プロダクト一覧ページ</a>-->
+<!--        </div>-->
+<!--    </div>-->
 
-    リンク一覧
-    <div class="row">
+    <div class="row mb-3">
         <div class="col-12">
-            <a href="/ranking/testing">デバッグ用プロダクト一覧ページ</a>
+            Product一覧用生クエリ
+            <input id="input-raw-select-sql-for-product" class="form-control" type="text" autocomplete="off"
+                   placeholder="ProductIdのSELECTクエリを入力">
+            </span>
+            <button id="button-raw-select-sql-for-product" type="button" class="btn btn-primary">
+                実行
+            </button>
         </div>
     </div>
 
-    <br>
+    <div class="row mb-3">
+        <div class="col-12">
+            ProductBundle一覧用生クエリ
+            <input id="input-raw-select-sql" class="form-control" type="text" autocomplete="off"
+                   placeholder="ProductBundleIdのSELECTクエリを入力">
+            </span>
+            <button id="button-raw-select-sql" type="button" class="btn btn-primary">
+                実行
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <a href="/admin/protected_bundles_having_candidate_child_products">
+                所属候補Productがある保護されているProductBundle一覧
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <a href="/admin/ranked_bundles_without_protected">
+                総合ランキングで保護されていないProductBundle一覧
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <a href="/admin/sort_by_child_product_num">
+                保護されていない子Product数が多い順ProductBundle一覧
+            </a>
+        </div>
+    </div>
+
+    <div class="mt-3 mb-3">
+        ValidityStatusで絞ったProductBundle一覧
+        <% __.each(CONST.VALIDITY_STATUS_NAME_TO_ID_HASH, (id, name) => { %>
+            <div class="row">
+                <div class="col-12">
+                    <a href="/admin/select_by_validity_status?validity_status_id=<%= id %>">
+                        <%= name %>
+                    </a>
+                    (<%= id %>)
+                </div>
+            </div>
+        <% }); %>
+    </div>
+
+    <div class="mt-3 mb-3">
+        Productテーブルで絞ったProductBundle一覧
+        <% __.each(ProductUtil.getAllProductModelClass(), productModelClass => { %>
+            <div class="row">
+                <div class="col-12">
+                    <a href="/admin/select_by_product_table_name?product_table_name=<%= productModelClass.name %>">
+                        <%= productModelClass.name %>
+                    </a>
+                </div>
+            </div>
+        <% }); %>
+
+        <% __.each(ProductUtil.getAllProductModelClass(), productModelClass => { %>
+            <div class="row">
+                <div class="col-12">
+                    <a href="/admin/select_by_product_table_name?product_table_name=<%= productModelClass.name %>&should_review_validity_status=true">
+                        <%= productModelClass.name %>かつSHOULD_REVIEW_VALIDITY_STATUS_IDSのステータス
+                    </a>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+
+
+    <div class="row">
+        <div class="col-12">
+            <input id="input-" class="form-control" type="text" autocomplete="off" placeholder="">
+        </div>
+    </div>
 
     <table class="table table-striped table-hover">
         <tr>
@@ -38,8 +138,9 @@
         </tr>
 
         <%
-        __.each(cacheKeyIntoByteSizeHash, (byte, key) => {
-            var mb = byte / (1000 * 1000);
+        __.each(cacheInfoList, cacheInfo => {
+            var key = cacheInfo.key;
+            var mb = cacheInfo.size / (1000 * 1000);
             var roundedMb = Math.round(mb * 1000) / 1000;
         %>
         <tr>

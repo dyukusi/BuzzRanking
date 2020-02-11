@@ -1,15 +1,16 @@
 const appRoot = require('app-root-path');
 const {JSDOM} = require('jsdom');
 const $ = jQuery = require('jquery')(new JSDOM().window);
-const CONST = require(appRoot + '/my_libs/const.js');
+const CONST = require(appRoot + '/lib/const.js');
 const _ = require('underscore');
-const Util = require(appRoot + '/my_libs/util.js');
+const Util = require(appRoot + '/lib/util.js');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const Moment = require('moment');
 const ProductNum = require(appRoot + '/models/product_num');
 const sprintf = require('sprintf-js').sprintf;
 const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+const ProductUtil = require(appRoot + '/lib/product_util.js');
 
 var targetMoment = new Moment(process.argv[2]);
 if (!process.argv[2] || !targetMoment.isValid()) {
@@ -21,7 +22,7 @@ if (!process.argv[2] || !targetMoment.isValid()) {
   var untilStr = targetMoment.clone().add(1, 'days').format('YYYY-MM-DD');
 
   var results = await Promise.all(
-    _.map(CONST.PRODUCT_MODELS, productClass => {
+    _.map(ProductUtil.getAllProductModelClass(), productClass => {
       return sequelize.query(
         sprintf(
           "SELECT product_type_id, count(*) AS count FROM %s WHERE created_at <= :until AND validity_status IN (:validStatusIds) GROUP BY product_type_id;",

@@ -1,76 +1,49 @@
+const appRoot = require('app-root-path');
 const express = require('express');
 const router = express.Router();
-const cluster = require('cluster');
+const __ = require('underscore');
+
+const Util = require(appRoot + '/lib/util.js');
+const CONST = require(appRoot + '/lib/const.js');
+const CacheKeyGenerator = require(appRoot + '/lib/cache_key_generator.js');
+const CacheUtil = require(appRoot + '/lib/cache_util.js');
+const ProductUtil = require(appRoot + '/lib/product_util.js');
+
+const ProductBundle = require(appRoot + '/models/product_bundle');
 const ReleaseControl = require(appRoot + '/models/release_control.js');
-const Moment = require('moment');
-const Const = require(appRoot + '/my_libs/const.js');
-const Stat = require(appRoot + '/models/stat.js');
-const StatData = require(appRoot + '/models/stat_data.js');
-const slaveManager = require(appRoot + '/my_libs/slave_manager.js');
-const cacheUtil = require(appRoot + '/my_libs/cache_util.js');
+const Ranking = require(appRoot + '/models/ranking.js');
+const ProductTweetStat = require(appRoot + '/models/product_tweet_stat');
 const TwitterAlternativeSearchWord = require(appRoot + '/models/twitter_alternative_search_word');
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 // admin settings
-const ENABLE_HTML_CACHE = true;
+const ENABLE_HTML_CACHE = false;
 
-// for testing
-router.get('/testing', async function (req, res, next) {
-  var queryParam = req.query || {};
+router.get('/', async function (req, res, next) {
   var isAdmin = Util.isAdminByReq(req);
-  var page = Number(queryParam['page']) || 1;
+  var queryString = req.query || {};
+  var rankingTypeName = queryString['rtype'] || 'BUZZ';
+  var rankingTypeId = CONST.RANKING_TYPE_NAME_TO_ID_HASH[rankingTypeName.toUpperCase()];
+  var productTypeBundleId = CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH[(queryString['category'] || '').toUpperCase()] || CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL;
+  var productTypeId = CONST.PRODUCT_TYPE_NAME_TO_ID_HASH[(queryString['type'] || '').toUpperCase()] || CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL;
+  var page = Number(queryString['page']) || 1;
+  var latestReleaseControlModel = await ReleaseControl.selectLatest();
+  var targetDateStr = latestReleaseControlModel.getMoment().format('YYYY-MM-DD');
+  var redis = CacheUtil.getRedisInstance();
 
-  if (!isAdmin) {
-    return res.redirect('/auth');
+  if (!rankingTypeName || !rankingTypeId) {
+    return next('undefined ranking type name: ' + rankingTypeName);
   }
 
-  var productDataList = await cacheUtil.getCachedProductDataList(cacheUtil.getProductDataListForDebugCacheKey(), {
-    restoreProductModel: true,
-  });
-
-  var productIdIntoTwitterAltSearchWordModelsHash = __.groupBy(await TwitterAlternativeSearchWord.selectAllValid(), m => {
-    return m.productId;
-  });
-
-  var pageMax = Math.ceil(productDataList.length / Const.PRODUCT_NUM_PER_PAGE) || 1;
-
-  return res.render('ranking', {
-    isAdmin: isAdmin,
-    targetPage: page,
-    productDataList: productDataList,
-    lastUpdateMoment: null,
-    productTypeBundleId: null,
-    targetProductTypeId: null,
-    isDateSpecified: null,
-    originalURL: req.originalUrl,
-    pageMax: pageMax,
-
-    // for admin
-    productIdIntoTwitterAltSearchWordModelsHash: productIdIntoTwitterAltSearchWordModelsHash,
-  });
-});
-
-router.get('/:product_type_bundle_name', async function (req, res, next) {
-  var isAdmin = Util.isAdminByReq(req);
-  var queryParam = req.query || {};
-  var page = Number(queryParam['page']) || 1;
-  var targetProductTypeBundleName = req.params.product_type_bundle_name;
-  var targetProductTypeBundleId = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID[targetProductTypeBundleName];
-  var targetProductTypeId = Const.PRODUCT_TYPE_NAME_TO_ID_HASH[queryParam['type']] || null;
-  var targetProductTypeIds = targetProductTypeId ? [targetProductTypeId] : Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[targetProductTypeBundleId];
-  var latestReleaseControlModel = await ReleaseControl.selectLatestReleaseDate();
-  var targetMoment = process.argv[2] ? new Moment(process.argv[2]) : latestReleaseControlModel.getDateMoment();
-  // var targetMoment = queryParam['date'] ? new Moment(queryParam['date']) : latestReleaseControlModel.getDateMoment();
-  var htmlCacheKey = 'html_ranking_' + (targetProductTypeId || 'bundle_' + targetProductTypeBundleId) + '_' + targetMoment.format("YYYY-MM-DD") + '_p' + page;
+  var htmlCacheKey = CacheKeyGenerator.generateHtmlCacheForRanking(
+    targetDateStr,
+    rankingTypeName,
+    productTypeBundleId,
+    productTypeId,
+    page
+  );
   var htmlCache = await redis.get(htmlCacheKey);
-
-  if (!targetProductTypeBundleId) {
-    return next(targetProductTypeBundleName + ' is not defined');
-  }
-
-  // date function is only for admin
-  if (!!queryParam['date'] && !isAdmin) {
-    return res.redirect('/auth');
-  }
 
   // html cache hit
   if (htmlCache && ENABLE_HTML_CACHE && !isAdmin) {
@@ -79,32 +52,82 @@ router.get('/:product_type_bundle_name', async function (req, res, next) {
 
   console.log("html cache miss: " + htmlCacheKey);
 
-  var statModel = await Stat.selectByRankingDate(targetMoment);
-  var productDataListCacheKey = cacheUtil.generateProductDataListCacheKeyByStatId(statModel.id);
-  var allProductDataList = await cacheUtil.getCachedProductDataList(productDataListCacheKey);
+  var rankingModels;
+  var start;
+  var end;
 
-  // product list object cache miss
-  if (!allProductDataList) {
-    console.log("product data list cache miss: " + productDataListCacheKey);
-    return next({
-      message: 'preparing product data list: ' + productDataListCacheKey,
-      dispMessage: Const.ERROR_MESSAGE.IN_PREPARING_RANKING,
+  // === DEBUG FOR ADMIN ===
+  if (isAdmin && req.query.debug_product_bundle_ids) {
+    var debugTargetProductBundleIds = __.map(req.query.debug_product_bundle_ids.split(','), productBundleIdStr => {
+      return +productBundleIdStr;
     });
+
+    // create dummy ranking models
+    rankingModels = __.map(debugTargetProductBundleIds, productBundleId => {
+      return new Ranking({
+        date: targetDateStr,
+        type: rankingTypeId,
+        productTypeBundleId: productTypeBundleId,
+        productTypeId: productTypeId,
+        productBundleId: productBundleId,
+        rank: -1,
+      });
+    });
+
+    start = (page - 1) * CONST.PRODUCT_NUM_PER_PAGE;
+    end = start + CONST.PRODUCT_NUM_PER_PAGE;
+  }
+  // === NORMAL PROCESS ===
+  else {
+    rankingModels = __.chain(await Ranking.findAll({
+      where: {
+        date: targetDateStr,
+        type: rankingTypeId,
+        productTypeBundleId: productTypeBundleId,
+        productTypeId: productTypeId,
+      },
+    }))
+      .sortBy(rankingModel => {
+        return rankingModel.rank; // ASC
+      })
+      .value();
+
+    start = (page - 1) * CONST.PRODUCT_NUM_PER_PAGE;
+    end = start + CONST.PRODUCT_NUM_PER_PAGE;
   }
 
-  var targetProductDataList = __.filter(allProductDataList, productData => {
-    return __.contains(targetProductTypeIds, productData.productModel.productTypeId);
+  var targetRankingModels = rankingModels.slice(start, end);
+  var productBundleIds = __.map(targetRankingModels, m => {
+    return m.productBundleId;
   });
 
-  var pageMax = Math.ceil(targetProductDataList.length / Const.PRODUCT_NUM_PER_PAGE) || 1;
-  if (pageMax < page) {
-    return next({
-      message: 'Exceeded page limit. Page: ' + page + ' MaxPage: ' + pageMax,
-      dispMessage: Const.ERROR_MESSAGE.PAGE_EXCEEDED,
-    });
-  }
+  var [
+    productBundleIdIntoProductDataHash,
+    productBundleIdIntoTweetModelsHash,
+    productBundleIdIntoProductTweetStatModelHash,
+    productBundleIdIntoSearchWordsHash,
+    adDataList,
+  ] = await Promise.all([
+    ProductUtil.loadProductDataHashByProductBundleIds(productBundleIds, {
+      ignoreCache: isAdmin,
+      includeAllProduct: isAdmin
+    }),
+    ProductUtil.loadSortedTweetModelsHashByProductBundleIds(productBundleIds),
+    (async () => {
+      var productTweetStatModels = await ProductTweetStat.findAll({
+        where: {
+          productBundleId: productBundleIds,
+        },
+      });
+      return __.indexBy(productTweetStatModels, m => {
+        return m.productBundleId;
+      });
+    })(),
+    ProductUtil.buildProductBundleIdIntoSearchWordsHashByProductBundleIds(productBundleIds),
+    ProductUtil.loadSimpleRankingDataList(latestReleaseControlModel.getMoment().format('YYYY-MM-DD')),
+  ]);
 
-  // html cache
+  // prepare for html cache
   if (!isAdmin && ENABLE_HTML_CACHE) {
     res.sendResponse = res.send;
     res.send = (body) => {
@@ -113,29 +136,102 @@ router.get('/:product_type_bundle_name', async function (req, res, next) {
     };
   }
 
-  var productIdIntoTwitterAltSearchWordModelsHash;
+  // for debug data
+  var debugData = {};
   if (isAdmin) {
-    productIdIntoTwitterAltSearchWordModelsHash = __.groupBy(await TwitterAlternativeSearchWord.selectAllValid(), m => {
-      return m.productId;
-    });
+    debugData = await createDataForDebug(productBundleIds);
   }
 
   return res.render('ranking', {
     isAdmin: isAdmin,
-    pageMax: pageMax,
-    targetDateMoment: targetMoment,
-    targetPage: page,
-    productDataList: targetProductDataList,
-    lastUpdateMoment: latestReleaseControlModel.getDateMoment(),
-    productTypeBundleId: targetProductTypeBundleId,
-    targetProductTypeId: targetProductTypeId,
-    isDateSpecified: !!queryParam['date'],
     originalURL: req.originalUrl,
+    targetPage: page,
+    totalRankedNum: rankingModels.length,
 
-    // for admin
-    productIdIntoTwitterAltSearchWordModelsHash: productIdIntoTwitterAltSearchWordModelsHash,
+    rankingTypeId: rankingTypeId,
+    productTypeBundleId: productTypeBundleId,
+    productTypeId: productTypeId,
+
+    rankingModels: targetRankingModels,
+    productBundleIdIntoProductDataHash: productBundleIdIntoProductDataHash,
+    productBundleIdIntoTweetModelsHash: productBundleIdIntoTweetModelsHash,
+    productBundleIdIntoProductTweetStatModelHash: productBundleIdIntoProductTweetStatModelHash,
+    productBundleIdIntoSearchWordsHash: productBundleIdIntoSearchWordsHash,
+    adDataList: adDataList,
+
+    // ---------- below data can be used only with admin mode --------------
+    debugData: debugData,
+
+    // targetDateMoment: targetMoment,
+    // productDataList: targetProductDataList,
+    // lastUpdateMoment: latestReleaseControlModel.getMoment(),
+    // productTypeBundleId: targetProductTypeBundleId,
+    // targetProductTypeId: targetProductTypeId,
+    // isDateSpecified: !!queryString['date'],
   });
 
 });
+
+async function createDataForDebug(productBundleIds) {
+  var productBundleModels = await ProductBundle.findAll({
+    where: {
+      id: productBundleIds,
+    }
+  });
+
+  var twitterAltSearchWordModels = await TwitterAlternativeSearchWord.findAll({
+    where: {
+      productBundleId: productBundleIds,
+    },
+  });
+
+  var productBundleIdIntoTwitterAltSearchWordModelsHash = __.groupBy(twitterAltSearchWordModels, m => {
+    return m.productBundleId;
+  });
+
+  var protectedProductBundleModels = __.filter(productBundleModels, m => {
+    return m.isProtected();
+  });
+
+  var productBundleIdIntoChildCandidateProductModels = {};
+  var productBundleIdIntoParentProductDataHash = {};
+  for (var i = 0; i < protectedProductBundleModels.length; i++) {
+    var productBundleModel = protectedProductBundleModels[i];
+    var productModels = await ProductUtil.selectProductModels({
+      title: {
+        [Op.like]: '%' + productBundleModel.name + '%',
+      },
+      productBundleId: {
+        [Op.or]: [
+          {
+            [Op.ne]: productBundleModel.id,
+          },
+          {
+            [Op.eq]: null,
+          }
+        ],
+      },
+    });
+
+    productBundleIdIntoChildCandidateProductModels[productBundleModel.id] = productModels;
+
+    var parentProductDataList = await Promise.all(__.compact(__.map(productModels, m => {
+      if (!m.productBundleId) return null;
+      return ProductUtil.loadProductDataByProductBundleId(m.productBundleId);
+    })));
+
+    __.each(parentProductDataList, m => {
+      if (!m.productBundleModel) return;
+      productBundleIdIntoParentProductDataHash[m.productBundleModel.id] = m;
+    });
+  }
+
+  return {
+    productBundleIdIntoTwitterAltSearchWordModelsHash,
+    productBundleIdIntoChildCandidateProductModels,
+    productBundleIdIntoParentProductDataHash,
+  };
+}
+
 
 module.exports = router;

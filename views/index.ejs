@@ -1,8 +1,11 @@
 <%
-var productTypeBundleNames = __.keys(Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID);
+const appRoot = require('app-root-path');
+const CONST = require(appRoot + '/lib/const.js');
+const __  = require('underscore');
 
+var productTypeBundleNames = __.keys(CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH);
 var productTypeBundleIdToAltText = {
-  [Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID['inn']]: '<span class="no-wrap">宿泊・旅行</span><span class="no-wrap">予約</span>',
+  [CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.INN]: '<span class="no-wrap">宿泊・旅行</span><span class="no-wrap">予約</span>',
 };
 %>
 
@@ -32,12 +35,12 @@ var productTypeBundleIdToAltText = {
     <div class="grid-container">
         <%
         __.each(productTypeBundleNames, productTypeBundleName => {
-          var productTypeBundleId = Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID[productTypeBundleName];
-          var dispHTML = productTypeBundleIdToAltText[productTypeBundleId] || Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId];
+          var productTypeBundleId = CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH[productTypeBundleName];
+          var dispHTML = productTypeBundleIdToAltText[productTypeBundleId] || CONST.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId];
         %>
 
             <div class="grid">
-                <a href="/ranking/<%= productTypeBundleName %>">
+                <a href="/ranking/<%= productTypeBundleName.toLowerCase() %>">
                     <img src="img/category/<%= productTypeBundleName %>.jpg">
                 </a>
                 <p><%- dispHTML %></p>

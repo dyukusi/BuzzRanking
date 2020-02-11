@@ -2,23 +2,15 @@ const appRoot = require('app-root-path');
 const __ = require('underscore');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
+const Moment = require('moment');
 
 class StatData extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
-
   // ------------------- Class Methods -------------------
   static selectByStatId(statId) {
     return this.findAll({
       where: {
         statId: statId,
-      },
-    });
-  }
-
-  static selectByProductId(productId) {
-    return this.findAll({
-      where: {
-        productId: productId,
       },
     });
   }
@@ -28,24 +20,14 @@ StatData.init({
     statId: {
       type: Sequelize.INTEGER(11).UNSIGNED,
       allowNull: false,
-      field: 'stat_id',
       primaryKey: true,
+      field: 'stat_id'
     },
-    rank: {
-      type: Sequelize.INTEGER(11).UNSIGNED,
-      allowNull: true,
-      field: 'rank'
-    },
-    categoryRank: {
-      type: Sequelize.INTEGER(11).UNSIGNED,
-      allowNull: true,
-      field: 'category_rank'
-    },
-    productId: {
+    productBundleId: {
       type: Sequelize.INTEGER(11).UNSIGNED,
       allowNull: false,
-      field: 'product_id',
       primaryKey: true,
+      field: 'product_bundle_id'
     },
     tweetCount: {
       type: Sequelize.INTEGER(10).UNSIGNED,
@@ -54,16 +36,15 @@ StatData.init({
     },
     buzz: {
       type: Sequelize.INTEGER(11).UNSIGNED,
-      allowNull: true,
-      defaultValue: '0',
+      allowNull: false,
       field: 'buzz'
     },
-    isInvalid: {
-      type: Sequelize.INTEGER(1),
+    createdAt: {
+      type: Sequelize.DATE,
       allowNull: false,
-      defaultValue: '0',
-      field: 'is_invalid'
-    }
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+      field: 'created_at'
+    },
   }, {
     freezeTableName: true,
     underscored: true,

@@ -1,186 +1,294 @@
 // node create_ranking.js ProductTypeId rankingDate tweetSince tweetUntil productSince productUntil
 const appRoot = require('app-root-path');
-const {JSDOM} = require('jsdom');
-const $ = jQuery = require('jquery')(new JSDOM().window);
-const fs = require('fs');
-const moment = require('moment');
 const _ = require('underscore');
-const request = require('request');
-const Q = require('q');
-const Util = require(appRoot + '/my_libs/util.js');
-const QueryString = require('query-string');
-const Twitter = require('twitter');
-const con = require(appRoot + '/my_libs/db.js');
-const async = require('async');
-const BatchUtil = require(appRoot + '/my_libs/batch_util.js');
-const sprintf = require('sprintf-js').sprintf;
+const Ranking = require(appRoot + '/models/ranking.js');
+const ProductUtil = require(appRoot + '/lib/product_util.js');
+const ProductTweetStat = require(appRoot + '/models/product_tweet_stat');
 
-const NewTweet = require(appRoot + '/models/new_tweet.js');
-const Stat = require(appRoot + '/models/stat.js');
-
-const CONST = require(appRoot + '/my_libs/const.js');
+const Moment = require('moment');
+const CONST = require(appRoot + '/lib/const.js');
 const Sequelize = require('sequelize');
-const sequelize = require(appRoot + '/db/sequelize_config');
 const Op = Sequelize.Op;
 
-const RANK_IN_BUZZ_THRESHOLD = 30;
-var rankingMoment = moment(process.argv[2]);
-var tweetSinceMoment = moment(rankingMoment).subtract(7, 'days');
-var tweetUntilMoment = moment(rankingMoment);
-
-if (!process.argv[2]) {
-  throw new Error('pls specify args. node create_ranking.js RankingDate');
+var targetDate = process.argv[2];
+if (_.isEmpty(process.argv[2])) {
+  throw new Error('pls specify args. node create_ranking.js 2020-01-07');
 }
+var targetMoment = new Moment(targetDate);
 
-console.log('ranking date: ' + rankingMoment.format());
-console.log('tweet since(<=): ' + tweetSinceMoment.format());
-console.log('tweet until(<): ' + tweetUntilMoment.format());
+console.log('target ranking date: ' + targetDate);
 
-main()
-  .then(() => {
-    console.log("Finish!");
-  });
+(async () => {
+  console.log("calculating ranking...");
+  // var insertObjectsForBuzzRanking = await createInsertObjectsForBuzzRanking();
+  var insertObjectsForBuzzRankingDX = await createInsertObjectsForBuzzRankingDX();
 
-async function main() {
-  var isNoBuzzThresholdProductIdHash = await createIsNoBuzzThresholdProductIdHash();
+  var allInsertObjects = _.flatten([
+    // insertObjectsForBuzzRanking,
+    insertObjectsForBuzzRankingDX,
+  ]);
 
-  console.log("finding high buzz product candidates");
-  var productIdAndOriginalTweetCountRows = (await sequelize.query(
-    sprintf(
-      "SELECT * FROM (SELECT product_id, count(*) AS count FROM new_tweet WHERE product_id NOT IN (SELECT product_id FROM invalid_product) AND '%s' <= tweeted_at AND tweeted_at <= '%s' GROUP BY product_id ORDER BY count DESC) AS temp WHERE %d <= count;",
-      tweetSinceMoment.format("YYYY-MM-DD"),
-      tweetUntilMoment.format("YYYY-MM-DD"),
-      RANK_IN_BUZZ_THRESHOLD
-    )
-  ))[0];
-
-  // let productIdAndBuzzRows = (await sequelize.query(
-  //   sprintf(
-  //     "SELECT TweetCountLogA.product_id, TweetCountLogA.buzz, TweetCountLogA.created_at FROM tweet_count_log AS TweetCountLogA INNER JOIN (SELECT product_id, MAX(created_at) AS latest_date FROM tweet_count_log WHERE '%s' <= created_at AND created_at < '%s' GROUP BY product_id) AS TweetCountLogB ON TweetCountLogA.product_id = TweetCountLogB.product_id AND TweetCountLogA.created_at = TweetCountLogB.latest_date WHERE TweetCountLogA.product_id NOT IN (SELECT product_id FROM invalid_product) AND %d <= TweetCountLogA.buzz ORDER BY TweetCountLogA.buzz DESC;",
-  //     tweetSinceMoment.format("YYYY-MM-DD"),
-  //     tweetUntilMoment.format("YYYY-MM-DD"),
-  //     RANK_IN_BUZZ_THRESHOLD
-  //   )
-  // ))[0];
-
-  var candidateProductIdHash = _.indexBy(productIdAndOriginalTweetCountRows, row => {
-    return row.product_id;
-  });
-
-  // add missed products
-  _.each(_.keys(isNoBuzzThresholdProductIdHash), productId => {
-    if (!candidateProductIdHash[productId]) {
-      candidateProductIdHash[productId] = true;
+  console.log("deleting " + targetDate + " records if need");
+  await Ranking.destroy({
+    where: {
+      date: targetMoment.format('YYYY-MM-DD'),
     }
   });
 
-  var candidateProductIds = _.keys(candidateProductIdHash);
+  console.log("creating ranking records...");
+  var rankingModels = await Ranking.bulkCreate(allInsertObjects);
 
-  console.log("selecting tweets");
-  var mixedTweetModels = await NewTweet.selectByProductIds(
-    candidateProductIds,
-    {
-      since: tweetSinceMoment,
-      until: tweetUntilMoment,
-    }
-  );
+  console.log("done!");
+  process.exit(0);
+})();
 
-  var productIdIntoTweetModels = _.groupBy(mixedTweetModels, m => {
-    return m.productId;
+async function createInsertObjectsForBuzzRankingDX() {
+  var productTweetStatModels = await ProductTweetStat.findAll({
+    where: {
+      date: targetMoment.format('YYYY-MM-DD'),
+      buzz: {
+        [Op.gte]: CONST.THRESHOLD_BUZZ_FOR_RANK_IN,
+      },
+    },
   });
 
-  var productIdIntoInsertObjectsForStatData = {};
+  var productBundleIdIntoProductTweetStatModel = _.indexBy(productTweetStatModels, m => {
+    return m.productBundleId;
+  })
 
-  console.log("creating stat data objects");
-  for (var i = 0; i < candidateProductIds.length; i++) {
-    var productId = candidateProductIds[i];
-    var tweetModels = productIdIntoTweetModels[productId] || [];
-    var buzz = BatchUtil.calcBuzzByTweetModels(tweetModels, tweetUntilMoment);
+  var productBundleIds = _.map(productTweetStatModels, m => {
+    return m.productBundleId;
+  });
 
-    if (!isNoBuzzThresholdProductIdHash[productId] && buzz < RANK_IN_BUZZ_THRESHOLD) continue;
-    productIdIntoInsertObjectsForStatData[productId] = createInsertObjectBaseForStatData(productId, tweetModels.length, buzz);
+  var productDataList = [];
+  for (var i = 0; i < productBundleIds.length; i++) {
+    if (i % 100 == 0) {
+      console.log(i + '/' + productBundleIds.length);
+    }
+
+    var productBundleId = productBundleIds[i];
+    var productData = await ProductUtil.loadProductDataByProductBundleId(productBundleId, {
+      ignoreCache: true,
+    });
+    productDataList.push(productData);
   }
 
-  var calcRank = function(insertObjects) {
-    var sortedInsertObjects = _.sortBy(insertObjects, obj => {
-      return -1 * obj.buzz;
+  // var loadProductDataPromises = _.map(productBundleIds, productBundleId => {
+  //   return ProductUtil.loadProductDataByProductBundleId(productBundleId, {
+  //     ignoreCache: true,
+  //   });
+  // });
+  //
+  // var productDataList = await Promise.all(loadProductDataPromises);
+
+  console.log("create buzz ranking");
+
+  var createInsertObjects = function (targetProductTypeBundleId, targetProductTypeId) {
+    if (targetProductTypeBundleId == CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL && targetProductTypeId != CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL) {
+      throw new Error('target product type id should be ALL too when product type bundle id is ALL');
+    }
+
+    var targetProductDataList = [];
+    _.each(productDataList, (productData) => {
+      var hasTargetProductTypeBundleProduct = _.any(productData.productModels, productModel => {
+        var productTypeId = productModel.productTypeId;
+        var productTypeBundleId = CONST.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productTypeId];
+        if (targetProductTypeBundleId == CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL) return true;
+
+        if (!productModel.isNewReleasedProductByMoment(targetMoment)) return false;
+        if (targetProductTypeBundleId != productTypeBundleId) return false;
+        if (targetProductTypeId == CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL) return true;
+        return targetProductTypeId == productTypeId;
+      });
+
+      if (hasTargetProductTypeBundleProduct) {
+        targetProductDataList.push(productData);
+      }
     });
 
-    var rank = 0;
-    var previousBuzz = null;
-    var productIdIntoRank = {};
-    for (var i = 0; i < sortedInsertObjects.length; i++) {
-      var insertObject = sortedInsertObjects[i];
-      var buzz = insertObject.buzz;
+    targetProductDataList = _.filter(targetProductDataList, productData => {
+      return !!productData.productBundleModel;
+    });
 
+    var sortedProductDataList = _.sortBy(targetProductDataList, productData => {
+      try {
+        var productTweetStatModel = productBundleIdIntoProductTweetStatModel[productData.productBundleModel.id];
+        var buzz = productTweetStatModel.buzz;
+        return -1 * buzz; // desc order
+      } catch(e) {
+        console.log(productData.productBundleModel);
+        console.log(productData.productModels[0]);
+        process.exit(1);
+      }
+    });
+
+    var rank = -1;
+    var previousBuzz = null;
+    var insertObjectsForBuzzRanking = [];
+
+    for (let i = 0; i < sortedProductDataList.length; i++) {
+      var productData = sortedProductDataList[i];
+      var productTweetStatModel = productBundleIdIntoProductTweetStatModel[productData.productBundleModel.id];
+      var buzz = productTweetStatModel.buzz;
       if (previousBuzz != buzz) {
         rank = (i + 1);
       }
 
-      productIdIntoRank[insertObject.productId] = rank;
+      insertObjectsForBuzzRanking.push({
+        date: targetDate,
+        type: Number(CONST.RANKING_TYPE_NAME_TO_ID_HASH.BUZZ),
+        productTypeBundleId: Number(targetProductTypeBundleId),
+        productTypeId: Number(targetProductTypeId),
+        productBundleId: productData.productBundleModel.id,
+        rank: Number(rank),
+      });
+
       previousBuzz = buzz;
     }
 
-    return productIdIntoRank;
+    return insertObjectsForBuzzRanking;
   };
 
-  console.log("assigning rank");
-  var targetProductIds = _.keys(productIdIntoInsertObjectsForStatData);
-  var productModels = await Util.selectProductModels({
-    productId: targetProductIds,
-  });
+  var insertObjectsForBuzzRanking = [];
+  _.each(_.values(CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH), productTypeBundleId => {
+    var productTypeIds;
+    if (productTypeBundleId == CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL) {
+      productTypeIds = [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL];
+    } else {
+      productTypeIds = _.union(
+        [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL],
+        CONST.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId]
+      );
+    }
 
-  // all ranking
-  var productIdIntoRank = calcRank(_.values(productIdIntoInsertObjectsForStatData));
-  _.each(productIdIntoRank, (rank, productId) => {
-    productIdIntoInsertObjectsForStatData[productId].rank = rank;
-  });
-
-  // category ranking
-  var productTypeBundleIdIntoProductModels = _.groupBy(productModels, m => {
-    return CONST.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[m.productTypeId];
-  });
-
-  _.each(productTypeBundleIdIntoProductModels, (productModels, productTypeBundleId) => {
-    var insertObjects = _.map(productModels, m => {
-      return productIdIntoInsertObjectsForStatData[m.productId];
-    });
-
-    var productIdIntoRank = calcRank(insertObjects);
-    _.each(productIdIntoRank, (rank, productId) => {
-      productIdIntoInsertObjectsForStatData[productId].categoryRank = rank;
+    _.each(productTypeIds, productTypeId => {
+      insertObjectsForBuzzRanking.push(createInsertObjects(productTypeBundleId, productTypeId));
     });
   });
 
-  console.log("creating records");
-  await Stat.createRankingData(rankingMoment, tweetSinceMoment, tweetUntilMoment, _.values(productIdIntoInsertObjectsForStatData));
+  insertObjectsForBuzzRanking = _.chain(insertObjectsForBuzzRanking)
+    .flatten()
+    .compact()
+    .value();
 
-  console.log("finish!");
+  return insertObjectsForBuzzRanking;
 }
 
-async function createIsNoBuzzThresholdProductIdHash() {
-  var productModels = await Util.selectProductModels({
-    productTypeId: CONST.EXCEPTION_NO_BUZZ_NUM_THRESHOLD_PRODUCT_TYPE_IDS,
+async function createInsertObjectsForBuzzRanking() {
+  var productTweetStatModels = await ProductTweetStat.findAll({
+    where: {
+      date: new Moment(targetDate).format('YYYY-MM-DD'),
+      buzz: {
+        [Op.gte]: CONST.THRESHOLD_BUZZ_FOR_RANK_IN,
+      },
+    },
   });
 
-  var productIds = _.map(productModels, m => {
-    return m.productId;
+  var productBundleIdIntoProductTweetStatModel = _.indexBy(productTweetStatModels, m => {
+    return m.productBundleId;
+  })
+
+  var productBundleIds = _.map(productTweetStatModels, m => {
+    return m.productBundleId;
   });
 
-  var isNoBuzzThresholdProductIdHash = _.indexBy(productIds, productId => {
-    return productId;
+  var loadProductDataPromises = _.map(productBundleIds, productBundleId => {
+    return ProductUtil.loadProductDataByProductBundleId(productBundleId, {
+      ignoreCache: true,
+    });
   });
 
-  return isNoBuzzThresholdProductIdHash;
-}
+  var productDataList = await Promise.all(loadProductDataPromises);
 
-function createInsertObjectBaseForStatData(productId, tweetCount, buzz) {
-  return {
-    statId: null,
-    productId: productId,
-    tweetCount: tweetCount,
-    buzz: buzz,
-    rank: null,
-    isInvalid: 0,
+  console.log("create buzz ranking");
+
+  var createInsertObjects = function (targetProductTypeBundleId, targetProductTypeId) {
+    if (targetProductTypeBundleId == CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL && targetProductTypeId != CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL) {
+      throw new Error('target product type id should be ALL too when product type bundle id is ALL');
+    }
+
+    var targetProductDataList = [];
+    _.each(productDataList, (productData) => {
+      var hasTargetProductTypeBundleProduct = _.any(productData.productModels, productModel => {
+        var productTypeId = productModel.productTypeId;
+        var productTypeBundleId = CONST.PRODUCT_TYPE_ID_TO_BELONGED_PRODUCT_TYPE_BUNDLE_ID[productTypeId];
+
+        if (targetProductTypeBundleId == CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL) return true;
+        if (targetProductTypeBundleId != productTypeBundleId) return false;
+
+        if (targetProductTypeId == CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL) return true;
+        return targetProductTypeId == productTypeId;
+      });
+
+      if (hasTargetProductTypeBundleProduct) {
+        targetProductDataList.push(productData);
+      }
+    });
+
+    targetProductDataList = _.filter(targetProductDataList, productData => {
+      return !!productData.productBundleModel;
+    });
+
+    var sortedProductDataList = _.sortBy(targetProductDataList, productData => {
+      try {
+        var productTweetStatModel = productBundleIdIntoProductTweetStatModel[productData.productBundleModel.id];
+        var buzz = productTweetStatModel.buzz;
+        return -1 * buzz; // desc order
+      } catch(e) {
+        console.log(productData.productBundleModel);
+        console.log(productData.productModels[0]);
+        process.exit(1);
+      }
+    });
+
+    var rank = -1;
+    var previousBuzz = null;
+    var insertObjectsForBuzzRanking = [];
+
+    for (let i = 0; i < sortedProductDataList.length; i++) {
+      var productData = sortedProductDataList[i];
+      var productTweetStatModel = productBundleIdIntoProductTweetStatModel[productData.productBundleModel.id];
+      var buzz = productTweetStatModel.buzz;
+      if (previousBuzz != buzz) {
+        rank = (i + 1);
+      }
+
+      insertObjectsForBuzzRanking.push({
+        date: targetDate,
+        type: Number(CONST.RANKING_TYPE_NAME_TO_ID_HASH.BUZZ),
+        productTypeBundleId: Number(targetProductTypeBundleId),
+        productTypeId: Number(targetProductTypeId),
+        productBundleId: productData.productBundleModel.id,
+        rank: Number(rank),
+      });
+
+      previousBuzz = buzz;
+    }
+
+    return insertObjectsForBuzzRanking;
   };
+
+  var insertObjectsForBuzzRanking = [];
+  _.each(_.values(CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH), productTypeBundleId => {
+    var productTypeIds;
+    if (productTypeBundleId == CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL) {
+      productTypeIds = [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL];
+    } else {
+      productTypeIds = _.union(
+        [CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL],
+        CONST.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId]
+      );
+    }
+
+    _.each(productTypeIds, productTypeId => {
+      insertObjectsForBuzzRanking.push(createInsertObjects(productTypeBundleId, productTypeId));
+    });
+  });
+
+  insertObjectsForBuzzRanking = _.chain(insertObjectsForBuzzRanking)
+    .flatten()
+    .compact()
+    .value();
+
+  return insertObjectsForBuzzRanking;
 }

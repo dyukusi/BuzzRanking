@@ -22,7 +22,7 @@
     margin-left: auto;
 }
 
-/* md */
+/* Smart Device */
 @media (min-width: 0px) {
     .tweet-count-text {
         /*font-size: 3rem;*/
@@ -50,9 +50,27 @@
         height: 3rem;
         width: auto;
     }
+
+    .tweet-reference-block-col {
+        padding-left: 1px;
+        padding-right: 5px;
+    }
+
+    .product-image {
+        height: 200px;
+    }
+
+    .product-image-col {
+        padding-left: 5px;
+        padding-right: 1px;
+    }
+
+    .product-title {
+        font-size: 1rem;
+    }
 }
 
-/* lg */
+/* PC */
 @media (min-width: 992px) {
     .tweet-count-text {
         /*font-size: 3rem;*/
@@ -79,6 +97,24 @@
     .rank-crown-img {
         height: 4rem;
         width: auto;
+    }
+
+    .tweet-reference-block-col {
+        padding-left: 5px;
+        padding-right: 15px;
+    }
+
+    .product-image {
+        height: 300px;
+    }
+
+    .product-image-col {
+        padding-left: 15px;
+        padding-right: 5px;
+    }
+
+    .product-title {
+        font-size: 1.3rem;
     }
 }
 
@@ -170,6 +206,7 @@ span {
     top: 1rem;
     padding: 1rem;
     margin-bottom: 1rem;
+    background-color: white;
 }
 
 .product-info {
@@ -190,7 +227,8 @@ span {
     position: relative;
     /*font-family: serif;*/
     font-weight: bold;
-    font-size: 1.0em;
+    z-index: 100;
+    /*font-size: 1.0em;*/
 }
 
 .sale-date {
@@ -226,24 +264,10 @@ span {
     /*font-size: 2vw;*/
 }
 
-.tweet-references {
+.tweet-reference-block {
     padding: 0px !important;
     overflow-x: hidden;
     height: 0px;
-}
-
-.twitter-tweet {
-    width: 100% !important;
-    margin-top: 0px !important;
-    margin-bottom: 2px !important;
-    min-width: initial !important;
-    /*border-radius: 0 !important;*/
-    /*box-shadow: none !important;*/
-    /*max-width: initial !important;*/
-
-    /*backgrounf: #fff;*/
-    /*margin-top: 1px !important;*/
-    /*margin-bottom: 1px !important;*/
 }
 
 .twitter-tweet-error {
@@ -286,7 +310,7 @@ span {
     /*padding-right: 5px !important;*/
 }
 
-.grad-trigger {
+.read-more-button {
     visibility: hidden;
     z-index: 2;
     position: absolute;
@@ -298,9 +322,9 @@ span {
 
     display: table;
     font-size: 1.1em;
-    color: #ff8700;
-    background-color: rgba(255,255,255,0.1);
-    border: solid 3px #ff8700;
+    color: #007bff;
+    border: solid 2px #007bff;
+    background-color: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     font-weight: bold;
 }
@@ -310,9 +334,9 @@ span {
     bottom: initial;
 }
 
-.grad-trigger:hover {
+.read-more-button:hover {
     color: white;
-    background-color: #ff5200;
+    background-color: #007bff;
 }
 
 .grad-wrap {
@@ -331,8 +355,9 @@ span {
     height: 100%;
     position: relative;
     overflow: hidden;
-    padding-left: 2%;
-    padding-right: 2%;
+    padding: 0;
+    /*padding-left: 2%;*/
+    /*padding-right: 2%;*/
 }
 
 .grad-item.is-hide {
@@ -362,7 +387,7 @@ span {
     background: none;
 }
 
-.grad-trigger.is-show + .grad-item::before {
+.read-more-button.is-show + .grad-item::before {
     display: none;
 }
 
@@ -434,25 +459,31 @@ span {
 }
 
 .product-info-block {
-    /*transform: translate3d(0, 0, 0);*/
-    position: -webkit-sticky;
-    position: sticky;
-    top: 1rem;
-    text-align: center;
+}
+
+.product-info-block .product-info-block-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    text-indent: -999px;
+    z-index: 2;
 }
 
 .product-block-header {
     text-align: center;
+    z-index: 100;
 }
 
 .read-book-caption-button {
     width: 100%;
-    padding:  0.1rem;
+    padding: 0.1rem;
     transition: .2s ease;
 
     font-size: 1.1em;
     color: #ff8700;
-    background-color: rgba(255,255,255,0.1);
+    background-color: rgba(255, 255, 255, 0.1);
     border: solid 3px #ff8700;
     border-radius: 8px;
     font-weight: bold;
@@ -531,25 +562,29 @@ span {
     position: relative;
     padding: 0.25em 0.25em 0 0.25em;
 }
-.book-caption:before,.book-caption:after{
-    content:'';
+
+.book-caption:before, .book-caption:after {
+    content: '';
     width: 20px;
     height: 30px;
     position: absolute;
     display: inline-block;
 }
-.book-caption:before{
+
+.book-caption:before {
     border-left: solid 1px #5767bf;
     border-top: solid 1px #5767bf;
-    top:0;
+    top: 0;
     left: 0;
 }
-.book-caption:after{
+
+.book-caption:after {
     border-right: solid 1px #5767bf;
     border-bottom: solid 1px #5767bf;
-    bottom:0;
+    bottom: 0;
     right: 0;
 }
+
 .book-caption p {
     margin: 0;
     padding: 0;
@@ -581,11 +616,11 @@ span {
     color: white;
     top: 50%;
     left: 50%;
-    -ms-transform: translate(-50%,-50%);
-    -webkit-transform: translate(-50%,-50%);
-    transform: translate(-50%,-50%);
-    margin:0;
-    padding:0;
+    -ms-transform: translate(-50%, -50%);
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: 0;
     position: absolute;
     text-align: center;
     white-space: nowrap;
@@ -620,13 +655,13 @@ span {
 
 .product-block-border {
     position: relative;
-    margin-top: 1rem;
+    margin-top: 0.3rem;
     padding: 1rem;
     border: solid 1px #dedede;
-    border-radius: 8px;
+    border-radius: 10px;
 }
 
-.product-block-border .product-block-border-title {
+.product-block-border-title {
     font-size: 1.5rem;
     font-weight: bold;
     color: black;
@@ -636,7 +671,8 @@ span {
     left: 10px;
     padding: 0 10px;
     line-height: 1;
-    background: #FFF;
+    background: white;
+    border-radius: 10px;
 
 }
 
@@ -684,11 +720,35 @@ span {
     font-weight: bold;
 }
 
-.progress-bar-buzz-icon {
-    color: red;
-    /*margin-right: 0.3rem;*/
-}
-
 .category-rank-text {
     font-size: 1rem;
 }
+
+.product-image {
+    /*max-height: 100px;*/
+    /*border: 1px solid #ddd;*/
+    width: 100%;
+    /*height: 200px;*/
+    /*min-height: 200px;*/
+    /*max-height: 200px;*/
+    object-fit: cover;
+    border-radius: 15px 15px 15px 15px;
+    /*box-shadow: -3px 3px 3px rgba(0, 0, 0, 0.6);*/
+    /*margin: 10px;*/
+}
+
+.simple-buzz-chart-img {
+    width: 100%;
+    height: auto;
+}
+
+.read-more-loading-spin {
+    width: 1rem;
+    height: 1rem;
+}
+
+.your-class div {
+    background-color: #82b8ff;;
+}
+
+

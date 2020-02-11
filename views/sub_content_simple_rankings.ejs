@@ -1,0 +1,68 @@
+<%
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const CONST = require(appRoot + '/lib/const.js');
+const UrlGenerator = require(appRoot + '/lib/url_generator.js');
+
+var productTypeBundleIdIntoAdDataList = __.groupBy(adDataList, adData => {
+    return adData.rankingModel.productTypeBundleId;
+});
+
+__.each(productTypeBundleIdIntoAdDataList, (adDataList, productTypeBundleId) => {
+  // for Amazon examination
+  if (productTypeBundleId == CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.DATING) {
+    return;
+  }
+
+  var isAll = productTypeBundleId == CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL;
+%>
+    <div class="sub-content-div div-ranking-ad <%= isAll ? 'my-sticky' : '' %>">
+        <div class="sub-content-title">
+            <div class="sub-content-title-icon">
+                <i class="<%= CONST.PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS[productTypeBundleId] %> fa-fw"></i>
+            </div>
+            <a href="<%= UrlGenerator.generateRankingPageURL({
+                productTypeBundleId
+            }) %>">
+                <%= CONST.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] %>
+            </a>
+        </div>
+
+        <table class="table table-striped">
+            <tbody>
+            <%
+            __.each(adDataList, adData => {
+                var rankingModel = adData.rankingModel;
+                var productBundleModel = adData.productData.productBundleModel;
+                var productTweetStatModel = adData.productTweetStatModel;
+                var productModels = adData.productData.productModels;
+                if (!productTweetStatModel || !productBundleModel) return;
+            %>
+
+            <tr>
+                <th scope="row" class="p-1 text-align-center">
+                    <%= rankingModel.rank %>
+                </th>
+                <td class="p-0 ad-product-disp-row">
+                    <a href="<%= UrlGenerator.generateProductBundleDetailPageURL(productBundleModel.id) %>">
+                        <%= productBundleModel.name %>
+                    </a>
+                </td>
+                <td class="p-0 text-align-right ad-product-buzz">
+                    <span class="no-wrap">
+                        <span class="ad-product-buzz-num">
+                            <%= productTweetStatModel.buzz %>
+                        </span>
+                        <span class="ad-product-buzz-suffix">
+                            Buzz
+                        </span>
+                    </span>
+                </td>
+            </tr>
+
+            <% }); %>
+
+            </tbody>
+        </table>
+    </div>
+<% }); %>

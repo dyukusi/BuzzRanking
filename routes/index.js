@@ -1,11 +1,11 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 const Config = require('config');
-const cluster = require('cluster');
 
-router.get('/', async function (req, res, next) {
-  res.render('index', {});
-});
+
+// NOTE: SEE routes/ranking.js
+// router.get('/', async function (req, res, next) {
+// });
 
 router.get('/faq', async function (req, res, next) {
   res.render('faq', {});

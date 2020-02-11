@@ -1,3 +1,10 @@
+<%
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const CONST = require(appRoot + '/lib/const.js');
+const UrlGenerator = require(appRoot + '/lib/url_generator.js');
+%>
+
 <!DOCTYPE html>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
       integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
@@ -8,11 +15,11 @@
 
 <html>
 <head>
-    <title>サイトマップ【BuzzRanking】</title>
+    <title>サイトマップ | バズランキング</title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <meta name="description"
-          content="今ネットでバズっている本や漫画、小説、ゲームなどの商品や、宿泊・旅行予約などのWebサービスを話題性の高い順に毎日ランキング形式で紹介するBuzzRankingのサイトマップ">
+          content="1000万以上のユーザーの声を基に本・書籍・アニメ・ゲーム・映画などの注目度ランキングを毎日お届け！BuzzRankingのサイトマップはこちら">
 
 </head>
 <body>
@@ -26,31 +33,12 @@
         <div class="row">
             <div class="col-12">
                 <ul class="sitemap_list">
-                    <%
-                    __.each(Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID, (productTypeBundleId, productTypeBundleName) => {
-                        var productTypeBundleJapaneseName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId];
-                        var belongedProductTypeIds = Const.PRODUCT_TYPE_BUNDLE_ID_TO_PRODUCT_TYPE_IDS[productTypeBundleId];
-                    %>
-                    <li>
-                        <a href="/ranking/<%= productTypeBundleName %>">
-                            <%= productTypeBundleJapaneseName %>
-                        </a>
-                        <% if (!__.isEmpty(belongedProductTypeIds) && 2 <= belongedProductTypeIds.length && productTypeBundleName != 'all') { %>
-                            <ul class="sitemap_list">
-                                <%
-                                __.each(belongedProductTypeIds, productTypeId => {
-                                    var productTypeName = Const.PRODUCT_TYPE_ID_TO_NAME_HASH[productTypeId];
-                                    var productTypeJapaneseName = Const.PRODUCT_TYPE_ID_TO_JA_NAME_HASH[productTypeId];
-                                %>
-                                    <li>
-                                        <a href="/ranking/<%= productTypeBundleName %>?type=<%= productTypeName %>">
-                                            <%= productTypeJapaneseName %>
-                                        </a>
-                                    </li>
-                                <% }); %>
-                            </ul>
-                        <% } %>
-                    </li>
+                    <% __.each(CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH, (productTypeBundleId, productTypeBundleName) => { %>
+                        <li>
+                            <a href="<%= UrlGenerator.generateRankingPageURL({productTypeBundleId: productTypeBundleId,}) %>">
+                                <%= CONST.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] %>
+                            </a>
+                        </li>
                     <% }); %>
                 </ul>
             </div>
@@ -62,7 +50,7 @@
         <div class="row">
             <div class="col-12">
                 <ul class="sitemap_list">
-                    <li><a href="/product/list">商品・サービス検索</a></li>
+                    ページ最上部の入力欄から商品名を検索することで、詳細ページを閲覧することができます
                 </ul>
             </div>
         </div>

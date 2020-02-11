@@ -1,0 +1,13 @@
+/* smart device */
+@media (min-width: 0px) {
+    #content.container-fluid {
+        max-width: 100%;
+    }
+}
+
+/* pc */
+@media (min-width: 992px) {
+    #content.container-fluid {
+        max-width: 40%;
+    }
+}

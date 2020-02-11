@@ -1,17 +1,63 @@
 const appRoot = require('app-root-path');
-const Q = require('q');
-const __ = require('underscore');
-const DBUtil = require(appRoot + '/my_libs/db_util.js');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
-const Op = Sequelize.Op;
 const ProductBase = require(appRoot + '/models/product_base');
+const Moment = require('moment');
 
 class Book extends ProductBase {
   // ------------------- Instance Methods -------------------
-  getImageURL() {
-    return this.imageUrlBase;
+  getImageURL(options = {}) {
+    if (options.originalSize) {
+      return this.imageUrlBase;
+    }
+
+    return this.imageUrlBase + '?_ex=300x300';;
   }
+
+  getReleaseDateMoment() {
+    if (this.saleDate) {
+      return new Moment(this.saleDate);
+    }
+
+    var dateStr = '';
+    var yearMatch = this.saleDateStr.match(/(\d+)年/);
+
+    if (!yearMatch) {
+      return new Moment(this.createdAt);
+    }
+
+    dateStr += yearMatch[1];
+
+    var monthMatch = this.saleDateStr.match(/(\d+)月/);
+
+    if (!monthMatch) {
+      return new Moment(dateStr + '-12-31');
+    }
+
+    dateStr += '-' + monthMatch[1];
+
+    var dayMatch = this.saleDateStr.match(/(\d+)日/);
+
+    if (!dayMatch) {
+      return new Moment(dateStr);
+    }
+
+    dateStr += '-' + dayMatch[1];
+
+    return new Moment(dateStr);
+  }
+
+  isNewReleasedProductByMoment(moment) {
+    var baseMoment = moment.clone();
+
+    var releaseMoment = this.getReleaseDateMoment();
+    var thresholdMoment = releaseMoment.clone().subtract(7, 'day');
+
+    // normally 1 cour Anime = 3 months. +1 for extra evaluation term
+    return thresholdMoment.unix() <= baseMoment.unix() &&
+      baseMoment.unix() <= releaseMoment.add(30, 'day').unix();
+  }
+
 
   generateProductImageHtmlForProductDetailPage() {
     return sprintf(
@@ -113,6 +159,11 @@ Book.init({
       allowNull: false,
       field: 'caption'
     },
+    captionOpendb: {
+      type: Sequelize.TEXT,
+      allowNull: true,
+      field: 'caption_opendb'
+    },
     itemUrl: {
       type: Sequelize.TEXT,
       allowNull: false,
@@ -156,12 +207,12 @@ Book.init({
     },
     saleDateStr: {
       type: Sequelize.STRING(30),
-      allowNull: true,
+      allowNull: false,
       field: 'sale_date_str'
     },
     saleDate: {
       type: Sequelize.DATEONLY,
-      allowNull: false,
+      allowNull: true,
       field: 'sale_date'
     },
     validityStatus: {
@@ -172,6 +223,7 @@ Book.init({
     updatedAt: {
       type: Sequelize.DATE,
       allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
       field: 'updated_at'
     },
     createdAt: {

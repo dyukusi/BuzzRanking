@@ -1,0 +1,159 @@
+<%
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const Moment = require('moment');
+const sprintf = require('sprintf-js').sprintf;
+const CONST = require(appRoot + '/lib/const.js');
+const UrlGenerator = require(appRoot + '/lib/url_generator.js');
+const Pagination = require('pagination');
+
+// arguments
+var screenName;
+var page;
+var totalTweetNum;
+var tweetModelsWithProductBundle;
+var productBundleIdIntoSearchWordsHash;
+var adDataList;
+
+var paginator = new Pagination.SearchPaginator({
+    prelink: UrlGenerator.generateTwitterAccountPageURL(screenName),
+    current: page,
+    rowsPerPage: CONST.TWEET_NUM_PER_PAGE_IN_TWITTER_ACCOUNT_PAGE,
+    totalResult: totalTweetNum,
+});
+var paginationData = paginator.getPaginationData();
+%>
+<!DOCTYPE html>
+
+
+<!-- bootstrap -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+<!-- fontawesome -->
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+      integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+<!-- my css -->
+<link href="/css/common.css" rel="stylesheet">
+<link href="/css/twitter_account.css" rel="stylesheet">
+
+<html>
+<head>
+    <title>
+        @<%= screenName %>の貢献ツイート一覧
+    </title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="description" content="hoge">
+</head>
+<body>
+
+<%- include('header.ejs') %>
+
+<div id="content" class="container-fluid">
+
+    <div class="row">
+
+        <!-- ======== MAIN CONTENTS COL ======== -->
+        <div class="col-12 col-lg-8 main-content-col background-white">
+
+            <div class="row pt-3">
+                <div class="col-12">
+                    <h1 class="large-header">
+                        <a href="https://twitter.com/<%= screenName %>">
+                            @<%= screenName %>
+                        </a>
+                        <span class="no-wrap sub-large-header">の貢献ツイート一覧</span>
+                    </h1>
+                </div>
+            </div>
+
+<!--            <div class="row pt-2">-->
+<!--                <div class="col-12">-->
+<!--                    <h2 class="mid-header">-->
+<!--                        <a href="https://twitter.com/<%= screenName %>">-->
+<!--                            @<%= screenName %>-->
+<!--                        </a>-->
+<!--                        の貢献ツイート一覧-->
+<!--                    </h2>-->
+<!--                </div>-->
+<!--            </div>-->
+
+            <%- include(appRoot + '/views/pagination.ejs', { paginationData: paginationData, }); %>
+            <div class="contributed-tweet-list">
+                <%
+                for (var i = 0; i < tweetModelsWithProductBundle.length; i++) {
+                    var isLastElement = i == (tweetModelsWithProductBundle.length - 1);
+                    var tweetModel = tweetModelsWithProductBundle[i];
+                    var productBundleModel = tweetModel.product_bundle;
+                %>
+                <div class="contributed-tweet-div" data-product-bundle-id="<%= productBundleModel.id %>">
+                    <ul class="mb-0">
+                        <li>
+                            <a href="<%= UrlGenerator.generateProductBundleDetailPageURL(productBundleModel.id) %>"
+                               class="product-bundle-name">
+                                <%= productBundleModel.name %>
+                            </a>
+                            <ul>
+                                <li>
+                                    <div class="col-12 pt-2 pb-2">
+                                        <div class="embedded-tweet">
+                                            <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
+                                                <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.id %>">
+                                                    <%= tweetModel.text %>
+                                                </a>
+                                            </blockquote>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <% if (!isLastElement) { %>
+                    <hr>
+                <% } %>
+
+                <% } %>
+
+            </div>
+
+            <%- include(appRoot + '/views/pagination.ejs', { paginationData: paginationData, }); %>
+
+            <%-
+            include(appRoot + '/views/sns_share.ejs', {
+            shareTargetName: '@' + screenName,
+            shareURL: UrlGenerator.generateTwitterAccountPageURL(screenName),
+            shareText: screenName + 'が',
+            mainShareButtonSuffix: 'の注目度貢献ツイート一覧をシェアする',
+            })
+            %>
+
+            <%- include(appRoot + '/public/ad/adsense/in_feed.html') %>
+        </div>
+        <!-- ======================================== -->
+
+        <!-- ========== SUB CONTENTS ROW ========= -->
+        <div class="col-12 pl-1 pr-1 col-lg-4 pl-lg-3 pr-lg-0">
+            <div class="col-12 sub-content-col mt-lg-3">
+                <%- include(appRoot + '/views/sub_content_search_tweet_by_account_name.ejs', {}) %>
+                <%- include(appRoot + '/views/sub_content_ad_official_twitter_account.ejs', {}) %>
+                <%- include(appRoot + '/views/sub_content_simple_rankings.ejs', { adDataList: adDataList, }) %>
+            </div>
+        </div>
+    </div>
+    <!-- ========================================================= -->
+
+</div>
+
+<%- include('footer.ejs') %>
+
+<script>
+  var productBundleIdIntoSearchWordsHash = JSON.parse('<%- JSON.stringify(productBundleIdIntoSearchWordsHash) %>');
+</script>
+
+<script src="/js/compressed/twitter_account.min.js" type="text/javascript"></script>
+</body>
+</html>

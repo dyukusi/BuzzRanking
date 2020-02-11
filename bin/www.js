@@ -1,23 +1,22 @@
 #!/usr/bin/env node
-const appRoot = require('app-root-path');
 const app = require('../app');
 const debug = require('debug')('trendranking:server');
 const http = require('http');
-const cluster = require('cluster');
-const expressCluster = require('express-cluster');
-var port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
+const server = http.createServer(app);
 
-var server = http.createServer(app);
-
-if (cluster.isMaster) {
-  console.log("Im master process :)");
-  console.log("PORT: " + port);
-}
-
+console.log("PORT: " + port);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+
+// const cluster = require('cluster');
+// const expressCluster = require('express-cluster');
+
+// if (cluster.isMaster) {
+//   console.log("Im master process :)");
+// }
 
 // expressCluster(worker => {
 //   console.log("Child process started. id: " + worker.id);

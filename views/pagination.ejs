@@ -1,0 +1,83 @@
+<%
+const __ = require('underscore');
+
+// argumanets
+var paginationData;
+
+var d = paginationData;
+var createPageLink = function (page) {
+    var prefix = d.prelink.indexOf('?') == -1 ? '?' : '&';
+
+    return d.prelink + prefix + 'page=' + page;
+}
+%>
+
+<% if (d.next || d.previous) { %>
+
+    <div class="pager pt-3">
+        <ul class="my-pagination">
+            <li class="pre">
+                <a href=<%= createPageLink(d.previous) %> class="<%= d.current <= 1 ? 'disabled-link' : '' %>">
+                    <span>«</span>
+                </a>
+            </li>
+
+            <% if (d.first && !__.contains(d.range, d.first)) { %>
+                <li>
+                    <a href=<%= createPageLink(d.first) %>>
+                    <span>
+                        <%= d.first %>
+                    </span>
+                    </a>
+                </li>
+
+                <% if (d.first != __.first(d.range) - 1) { %>
+                    <li>
+                        <a href='/' class="disabled-link">
+                    <span>
+                        …
+                    </span>
+                        </a>
+                    </li>
+                <% } %>
+            <% } %>
+
+            <% __.each(d.range, page => { %>
+                <li>
+                    <a href=<%= createPageLink(page) %> class="<%= d.current == page ? 'active' : '' %>">
+                    <span>
+                        <%= page %>
+                    </span>
+                    </a>
+                </li>
+            <% }); %>
+
+            <% if (d.last && !__.contains(d.range, d.last)) { %>
+                <% if (d.last != __.last(d.range) + 1) { %>
+                    <li>
+                        <a href='/' class="disabled-link">
+                    <span>
+                        …
+                    </span>
+                        </a>
+                    </li>
+                <% } %>
+
+                <li>
+                    <a href=<%= createPageLink(d.last) %>>
+                    <span>
+                        <%= d.last %>
+                    </span>
+                    </a>
+                </li>
+            <% } %>
+
+            <li class="next">
+                <a href=<%= createPageLink(d.next) %> class="<%= d.last <= d.current ? 'disabled-link' : '' %>">
+                    <span>»</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+<% } %>

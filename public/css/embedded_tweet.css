@@ -27,7 +27,7 @@
 }
 
 .Tweet-body {
-    margin-top: 0px;
+    margin-top: 3px !important;
 }
 
 .EmbeddedTweet-ancestor {
@@ -36,5 +36,10 @@
 
 .Tweet-text {
     /*font-size: 2rem;*/
-    font-family: Gadget, sans-serif;
+    /*font-family: Gadget, sans-serif;*/
+}
+
+.tweet-text-highlighted {
+    font-weight: bold;
+    color: red;
 }

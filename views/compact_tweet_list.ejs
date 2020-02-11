@@ -1,8 +1,14 @@
 <%
-var rank = productData.rank;
-var initialDisplayTweetModels = __.first(productData.tweetModels, Const.INITIAL_DISPLAY_TWEET_NUM_IN_RANKING);
-var hasMoreTweets = Const.INITIAL_DISPLAY_TWEET_NUM_IN_RANKING <= initialDisplayTweetModels.length;
-var dataAttrStr = __.map(productData.tweetModels, function (tweetModel) {
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const CONST = require(appRoot + '/lib/const.js');
+
+// arguments
+var tweetModels;
+
+var initialDisplayTweetModels = __.first(tweetModels, CONST.INITIAL_DISPLAY_TWEET_NUM_IN_RANKING);
+var hasMoreTweets = CONST.INITIAL_DISPLAY_TWEET_NUM_IN_RANKING <= initialDisplayTweetModels.length;
+var dataAttrStr = __.map(tweetModels, function (tweetModel) {
     return '["' + tweetModel.screenName + '","' + tweetModel.id + '"]';
 }).join(',');
 %>
@@ -10,12 +16,11 @@ var dataAttrStr = __.map(productData.tweetModels, function (tweetModel) {
 <div class="twitter-reaction-loading">
     <span class="spinner-border text-primary" role="status" aria-hidden="true"></span>
 </div>
-<div class="tweet-references">
-
+<div class="tweet-reference-block">
     <div class="grad-wrap">
 
         <% if (hasMoreTweets) { %>
-            <button class="btn grad-trigger"
+            <button class="btn read-more-button"
                     type="button"
                     data-read-more-tweet-ids="[<%= dataAttrStr %>]"
                     data-is-open="false"
@@ -31,10 +36,8 @@ var dataAttrStr = __.map(productData.tweetModels, function (tweetModel) {
         <% } %>
 
         <% if (initialDisplayTweetModels.length) { %>
-            <div class="grad-item" data-grad-idx="<%= rank %>"
-                 data-is-first-render='true'>
-
-                <% if (productData.bookCaptionModel) { %>
+            <div class="grad-item" data-is-first-render='true'>
+                <% if (false) { %>
                     <div class="book-caption-accordion">
                         <div>
                                                 <span class="btn read-book-caption-button">
@@ -50,22 +53,8 @@ var dataAttrStr = __.map(productData.tweetModels, function (tweetModel) {
                     </div>
                 <% } %>
 
-                <div class="twitter-reaction-area">
-                    <%
-                    __.each(initialDisplayTweetModels, function(tweetModel) {
-                    %>
-                        <blockquote class="twitter-tweet" data-lang="ja" data-cards="">
-                            <a href="https://twitter.com/<%= tweetModel.screenName %>/status/<%= tweetModel.id %>"><%= tweetModel.text %></a>
-                        </blockquote>
+                <div class="twitter-reaction-area" data-is-first-load='true'>
 
-                        <% if (isAdmin) { %>
-                            <button class="btn btn-danger remove-tweet-button"
-                                    data-tweet-id="<%= tweetModel.tweetId %>">
-                                (Admin)このツイートを無効化する
-                            </button>
-                        <% } %>
-                        <hr>
-                    <% }); %>
                 </div>
             </div>
 

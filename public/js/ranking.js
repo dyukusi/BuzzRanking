@@ -1,36 +1,82 @@
-$ = jQuery = require('jquery');
+const $ = jQuery = require('jquery');
 const _ = require('underscore');
 const sprintf = require('sprintf-js').sprintf;
 const MyUtil = require('./util.js')
-const Accordion = require('accordion').Accordion;
-const Lazysizes = require('lazysizes');
 const isMobileDevice = 'ontouchstart' in window;
-const isAdmin = !!$('#is-admin-dummy-div')[0];
-var isFirstTwitterWigetsLoad = true;
-
+const Accordion = require('accordion').Accordion;
 require('bootstrap');
 require('readmore-js');
 
+var INIT_TWEETS_NUM = isMobileDevice ? 2 : 3;
 var ADD_TWEETS_NUM_PER_READ_MORE = 5;
-var gradEleTempHeightHash = {};
-var updatedGradElements = [];
 
-$(function() {
-  initEmbeddedTweets();
+
+$(async function () {
+  initSimpleBuzzChartImage();
+
+  await initTwitterWidget();
   initReadMoreButtons();
-  // initImageZoom();
-  initAdminFunctions();
   initReadCaptionButton();
 
-  // NOTE: this function doesn't work with touch scroll
-  if (!isMobileDevice && !isAdmin) {
-    initAutoTweetsDivCloser();
+  _.each($('.tweet-reference-block'), tweetReferenceBlock => {
+    loadChunkTweets($(tweetReferenceBlock));
+  });
+
+  if (isAdmin) {
+    initAdminFunctions();
+    initUpdateBelongedProductBundleAutoComplete();
   }
+
+  // NOTE: this function doesn't work with touch scroll
+  // if (!isMobileDevice && !isAdmin) {
+  //   initAutoTweetsDivCloser();
+  // }
 });
+
+async function initSimpleBuzzChartImage() {
+  var productBundleIds = _.map($('.product-block'), productBlockEle => {
+    return $(productBlockEle).data('product-bundle-id');
+  });
+
+  try {
+    var productBundleIdIntoSimpleBuzzChartBase64ImageHash = await $.ajax({
+      url: MyUtil.getLocationOrigin() + '/api/simple_buzz_chart',
+      type: 'GET',
+      dataType: 'json',
+      data: {
+        productBundleIds: productBundleIds,
+      },
+      timeout: 5000,
+    });
+
+    // set simple buzz chart base64 images
+    _.each($('.product-block'), productBlockEle => {
+      var $productBlock = $(productBlockEle);
+      var $image = $productBlock.find('.simple-buzz-chart-img');
+      var productBundleId = $productBlock.data('product-bundle-id');
+
+      var base64 = productBundleIdIntoSimpleBuzzChartBase64ImageHash[productBundleId];
+      if (!base64) {
+        console.error('failed to fetch simple buzz chart img. product bundle id: ' + productBundleId);
+        return;
+      }
+
+      $image.prop('src', base64);
+    });
+  } catch (e) {
+    console.error(e);
+    console.error('ERROR: failed to fetch simple buzz chart image');
+  }
+}
+
+function adjustProductImageTopMargin() {
+  var height = $('#header').height() - $('.navbar-brand').height() + 20;
+  $('.product-info-block').css('top', height);
+}
 
 function initReadCaptionButton() {
   var acOptions = {
-    onToggle: function(fold, isOpen) {
+    onToggle: function (fold, isOpen) {
       if (isOpen) {
         $(fold.content).data('is-open', true)
         $(fold.accordion.el).css('max-height', $(fold.content).height() + 10);
@@ -39,123 +85,10 @@ function initReadCaptionButton() {
     },
   };
 
-  _.each(document.querySelectorAll('.book-caption-accordion'), function(ac) {
+  _.each(document.querySelectorAll('.book-caption-accordion'), function (ac) {
     new Accordion(ac, acOptions);
   });
 }
-
-function initAdminFunctions() {
-  $('.delete-tweet-and-tweet-count-log').on('click', function () {
-    var button = $(this);
-    var productId = Number(button.parents('.product-block').data('productId'));
-
-    // disable button
-    button.attr('disabled', true);
-    button.html('処理中...');
-
-    $.ajax({
-      url: MyUtil.getLocationOrigin() + '/admin/delete_tweet_and_tweet_count_log',
-      method: 'POST',
-      data: {
-        productId: productId,
-      },
-    }).done(function (data) {
-      button.html(data.result ? '正常に関連ツイートとTweetCountLogが削除されました' : '失敗しました');
-    }).fail(function (e) {
-      button.html('失敗しました: ' + e);
-    });
-
-  });
-
-
-  $('.update-product-validity-status').on('click', function () {
-    var button = $(this);
-    var productId = Number(button.parents('.product-block').data('productId'));
-    var status = Number(button.val());
-
-    // disable button
-    button.attr('disabled', true);
-    button.html('処理中...');
-
-    $.ajax({
-      url: MyUtil.getLocationOrigin() + '/admin/update_product_validity_status',
-      method: 'POST',
-      data: {
-        productId: productId,
-        status: status,
-      },
-    }).done(function (data) {
-      button.html(data.result ? 'validityStatusを' + status + 'に更新しました' : '失敗しました');
-    }).fail(function (e) {
-      button.html('失敗しました: ' + e);
-    });
-
-  });
-
-  $('.update-alt-search-word-validity-status').on('click', function () {
-    var button = $(this);
-    var productId = Number(button.parents('.product-block').data('productId'));
-    var searchWord = button.data('search-word');
-    var status = Number(button.val());
-
-    // disable button
-    button.attr('disabled', true);
-    button.html('処理中...');
-
-    $.ajax({
-      url: MyUtil.getLocationOrigin() + '/admin/update_alt_search_word_validity_status',
-      method: 'POST',
-      data: {
-        productId: productId,
-        searchWord: searchWord,
-        status: status,
-      },
-    }).done(function (data) {
-      button.html(data.result ? 'validityStatusを' + status + 'に更新しました' : '失敗しました');
-    }).fail(function (e) {
-      button.html('失敗しました: ' + e);
-    });
-
-  });
-
-
-  $('.remove-tweet-button').on('click', function () {
-    var button = $(this);
-    var tweetId = button.data('tweetId');
-
-    // disable button
-    button.attr('disabled', true);
-    button.html('処理中...');
-
-    $.ajax({
-      url: MyUtil.getLocationOrigin() + '/admin/enable_is_invalid_tweet_flag',
-      method: 'POST',
-      data: {
-        tweetId: tweetId,
-      },
-    }).done(function (data) {
-      button.html(data.result ? 'invalid_tweetフラグが有効になりました' : '失敗しました');
-    }).fail(function (e) {
-      button.html('失敗しました: ' + e);
-    });
-  });
-}
-
-function initGradElementsHeight() {
-  var twitterReactionAreas = _.map(document.querySelectorAll('.twitter-reaction-area'), function(e) {
-    return $(e);
-  });
-
-  _.each(twitterReactionAreas, function(area) {
-    adjustTwitterReactionAreaHeightForInit(area, false);
-  });
-}
-
-// function initImageZoom() {
-//   _.each(document.querySelectorAll('.zoomable-image'), function (e) {
-//     new Liminous(e, {});
-//   });
-// }
 
 function initAutoTweetsDivCloser() {
   $(window).scroll(function () {
@@ -183,47 +116,134 @@ function initAutoTweetsDivCloser() {
 }
 
 function initReadMoreButtons() {
-  $(".grad-trigger").click(function () {
-    var readMoreButtonEle = $(this);
+  $(".read-more-button").click(function () {
+    var $readMoreButton = $(this);
+    var $productBlock = $readMoreButton.parents('.product-block');
+    var $productInfoBlock = $productBlock.find('.product-info-block');
+    var $tweetReferenceBlock = $readMoreButton.parents('.tweet-reference-block');
 
-    if (readMoreButtonEle.hasClass('disable')) return;
+    if ($readMoreButton.hasClass('disable')) return;
 
-    var tweetReferenceAreaDiv = $(this).siblings('.grad-item').find('.twitter-reaction-area');
-    var fromIdx = tweetReferenceAreaDiv.children('.twitter-tweet').length;
-    var additionalTweets = $(this).data('read-more-tweet-ids').slice(fromIdx, fromIdx + ADD_TWEETS_NUM_PER_READ_MORE);
-    var gradIdx = $(this).siblings('.grad-item').data('grad-idx');
-    var productInfoEle = $(this).parents('.product-block').find('.product-info');
+    // fix height while loading
+    $tweetReferenceBlock.css('height', $tweetReferenceBlock.height() + 'px');
 
     // set button text to 'loading'
-    setButtonLoading(readMoreButtonEle);
+    setButtonLoading($readMoreButton);
 
-    // set productinfo sticy
-    productInfoEle.css('position', 'sticky');
-
-    if (_.isEmpty(additionalTweets) || (!readMoreButtonEle.data('is-open') && readMoreButtonEle.data('is-ever-opened'))) {
-      afterLoadTweets(tweetReferenceAreaDiv);
-      return;
-    }
-
-    _.each(additionalTweets, function (tweet) {
-      var html = sprintf(
-        '<blockquote class="twitter-tweet" data-lang="ja"> <a href="https://twitter.com/%s/status/%s"></a></blockquote>',
-        tweet[0], // screen name
-        tweet[1], // tweet id
-      ) + '<hr>';
-
-      tweetReferenceAreaDiv.append(html);
+    // set product image sticky
+    $productInfoBlock.css({
+      position: '-webkit-sticky',
+      position: 'sticky',
     });
 
-    twttr.widgets.load();
-
-    tweetReferenceAreaDiv.css('height', tweetReferenceAreaDiv.height());
-    gradEleTempHeightHash[gradIdx] = tweetReferenceAreaDiv.height();
+    loadChunkTweets($tweetReferenceBlock, true);
   });
 }
 
+function loadChunkTweets($tweetReferenceBlock, isOnClickReadMore) {
+  var $productInfo = $tweetReferenceBlock.parents('.product-block').find('.product-info');
+  var $readMoreButton = $tweetReferenceBlock.find('.read-more-button');
+  var $twitterReactionArea = $tweetReferenceBlock.find('.twitter-reaction-area');
+  var tweets = $readMoreButton.data('read-more-tweet-ids');
+  var $loadedTweets = $tweetReferenceBlock.find('.twitter-tweet');
+  var tweetFromIdx = $loadedTweets ? $loadedTweets.length : null;
+  var addTweetNum = isOnClickReadMore ? ADD_TWEETS_NUM_PER_READ_MORE : INIT_TWEETS_NUM;
+  var loadTargetTweets = tweets ? tweets.slice(tweetFromIdx, tweetFromIdx + addTweetNum) : [];
+
+  if (_.isEmpty(loadTargetTweets)) return;
+
+  // set productinfo sticy
+  $productInfo.css('position', 'sticky');
+
+  var embeddedTweetsHTML = '';
+  _.each(loadTargetTweets, function (tweet) {
+    embeddedTweetsHTML += sprintf(
+      '<div class="embedded-tweet">' +
+      '<blockquote class="twitter-tweet" data-lang="ja">' +
+      '<a href="https://twitter.com/%s/status/%s"></a>' +
+      '</blockquote>' +
+      '<hr>' +
+      '</div>',
+      tweet[0], // screen name
+      tweet[1], // tweet id
+    );
+  });
+
+  $twitterReactionArea.append('<div class="tweet-chunk">' + embeddedTweetsHTML + '</div>');
+
+  twttr.widgets.load($twitterReactionArea[0]);
+}
+
+function afterRederedAllTweetsInChunk($tweetReferenceBlock, $chunk) {
+  var $productBlock = $tweetReferenceBlock.parents('.product-block');
+  var $productInfoBlock = $productBlock.find('.product-info-block');
+  var $twitterReactionArea = $tweetReferenceBlock.find('.twitter-reaction-area');
+  var $readMoreButton = $tweetReferenceBlock.find('.read-more-button');
+  var addHeight = $tweetReferenceBlock.prop('scrollHeight');
+  var $tweetReferenceDiv = $tweetReferenceBlock.find('.grad-item');
+
+  $chunk.addClass('rendered');
+
+  // remove error tweets
+  _.each($chunk.find('.embedded-tweet'), embeddedTweetEle => {
+    var $embeddedTweet = $(embeddedTweetEle);
+    if ($embeddedTweet.find('.twitter-tweet-error')[0]) {
+      $embeddedTweet.remove();
+    }
+  });
+
+  var tweets = $readMoreButton.data('read-more-tweet-ids');
+  var loadedTweets = $twitterReactionArea.find('.twitter-tweet');
+  var remainingTweetsNum = !!tweets ? tweets.length - loadedTweets.length : 0;
+  var isFirstLoad = $twitterReactionArea.data('is-first-load');
+
+  $readMoreButton.data('is-open', true);
+  $readMoreButton.data('is-ever-opened', true);
+
+  if (remainingTweetsNum <= 0) {
+    $readMoreButton.hide();
+    $tweetReferenceDiv.addClass('remove-gradient');
+  }
+
+  setButtonReset($readMoreButton);
+
+  if (isFirstLoad) {
+    $twitterReactionArea.data('is-first-load', false);
+
+    var $firstTweet = $(loadedTweets[0]);
+    // var initialHeight = Math.max($productInfoBlock.height(), $firstTweet.height()) + $readMoreButton.height() + 5;
+    var initialHeight = Math.max($productInfoBlock.height(), $firstTweet.height() + $readMoreButton.height() + 5);
+    $twitterReactionArea.css('height', initialHeight + 'px');
+  } else {
+    var tweetListAfterHeight = _.reduce($twitterReactionArea.find('.tweet-chunk'), (memo, chunkEle) => {
+      var $chunk = $(chunkEle);
+      return memo + $chunk.height();
+    }, 0);
+
+    $twitterReactionArea.animate({height: tweetListAfterHeight}, 1000, 'swing', function () {
+      $twitterReactionArea.css('height', '100%');
+    });
+  }
+
+  // show hidden media cards
+  _.each($twitterReactionArea.children(), function (c) {
+    var shadowRoot = c.shadowRoot;
+    controlEmbeddedTweetMedia(shadowRoot, 'show');
+  });
+
+  // --- for first load ---
+  $('.read-more-button').css({
+    visibility: 'visible',
+  });
+
+  $('.twitter-reaction-loading').remove();
+  $('.grad-wrap').css('visibility', 'visible');
+  $('.tweet-reference-block').css('height', '100%');
+  // ---------------------
+}
+
 function adjustTwitterReactionAreaHeightForInit(area, isAutoClose) {
-  var productInfoAreaHeight = Math.min(area.parents('.product-block').find('.product-info-block').height(), 250);
+  var productInfoAreaHeight = $(area.children('twitter-widget')[0]).height() + 25;
   var bookCaption = area.parents('.grad-item').find('.book-caption');
   var bookCaptionHeight = bookCaption[0] && bookCaption.data('is-open') ? bookCaption.height() : 0;
 
@@ -232,7 +252,7 @@ function adjustTwitterReactionAreaHeightForInit(area, isAutoClose) {
     disableStickyHeaderTemporarily = true;
 
     // NOTE: chrome's scrollTo needs delay to work properly
-    setTimeout(function() {
+    setTimeout(function () {
       scrollTo(window.scrollX, adjustPositionY + bookCaptionHeight);
       area.css('height', productInfoAreaHeight);
     }, 1);
@@ -242,81 +262,110 @@ function adjustTwitterReactionAreaHeightForInit(area, isAutoClose) {
   area.css('height', productInfoAreaHeight);
 }
 
-function initEmbeddedTweets() {
-  window.twttr = (function (d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0],
-      t = window.twttr || {};
-    if (d.getElementById(id)) return t;
-    js = d.createElement(s);
-    js.id = id;
-    js.src = "https://platform.twitter.com/widgets.js";
-    fjs.parentNode.insertBefore(js, fjs);
+async function initTwitterWidget() {
+  return new Promise((resolve, reject) => {
+    window.twttr = (function (d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0],
+        t = window.twttr || {};
+      if (d.getElementById(id)) return t;
+      js = d.createElement(s);
+      js.id = id;
+      js.src = "https://platform.twitter.com/widgets.js";
+      fjs.parentNode.insertBefore(js, fjs);
 
-    t._e = [];
-    t.ready = function (f) {
-      t._e.push(f);
-    };
+      t._e = [];
+      t.ready = function (f) {
+        t._e.push(f);
+      };
 
-    return t;
-  }(document, "script", "twitter-wjs"));
+      return t;
+    }(document, "script", "twitter-wjs"));
 
-  twttr.ready(function (twttr) {
-    twttr.events.bind('loaded', function (event) {
-      if (isFirstTwitterWigetsLoad) {
-        // hide medias
-        _.each(event.widgets, function(w) {
-          var shadowRoot = w.shadowRoot;
-          controlEmbeddedTweetMedia(shadowRoot, 'hide');
-        });
+    twttr.ready(function (twttr) {
+      twttr.events.bind('loaded', function (event) {
 
-        // display read-more button
-        $('.grad-trigger').css({
-          visibility: 'visible',
-        });
+        // if (isFirstTwitterWigetsLoad) {
+        //   // hide medias
+        //   _.each(event.widgets, function (w) {
+        //     var shadowRoot = w.shadowRoot;
+        //     controlEmbeddedTweetMedia(shadowRoot, 'hide');
+        //   });
+        //
+        //   isFirstTwitterWigetsLoad = false;
+        //   return;
+        // }
+      });
 
-        if (!isAdmin) {
-          initGradElementsHeight();
+      twttr.events.bind('rendered', function (event) {
+        var tgt = event.target;
+        var $chunk = $(tgt).parents('.tweet-chunk');
+        var $tweetReferenceBlock = $(tgt).parents('.tweet-reference-block');
+        var $embeddedTweet = $(tgt).parents('.embedded-tweet');
+        var $productTitle = $(tgt).parents('.product-block').find('.product-title');
+        var productBundleId = $(tgt).parents('.product-block').data('product-bundle-id');
+        var isError = $(tgt).hasClass('twitter-tweet-error');
+        var afterCSSRenderProcessIfAllFinished = function () {
+          // already called afterRederedAllTweetsInChunk function
+          if ($chunk.hasClass('rendered')) return;
+
+          if (isAllRendered($chunk)) {
+            afterRederedAllTweetsInChunk($tweetReferenceBlock, $chunk);
+          }
+        };
+
+        $embeddedTweet.addClass('rendered');
+
+        if (isError) {
+          afterCSSRenderProcessIfAllFinished();
+          return;
         }
 
-        $('.twitter-reaction-loading').remove();
-        $('.grad-wrap').css('visibility', 'visible');
-        $('.tweet-references').css('height', '100%');
+        var searchWords = productBundleIdIntoSearchWordsHash[productBundleId];
 
-        isFirstTwitterWigetsLoad = false;
-        return;
-      }
+        var $tweetTextDivs = $(tgt.shadowRoot).find('.Tweet-text');
+        if ($tweetTextDivs[0]) {
+          _.each($tweetTextDivs, tweetTextDivEle => {
+            var $tweetTextDiv = $(tweetTextDivEle);
 
-      updatedGradElements = _.chain(event.widgets)
-        .map(function (e) {
-          return e.parentElement;
-        })
-        .uniq()
-        .map(function (e) {
-          return $(e);
-        })
-        .value();
+            _.each(searchWords, word => {
+              var modifiedHTML = $tweetTextDiv.html().replace(
+                new RegExp("(" + word.trim() + ")(?!([^<]+)?>)", "gi"),
+                targetStr => {
+                  return '<span class="tweet-text-highlighted">' + targetStr + '</span>';
+                }
+              );
+              $tweetTextDiv.html(modifiedHTML);
+            });
+          });
+        }
 
-      _.each(updatedGradElements, function(gradEle) {
-        afterLoadTweets(gradEle);
+        var embeddedTweetStyle = $('<link>').attr({
+          'rel': 'stylesheet',
+          'href': location.origin + '/css/embedded_tweet.css',
+        });
+
+        // triggered after custom css render
+        embeddedTweetStyle.bind('load', () => {
+          afterCSSRenderProcessIfAllFinished();
+        });
+
+        $(tgt.shadowRoot).append(embeddedTweetStyle);
       });
 
-      console.log("load process finished")
+      resolve('done!');
     });
+  });
+}
 
-    twttr.events.bind('rendered', function (event) {
-      var tgt = event.target;
-      var embeddedTweetStyle = $('<link>').attr({
-        'rel': 'stylesheet',
-        'href': location.origin + '/css/embedded_tweet.css',
-      });
-      $(tgt.shadowRoot).append(embeddedTweetStyle);
-    });
+function isAllRendered($chunk) {
+  return _.every($chunk.find('.embedded-tweet'), embeddedTweet => {
+    return $(embeddedTweet).hasClass('rendered');
   });
 }
 
 function setButtonLoading(button) {
   button.addClass('disabled');
-  button.html('<span class="spinner-border" role="status" aria-hidden="true"></span> 読み込み中...');
+  button.html('<span class="spinner-border read-more-loading-spin" role="status" aria-hidden="true"></span> 読み込み中...');
 }
 
 function setButtonReset(button) {
@@ -351,37 +400,4 @@ function controlEmbeddedTweetMedia(shadowRoot, command) {
     default:
       throw new Error('unknown control command');
   }
-}
-
-function afterLoadTweets(tweetReferenceAreaDiv) {
-  var readMoreButtonEle = tweetReferenceAreaDiv.parents('.grad-wrap').find('.grad-trigger');
-  var addHeight = tweetReferenceAreaDiv.prop('scrollHeight');
-
-  var tweetsListDiv = readMoreButtonEle.siblings('.grad-item');
-  var remainingTweetsNum = readMoreButtonEle.data('read-more-tweet-ids').length - tweetsListDiv.find('.twitter-reaction-area').children('.twitter-tweet').length;
-
-  readMoreButtonEle.data('is-open', true);
-  readMoreButtonEle.data('is-ever-opened', true);
-
-  if (remainingTweetsNum <= 0) {
-    readMoreButtonEle.hide();
-    tweetsListDiv.addClass('remove-gradient');
-  }
-
-  setButtonReset(readMoreButtonEle);
-
-  tweetReferenceAreaDiv.children('.mosaic-tweet-list-img').remove();
-
-  tweetReferenceAreaDiv.css('height', gradEleTempHeightHash[tweetReferenceAreaDiv.data('grad-idx')]);
-  tweetReferenceAreaDiv.animate({height: addHeight}, 1000, 'swing', function () {
-    tweetReferenceAreaDiv.css('height', '100%');
-  });
-
-  // show hidden media cards
-  _.each(tweetsListDiv.children(), function(c) {
-    var shadowRoot = c.shadowRoot;
-    controlEmbeddedTweetMedia(shadowRoot, 'show');
-  });
-
-  updatedGradElements = [];
 }

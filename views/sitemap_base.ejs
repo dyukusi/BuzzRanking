@@ -1,41 +1,45 @@
+<%
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const CONST = require(appRoot + '/lib/const.js');
+const UrlGenerator = require(appRoot + '/lib/url_generator.js');
+const Moment = require('moment');
+
+// arguments
+var productBundleIdAndLastUpdatedAtRows;
+var rankingLastUpdatedAtDateStr;
+%>
+
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <!-- 各ランキングトップページ -->
-    <% _.each(_.keys(CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID), bundleName => { %>
+    <%
+    var rankingLastModStr = new Moment(rankingLastUpdatedAtDateStr).format('YYYY-MM-DD');
+    __.each(__.keys(CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH), (productTypeBundleId, bundleName) => {
+    %>
         <url>
-            <loc>https://www.buzzranking.net/ranking/<%= bundleName %></loc>
-            <changefreq>daily</changefreq>
-            <priority>1.0</priority>
+            <loc><%= UrlGenerator.generateRankingPageURL({ productTypeBundleId: productTypeBundleId, }) %></loc>
+            <lastmod><%= rankingLastModStr %></lastmod>
         </url>
     <% }); %>
 
-    <!-- indexページ -->
+    <!-- indexページ(総合ランキング) -->
     <url>
         <loc>https://www.buzzranking.net/</loc>
-        <priority>0.9</priority>
-        <lastmod>2019-11-07</lastmod>
+        <lastmod><%= rankingLastModStr %></lastmod>
     </url>
 
     <!-- サイトマップ -->
     <url>
         <loc>https://www.buzzranking.net/sitemap</loc>
-        <priority>0.9</priority>
-        <lastmod>2019-11-07</lastmod>
-    </url>
-
-    <!-- 商品・サービス一覧 -->
-    <url>
-        <loc>https://www.buzzranking.net/product/list</loc>
-        <priority>0.9</priority>
-        <lastmod>2019-11-07</lastmod>
+        <lastmod>2020-02-11</lastmod>
     </url>
 
     <!-- 商品個別詳細ページ -->
-    <% _.each(productDataset, productData => { %>
+    <% __.each(productBundleIdAndLastUpdatedAtRows, row => { %>
         <url>
-            <loc>https://www.buzzranking.net/product/detail/<%= productData.productId %></loc>
-            <priority><%= productData.priority %></priority>
-            <lastmod><%= productDetailLastModStr %></lastmod>
+            <loc><%= UrlGenerator.generateProductBundleDetailPageURL(row.productBundleId) %></loc>
+            <lastmod><%= new Moment(row.lastUpdatedAt).format('YYYY-MM-DD') %></lastmod>
         </url>
     <% }); %>
 </urlset>

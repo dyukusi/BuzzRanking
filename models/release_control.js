@@ -7,12 +7,12 @@ const Q = require('q');
 
 class ReleaseControl extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
-  getDateMoment() {
+  getMoment() {
     return new Moment(this.date);
   }
 
   // ------------------- Class Methods -------------------
-  static selectLatestReleaseDate() {
+  static selectLatest() {
     // var d = Q.defer();
     //
     // this.findAll({

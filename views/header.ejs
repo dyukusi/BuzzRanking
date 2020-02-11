@@ -1,5 +1,11 @@
 <%
-var originalURL;
+const appRoot = require('app-root-path');
+const __ = require('underscore');
+const CONST = require(appRoot + '/lib/const.js');
+const UrlGenerator = require(appRoot + '/lib/url_generator.js');
+
+// arguments
+var productTypeBundleId;
 %>
 
 <link rel="icon" href="/favicon.ico">
@@ -14,7 +20,6 @@ var originalURL;
   }
 
   gtag('js', new Date());
-
   gtag('config', 'UA-125946852-2');
 </script>
 
@@ -30,31 +35,39 @@ var originalURL;
     </button>
 
     <!--<div class="collapse navbar-collapse common-nav" id="navbarSupportedContent">-->
-        <!--<ul class="navbar-nav">-->
-            <!--<li id="nav-sitemap" class="nav-item common-nav-item">-->
-                <!--<a class="nav-link" href="/sitemap">-->
-                    <!--<i class="fas fa-sitemap"></i>-->
-                    <!--サイトマップ-->
-                <!--</a>-->
-            <!--</li>-->
-        <!--</ul>-->
+    <!--<ul class="navbar-nav">-->
+    <!--<li id="nav-sitemap" class="nav-item common-nav-item">-->
+    <!--<a class="nav-link" href="/sitemap">-->
+    <!--<i class="fas fa-sitemap"></i>-->
+    <!--サイトマップ-->
+    <!--</a>-->
+    <!--</li>-->
+    <!--</ul>-->
     <!--</div>-->
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav">
             <%
-            __.each(Const.NAV_BUNDLE_ID_ORDER, bId => {
-                var bName = Const.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[bId];
+            __.each(CONST.NAV_BUNDLE_ID_ORDER, bTypeId => {
+                var bName = CONST.PRODUCT_TYPE_BUNDLE_ID_TO_NAME_HASH[bTypeId];
+                var isActive = bTypeId == productTypeBundleId;
             %>
-            <li id="nav-<%= bName %>" class="nav-item <%= originalURL && originalURL.match(bName) ? 'active' : '' %>">
+            <li id="nav-<%= bName.toLowerCase() %>"
+                class="nav-item <%= isActive ? 'active' : '' %>">
 
-                <a class="nav-link" href="/ranking/<%= bName %>">
-                    <i class="<%= Const.PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS[bId] %>"></i>
-                    <%= Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[bId] %>
+                <a class="nav-link" href="<%= UrlGenerator.generateRankingPageURL({ productTypeBundleId: bTypeId, }) %>">
+                    <i class="<%= CONST.PRODUCT_TYPE_BUNDLE_ID_TO_FONT_AWESOME_CLASS[bTypeId] %>"></i>
+                    <%= CONST.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[bTypeId] %>
                 </a>
             </li>
             <% }); %>
         </ul>
+    </div>
+
+    <div class="all-search-div">
+        <input id="input-all-search" class="form-control" type="text" autocomplete="off"
+           placeholder="気になるあの作品のタイトルを入力して検索"></label>
+        <button class="form2-button"><i class="fa fa-search"></i></button>
     </div>
 
     <!-- About the Buzzranking icon -->
@@ -66,3 +79,9 @@ var originalURL;
 </nav>
 
 <p id="PageTopBtn"><a href="#wrap"><i class="fas fa-angle-double-up"></i></a></p>
+
+<noscript>
+    <h1 class="m-5">
+        当サービスをご利用頂くためにはお使いのブラウザの設定より、JavaScriptを有効化してください。
+    </h1>
+</noscript>

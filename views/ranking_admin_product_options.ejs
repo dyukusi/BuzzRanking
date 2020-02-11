@@ -1,0 +1,246 @@
+<%
+const appRoot = require('app-root-path');
+const CONST = require(appRoot + '/lib/const.js');
+const __ = require('underscore');
+const Util = require(appRoot + '/lib/util.js');
+
+// arguments
+var productBundleId;
+var debugData;
+var productBundleModel;
+
+var altSearchModels = debugData.productBundleIdIntoTwitterAltSearchWordModelsHash[productBundleId];
+productModels = __.sortBy(productModels, m => {
+    return m.getProductName();
+}).reverse();
+var childCandidateProductModels = debugData.productBundleIdIntoChildCandidateProductModels[productBundleId];
+var productBundleIdIntoParentProductDataHash = debugData.productBundleIdIntoParentProductDataHash;
+%>
+<div class="row">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-12 mt-3 text-align-center font-weight-bold">
+                Admin用
+            </div>
+        </div>
+
+        <% if (!productBundleModel.isValid()) { %>
+            <div class="row">
+                <div class="col-12">
+                    <span style="font-size: 2rem; color: darkred;">ブロック済み</span>
+                </div>
+            </div>
+        <% } %>
+
+        <div class="row">
+            <div class="col-12">
+                ・ProductBundleId: <%= productBundleModel.id %>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                ・validityStatus: <%= CONST.VALIDITY_STATUS_ID_TO_NAME_HASH[productBundleModel.validityStatus] %>(<%= productBundleModel.validityStatus %>)
+                <% if (!productBundleModel.isValid()) { %>
+                    <span style="color: red; font-size:1.5rem; font-weight: bold;">(INVALID)</span>
+                <% } %>
+                <% if (productBundleModel.isProtected()) { %>
+                    <span style="color: green; font-size:1.5rem; font-weight: bold;">(PROTECTED)</span>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                ・TwitterAlternativeSearchWords
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <button type="button"
+                        class="btn btn-outline-primary add-alt-search-word"
+                        data-product-bundle-id="<%= productBundleModel.id %>"
+                        data-product-bundle-name="<%= productBundleModel.name %>"
+                >
+                    AltSearchWord追加
+                </button>
+            </div>
+        </div>
+
+        <% __.each(altSearchModels, altSearchModel => { %>
+            <div class="col-12">
+                => <%= altSearchModel.searchWord %>
+                <button type="button"
+                        class="btn btn-danger update-alt-search-word-validity-status"
+                        data-search-word="<%= altSearchModel.searchWord %>"
+                        value="<%= CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.INVALID %>">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        <% }); %>
+
+        <div class="row mt-3">
+            <div class="col-12">
+                ・ProductBundleに対する処理
+            </div>
+        </div>
+
+        <div class="row mt-3 update-product-bundle-row">
+            <div class="col-2">
+                <button type="button"
+                        class="btn btn-dark update-product-bundle-name">
+                    bundle名更新
+                </button>
+            </div>
+            <div class="col-10" style="align-self: center;">
+                <input class="form-control input-update-product-bundle-name" type="text"
+                       autocomplete="off" placeholder="" value="<%= productBundleModel.name %>">
+            </div>
+        </div>
+
+        <div class="row mt-3 text-align-center">
+            <div class="col-3">
+                <button type="button"
+                        class="btn btn-success update-product-bundle-validity-status"
+                        value="<%= CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.PROTECTED %>">
+                    保護ステータスに更新
+                </button>
+            </div>
+            <div class="col-3">
+                <button type="button"
+                        class="btn btn-outline-dark update-product-bundle-validity-status"
+                        value="<%= CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.MONITORING %>">
+                    監視ステータスに更新
+                </button>
+            </div>
+            <div class="col-3">
+                <button type="button" class="btn btn-warning initialize-product-bundle"
+                        value="<%= CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.INVALID %>">
+                    初期化
+                </button>
+            </div>
+            <div class="col-3">
+                <button type="button"
+                        class="btn btn-danger update-product-bundle-validity-status"
+                        value="<%= CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.INVALID %>">
+                    ブロック<i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-12">
+                ・このBundleに所属するProductModelsに対する処理
+            </div>
+        </div>
+        <%
+        __.each(productModels, productModel => {
+            var isParentProductModel = +productBundleModel.id == +productModel.productId;
+        %>
+        <div class="row mb-2 bundle-child-product-row-for-debug"
+             data-product-id="<%= productModel.productId %>">
+            <div class="col-4">
+                => <%= productModel.getProductName() %>
+                (
+                <%- isParentProductModel ?
+                        '<span class="highlighted-text">' + productModel.productId + '</span>' :
+                        productModel.productId
+                %>
+                )
+                <% if (!productModel.isValid()) { %>
+                    <span style="color: red;">(INVALID)</span>
+                <% } %>
+            </div>
+            <div class="col-8">
+                <div class="row">
+                    <div class="col-3">
+                        所属先変更
+                    </div>
+                    <div class="col-9">
+                        <input class="form-control input-update-belonged-product-bundle"
+                               data-product-id="<%= productModel.productId %>" type="text" autocomplete="off" placeholder="">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-3 p-0">
+                        <button type="button"
+                                class="btn btn-primary make-product-become-independent"
+                                value="<%= productModel.productId %>"
+                                data-product-name="<%= Util.formatProductName(productModel.getProductName()) %>">
+                            Bundle作成
+                        </button>
+                    </div>
+                    <div class="col-3 p-0">
+                        <button type="button"
+                                class="btn btn-success update-product-validity-status"
+                                data-product-id="<%= productModel.productId %>"
+                                value="<%= CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.PROTECTED %>">
+                            保護
+                        </button>
+                    </div>
+                    <div class="col-3 p-0">
+                        <button type="button"
+                                class="btn btn-outline-dark update-product-validity-status"
+                                data-product-id="<%= productModel.productId %>"
+                                value="<%= CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.NORMAL %>">
+                            ノーマル
+                        </button>
+                    </div>
+                    <div class="col-3 p-0">
+                        <button type="button"
+                                class="btn btn-danger update-product-validity-status"
+                                data-product-id="<%= productModel.productId %>"
+                                value="<%= CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.INVALID %>">
+                            ブロック<i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% }); %>
+
+        <% if (!__.isEmpty(childCandidateProductModels)) { %>
+            <div class="row mt-5">
+                <div class="col-12">
+                    ・このBundle名を含んでいるが、別のBundleに所属または無所属のProductModels
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <%
+                    __.each(childCandidateProductModels, productModel => {
+                        var parentProductData = productBundleIdIntoParentProductDataHash[productModel.productBundleId];
+                    %>
+                    <div class="row">
+                        <div class="col-12">
+                            <%= productModel.getProductName() %>
+                            (pid: <%= productModel.productId %>)
+                            <% if (parentProductData) { %>
+                                (bid: <%= parentProductData.productBundleModel.id %>)
+                            <% } %>
+                        </div>
+                    </div>
+                    <% }); %>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12 text-align-center">
+                    <button type="button"
+                            class="btn btn-outline-primary merge-products"
+                            data-product-ids="[<%= __.map(childCandidateProductModels, m => {
+                                return m.productId;
+                            }).join(',') %>]"
+                    >
+                        全てこのBundleに統合する
+                    </button>
+                </div>
+            </div>
+
+        <% } %>
+
+    </div>
+</div>

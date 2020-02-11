@@ -1,14 +1,58 @@
 const appRoot = require('app-root-path');
 const __ = require('underscore');
-const DBUtil = require(appRoot + '/my_libs/db_util.js');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const ProductBase = require(appRoot + '/models/product_base');
+const Moment = require('moment');
 
 class Game extends ProductBase {
   // ------------------- Instance Methods -------------------
   getImageURL() {
     return this.imageUrlBase;
+  }
+
+  getReleaseDateMoment() {
+    if (this.saleDate) {
+      return new Moment(this.saleDate);
+    }
+
+    var dateStr = '';
+    var yearMatch = this.saleDateStr.match(/(\d+)年/);
+
+    if (!yearMatch) {
+      return new Moment(this.createdAt);
+    }
+
+    dateStr += yearMatch[1];
+
+    var monthMatch = this.saleDateStr.match(/(\d+)月/);
+
+    if (!monthMatch) {
+      return new Moment(dateStr + '-12-31');
+    }
+
+    dateStr += '-' + monthMatch[1];
+
+    var dayMatch = this.saleDateStr.match(/(\d+)日/);
+
+    if (!dayMatch) {
+      return new Moment(dateStr + '');
+    }
+
+    dateStr += '-' + dayMatch[1];
+
+    return new Moment(dateStr + '');
+  }
+
+  isNewReleasedProductByMoment(moment) {
+    var baseMoment = moment.clone();
+
+    var releaseMoment = this.getReleaseDateMoment();
+    var thresholdMoment = releaseMoment.clone().subtract(7, 'day');
+
+    // normally 1 cour Anime = 3 months. +1 for extra evaluation term
+    return thresholdMoment.unix() <= baseMoment.unix() &&
+      baseMoment.unix() <= releaseMoment.add(60, 'day').unix();
   }
 
   // ------------------- Class Methods -------------------
@@ -86,7 +130,7 @@ Game.init({
     },
     saleDate: {
       type: Sequelize.DATEONLY,
-      allowNull: false,
+      allowNull: true,
       field: 'sale_date'
     },
     validityStatus: {
@@ -97,6 +141,7 @@ Game.init({
     updatedAt: {
       type: Sequelize.DATE,
       allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
       field: 'updated_at'
     },
     createdAt: {

@@ -1,7 +1,8 @@
-var express = require('express');
-var router = express.Router();
-var passport = require('passport');
-var passportGoogleOauth = require('passport-google-oauth2');
+const appRoot = require('app-root-path');
+const express = require('express');
+const router = express.Router();
+const passport = require('passport');
+const passportGoogleOauth = require('passport-google-oauth2');
 const Config = require('config');
 const GoogleStrategy = passportGoogleOauth.Strategy;
 

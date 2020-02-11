@@ -1,5 +1,5 @@
 const appRoot = require('app-root-path');
-const Util = require(appRoot + '/my_libs/util.js');
+const Util = require(appRoot + '/lib/util.js');
 const _ = require('underscore');
 const {JSDOM} = require('jsdom');
 const $ = jQuery = require('jquery')(new JSDOM().window);
@@ -7,7 +7,8 @@ const Config = require('config');
 const Moment = require('moment');
 const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 const Movie = require(appRoot + '/models/movie');
-const CONST = require(appRoot + '/my_libs/const.js');
+const CONST = require(appRoot + '/lib/const.js');
+const DBUtil = require(appRoot + '/lib/db_util.js');
 
 const TMDB_API_KEY = Config.tmdb_api_key;
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
@@ -33,9 +34,9 @@ const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
     var insertObjects = _.map(json.results, rawData => {
       return createInsertObjectBase(rawData);
     });
-    
-    var insertedMovieModels = await Movie.bulkInsert(insertObjects);
-    
+
+    var productModels = await DBUtil.insertProductsUpdateOnDuplicate(Movie, insertObjects);
+
     sleep(1500);
   } while (page++ < totalPage);
 
@@ -43,10 +44,10 @@ const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
 })();
 
 function createInsertObjectBase(rawData) {
-  var isValidSearchWord = Util.checkSearchWordValidity(rawData.title);
+  var isSuspicious = Util.isSuspiciousTitle(Util.formatProductName(rawData.title));
 
   return {
-    productTypeId: CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.movie,
+    productTypeId: CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.MOVIE,
     tmdbMovieId: rawData.id,
     title: rawData.title,
     originalTitle: rawData.original_title,
@@ -54,7 +55,9 @@ function createInsertObjectBase(rawData) {
     backdropUrl: rawData.backdrop_path ? IMAGE_BASE_URL + rawData.backdrop_path : null,
     originalLang: rawData.original_language,
     genreIds: rawData.genre_ids.join(','),
-    validityStatus: isValidSearchWord ? CONST.VALIDITY_STATUS_NAME_TO_ID.normal : CONST.VALIDITY_STATUS_NAME_TO_ID.suspicious,
+    validityStatus: isSuspicious ?
+      CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.SUSPICIOUS_BY_MECAB_ANALYSIS :
+      CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.NORMAL,
     releaseDate: rawData.release_date,
   };
 }

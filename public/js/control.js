@@ -1,10 +1,58 @@
-$ = jQuery = require('jquery');
+const $ = jQuery = require('jquery');
 const MyUtil = require('./util.js')
 const request = require('request');
 
 $(function () {
   initDeleteCacheFunction();
+  initButtons();
 });
+
+function initButtons() {
+  $('#button-raw-select-sql').on('click', function () {
+    var button = $(this);
+    var sql = $('#input-raw-select-sql').val();
+
+    // disable button
+    button.attr('disabled', true);
+    button.html('処理中...');
+
+    $.ajax({
+      url: MyUtil.getLocationOrigin() + '/admin/raw_select_sql',
+      method: 'POST',
+      data: {
+        sql: sql,
+      },
+    }).done(function (data) {
+      button.html('成功');
+      return window.location.href = data.url;
+    }).fail(function (e) {
+      button.html('失敗: ' + e);
+    });
+  });
+
+  $('#button-raw-select-sql-for-product').on('click', function () {
+    var button = $(this);
+    var sql = $('#input-raw-select-sql-for-product').val();
+
+    // disable button
+    button.attr('disabled', true);
+    button.html('処理中...');
+
+    $.ajax({
+      url: MyUtil.getLocationOrigin() + '/admin/raw_select_sql_for_product',
+      method: 'POST',
+      data: {
+        sql: sql,
+      },
+    }).done(function (data) {
+      button.html('成功');
+      return window.location.href = data.url;
+    }).fail(function (e) {
+      button.html('失敗: ' + e);
+    });
+  });
+
+}
 
 // function initBuildRankingFunction() {
 //   $('#build-ranking-button').on('click', function () {

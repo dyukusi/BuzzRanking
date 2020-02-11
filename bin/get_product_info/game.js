@@ -6,13 +6,15 @@ const fs = require('fs');
 const _ = require('underscore');
 const request = require('request');
 const Q = require('q');
-const Util = require(appRoot + '/my_libs/util.js');
+const Util = require(appRoot + '/lib/util.js');
 const async = require('async');
-const con = require(appRoot + '/my_libs/db.js');
+const con = require(appRoot + '/lib/db.js');
+const DBUtil = require(appRoot + '/lib/db_util.js');
 
-const GameModel = require(appRoot + '/models/game');
+const Game = require(appRoot + '/models/game');
 
 var FETCH_PRODUCT_DATA_DAYS_AGO_FROM_NOW = 365;
+
 var TARGET_GENRE_IDS = [
   '006508', // 3DS
   '006509', // PS Vita
@@ -20,6 +22,12 @@ var TARGET_GENRE_IDS = [
   '006513', // PS4
   '006514', // Switch
 ];
+
+// var IGNORE_GENRE_IDS = [
+//   '006508001', // 本体
+//   '006508002', // 周辺機器
+// ];
+
 var queue = [];
 
 initQueue();
@@ -54,20 +62,34 @@ function main() {
             console.log('Page ' + json['page'] + '/' + json['pageCount']);
             var shouldSearchNextPage = task.page < json['pageCount'];
             var thresholdDate = new Date(new Date().setDate(new Date().getDate() - FETCH_PRODUCT_DATA_DAYS_AGO_FROM_NOW));
-            var insertObjects = _.map(json['Items'], item => {
-              var insertObject = itemIntoInsertObjectBase(item);
+            var insertObjects = _.chain(json['Items'])
+              .filter(item => {
+                var IGNORE_GENRE_IDS = _.map(['001', '002'], suffix => {
+                  return task.genreId + suffix;
+                });
 
-              // check fetch limit date
-              var saleDate = new Date(insertObject.sale_date);
+                var genreIdStr = item['booksGenreId'];
+                return _.every(IGNORE_GENRE_IDS, ignoreGenreIdStr => {
+                  return genreIdStr.indexOf(ignoreGenreIdStr) == -1; // not containing
+                });
+              })
+              .map(item => {
+                var insertObject = itemIntoInsertObjectBase(item);
 
-              if (saleDate < thresholdDate) {
-                shouldSearchNextPage = false;
-              }
+                // check fetch limit date
+                var saleDate = new Date(insertObject.sale_date);
 
-              return insertObject;
-            });
+                if (saleDate < thresholdDate) {
+                  shouldSearchNextPage = false;
+                }
 
-            GameModel.bulkInsert(insertObjects)
+                return insertObject;
+              })
+              .value();
+
+            console.log("insertObjects: " + insertObjects.length);
+
+            DBUtil.insertProductsUpdateOnDuplicate(Game, insertObjects)
               .then(models => {
                 callback(null, shouldSearchNextPage);
               });

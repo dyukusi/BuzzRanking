@@ -2,8 +2,6 @@ const appRoot = require('app-root-path');
 const __ = require('underscore');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
-const Moment = require('moment');
-const Q = require('q');
 
 class ProductNum extends Sequelize.Model {
   // ------------------- Instance Methods -------------------

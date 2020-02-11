@@ -59,7 +59,7 @@ var baseURL = (() => {
                 <select id="product-type-select-input" class="form-control">
                     <option value="0" <%- options.productTypeId ? null : 'selected' %>>全て</option>
 
-                    <% __.each(Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID, (productTypeBundleId, productTypeBundleName) => { %>
+                    <% __.each(Const.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH, (productTypeBundleId, productTypeBundleName) => { %>
                         <% if (productTypeBundleName == 'all') return; %>
 
                         <optgroup label=<%= Const.PRODUCT_TYPE_BUNDLE_ID_TO_JA_NAME_HASH[productTypeBundleId] %>>

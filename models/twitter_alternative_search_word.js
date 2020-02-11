@@ -3,6 +3,7 @@ const __ = require('underscore');
 const Sequelize = require('sequelize');
 const sequelize = require(appRoot + '/db/sequelize_config');
 const Op = Sequelize.Op;
+const Util = require(appRoot + '/lib/util.js');
 
 class TwitterAlternativeSearchWord extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
@@ -11,10 +12,10 @@ class TwitterAlternativeSearchWord extends Sequelize.Model {
   }
 
   // ------------------- Class Methods -------------------
-  static selectByProductIds(productIds) {
+  static selectByProductBundleIds(productBundleIds) {
     return this.findAll({
       where: {
-        productId: productIds,
+        productBundleId: productBundleIds,
       }
     });
   }
@@ -29,23 +30,22 @@ class TwitterAlternativeSearchWord extends Sequelize.Model {
     });
   }
 
-  static insertIfValid(productId, word) {
-    if (!Util.checkSearchWordValidity(word)) return new Promise((resolve, reject) => {
-      resolve();
-    });
+  static async insertIfValid(productBundleId, word) {
+    var isSuspicious = await Util.isSuspiciousTitle(word);
+    if (isSuspicious) return;
 
     return this.upsert({
-      productId: productId,
+      productBundleId: productBundleId,
       searchWord: word,
     });
   }
 }
 
 TwitterAlternativeSearchWord.init({
-    productId: {
+    productBundleId: {
       type: Sequelize.INTEGER(11).UNSIGNED,
       allowNull: false,
-      field: 'product_id',
+      field: 'product_bundle_id',
     },
     searchWord: {
       type: Sequelize.STRING(255),

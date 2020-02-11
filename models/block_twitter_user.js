@@ -7,8 +7,11 @@ class BlockTwitterUser extends Sequelize.Model {
   // ------------------- Instance Methods -------------------
 
   // ------------------- Class Methods -------------------
-  static selectAll() {
-    return this.findAll({});
+  static async selectAllAndCreateScreenNameIntoBlockTwitterUserModelHash() {
+    var blockTwitterUserModels = await this.findAll({});
+    return __.indexBy(blockTwitterUserModels, m => {
+      return m.screenName;
+    });
   }
 }
 

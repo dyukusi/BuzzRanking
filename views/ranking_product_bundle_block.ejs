@@ -1,0 +1,20 @@
+<div class="row">
+    <div class="col-4 product-col">
+        <div class="product-info-block">
+
+            <div class="row">
+                <div class="col-12 product-image-col">
+                    <a href="/product/detail/<%= productData.productModel.productId %>" target="_blank">
+                        <img src="/img/blank.png" data-src="<%= productData.productModel.posterUrl %>"
+                             class="img-fluid product-image lazyload">
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="col-8 tweet-reference-block-col">
+        <%- include(appRoot + '/views/compact_tweet_list.ejs', { productData: productData, }) %>
+    </div>
+</div>
