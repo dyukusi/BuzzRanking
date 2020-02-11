@@ -183,7 +183,7 @@ function calcPriority(tweetCount, latestUpdatedAt) {
     return -1;
   }
 
-  let priority = (tweetCount * hoursSinceLastUpdated) + 1;
+  let priority = tweetCount + hoursSinceLastUpdated + 1;
 
   return priority;
 
