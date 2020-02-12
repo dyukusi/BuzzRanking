@@ -118,11 +118,12 @@ const META_TEXT_HASH = (() => {
 <body>
 <%- include(appRoot + '/views/header.ejs', { productTypeBundleId: productTypeBundleId, }) %>
 
-<div id="content" class="container-fluid p-0">
+<div id="content" class="container-fluid">
 
     <div class="row">
         <!-- ======== MAIN CONTENTS COL ======== -->
-        <div class="col-12 col-lg-8 p-0 mt-0 main-content-col">
+        <!--        <div class="col-12 col-lg-8 p-0 mt-0 main-content-col">-->
+        <div class="col-12 col-lg-8">
 
             <% if (isAdmin) { %>
                 <div class="row pl-4 pr-4">
@@ -198,8 +199,8 @@ const META_TEXT_HASH = (() => {
                 // 　　複数カテゴリでランクインしてる場合の考慮が必要
             %>
 
-            <div class="row m-1 m-lg-0 product-row-block">
-                <div class="col-12 p-lg-0">
+            <div class="row product-row-block">
+                <div class="col-12">
                     <div class="product-block product-block-border"
                          data-product-bundle-id="<%= productBundleModel.id %>">
 
@@ -273,14 +274,14 @@ const META_TEXT_HASH = (() => {
 
                         <%
                         if (isAdmin) {
-                        var args = {
-                            productBundleId,
-                            debugData,
-                            productBundleModel,
-                            productModels,
-                        };
+                            var args = {
+                                productBundleId,
+                                debugData,
+                                productBundleModel,
+                                productModels,
+                            };
                         %>
-                            <%- include(appRoot + '/views/ranking_admin_product_options.ejs', args) %>
+                        <%- include(appRoot + '/views/ranking_admin_product_options.ejs', args) %>
                         <% } %>
 
                     </div>
@@ -318,11 +319,9 @@ const META_TEXT_HASH = (() => {
 
         <!-- ========== SUB CONTENTS ROW ========= -->
         <div class="col-12 col-lg-4">
-            <div class="col-12 pl-1 pr-1 pl-lg-0 pr-lg-0 sub-content-col">
-                <%- include(appRoot + '/views/sub_content_search_tweet_by_account_name.ejs', {}) %>
-                <%- include(appRoot + '/views/sub_content_ad_official_twitter_account.ejs', {}) %>
-                <%- include(appRoot + '/views/sub_content_simple_rankings.ejs', { adDataList: adDataList, }) %>
-            </div>
+            <%- include(appRoot + '/views/sub_content_search_tweet_by_account_name.ejs', {}) %>
+            <%- include(appRoot + '/views/sub_content_ad_official_twitter_account.ejs', {}) %>
+            <%- include(appRoot + '/views/sub_content_simple_rankings.ejs', { adDataList: adDataList, }) %>
         </div>
         <!-- ======================================== -->
     </div>

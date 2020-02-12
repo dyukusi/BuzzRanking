@@ -25,7 +25,6 @@ var paginationData = paginator.getPaginationData();
 %>
 <!DOCTYPE html>
 
-
 <!-- bootstrap -->
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
       integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
@@ -54,9 +53,8 @@ var paginationData = paginator.getPaginationData();
 <div id="content" class="container-fluid">
 
     <div class="row">
-
         <!-- ======== MAIN CONTENTS COL ======== -->
-        <div class="col-12 col-lg-8 main-content-col background-white">
+        <div class="col-12 col-lg-8 background-white">
 
             <div class="row pt-3">
                 <div class="col-12">
@@ -68,17 +66,6 @@ var paginationData = paginator.getPaginationData();
                     </h1>
                 </div>
             </div>
-
-<!--            <div class="row pt-2">-->
-<!--                <div class="col-12">-->
-<!--                    <h2 class="mid-header">-->
-<!--                        <a href="https://twitter.com/<%= screenName %>">-->
-<!--                            @<%= screenName %>-->
-<!--                        </a>-->
-<!--                        の貢献ツイート一覧-->
-<!--                    </h2>-->
-<!--                </div>-->
-<!--            </div>-->
 
             <%- include(appRoot + '/views/pagination.ejs', { paginationData: paginationData, }); %>
             <div class="contributed-tweet-list">
@@ -136,12 +123,10 @@ var paginationData = paginator.getPaginationData();
         <!-- ======================================== -->
 
         <!-- ========== SUB CONTENTS ROW ========= -->
-        <div class="col-12 pl-1 pr-1 col-lg-4 pl-lg-3 pr-lg-0">
-            <div class="col-12 sub-content-col mt-lg-3">
-                <%- include(appRoot + '/views/sub_content_search_tweet_by_account_name.ejs', {}) %>
-                <%- include(appRoot + '/views/sub_content_ad_official_twitter_account.ejs', {}) %>
-                <%- include(appRoot + '/views/sub_content_simple_rankings.ejs', { adDataList: adDataList, }) %>
-            </div>
+        <div class="col-12 col-lg-4">
+            <%- include(appRoot + '/views/sub_content_search_tweet_by_account_name.ejs', {}) %>
+            <%- include(appRoot + '/views/sub_content_ad_official_twitter_account.ejs', {}) %>
+            <%- include(appRoot + '/views/sub_content_simple_rankings.ejs', { adDataList: adDataList, }) %>
         </div>
     </div>
     <!-- ========================================================= -->

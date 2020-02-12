@@ -83,18 +83,8 @@ body {
     background-color: #fff9f2;
 }
 
-.main-content-col {
-    margin: 1rem 0;
-}
-
 .background-white {
     background-color: white;
-}
-
-.sub-content-col {
-    /*background-color: white;*/
-    padding: 0;
-    height: 100%;
 }
 
 .div-ranking-ad {
@@ -702,12 +692,11 @@ hr {
     width: 100%;
     font-size: 1.2rem;
     color: #fff !important;
-    margin-bottom: 5px;
     padding: 5px;
     text-align: center;
     text-decoration: none;
     background: #55acee;
-    margin: 1rem 0;
+    margin: 1rem 0 0 0;
 }
 
 .twitter-follor-button:hover {
