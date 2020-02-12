@@ -569,6 +569,7 @@ html {
 
 .container-fluid {
     padding: 0 15px;
+    margin-top: 1rem;
 }
 
 .container-fluid .text-muted {
