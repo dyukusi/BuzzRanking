@@ -26,7 +26,7 @@ router.get('/:productBundleId', async function (req, res, next) {
   var redis = CacheUtil.getRedisInstance();
   var htmlCache = await redis.get(htmlCacheKey);
 
-  if (htmlCache && false) {
+  if (htmlCache) {
     res.send(htmlCache);
     return;
   }
