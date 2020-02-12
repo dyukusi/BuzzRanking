@@ -6,9 +6,6 @@ const Cookie = require('js-cookie');
 const sprintf = require('sprintf-js').sprintf;
 require('bootstrap');
 
-disableStickyHeaderTemporarily = false;
-var remainingCountOfDisableScrollEvent = 0;
-
 $(function () {
   if (location.pathname.match('book')) {
     $('#nav-book-ranking').addClass("active");
@@ -18,7 +15,7 @@ $(function () {
     // $('#nav-dating-ranking a').html('<i class="fas fa-heart">' + $('#nav-dating-ranking a').html());
   }
 
-  initAllSearchAutoComplete();
+  initAllSearchButton();
   initTwitterAccountSearchAutoCompleteIfNeed();
   adjustBodyMarginForFooter();
   initFooterMargin();
@@ -27,13 +24,17 @@ $(function () {
   initAboutBtn();
 });
 
-function initAllSearchAutoComplete() {
+function initAllSearchButton() {
   var input = document.getElementById("input-all-search");
   var allSearchJustBefore = Cookie.get('all-search-just-before');
 
   if (allSearchJustBefore) {
     input.value = allSearchJustBefore;
   }
+
+  input.addEventListener('focus', (event) => {
+    $('.navbar-collapse').collapse('hide');
+  });
 
   var autocomplete = Autocomplete({
     input: input,
@@ -155,22 +156,11 @@ function initAboutBtn() {
   // });
 }
 
+var scrollDirectionPower = 0;
 function initScrollHideNavbar() {
   var startPos = 0, winScrollTop = 0;
+
   var scrollEventFunction = function () {
-    if (disableStickyHeaderTemporarily) {
-      remainingCountOfDisableScrollEvent = 3;
-      disableStickyHeaderTemporarily = false;
-
-      winScrollTop = $(this).scrollTop();
-      startPos = winScrollTop;
-    }
-
-    if (remainingCountOfDisableScrollEvent) {
-      remainingCountOfDisableScrollEvent--;
-      return;
-    }
-
     var navEle = $('nav');
     var aboutIcon = $('#nav-about a');
     var navHeight = navEle.outerHeight(true);
@@ -178,19 +168,19 @@ function initScrollHideNavbar() {
     var commonNavRowHeight = $('.common-nav').outerHeight();
     winScrollTop = $(this).scrollTop();
 
+    updateScrollDirectionPower(winScrollTop >= startPos ? -1 : 1);
+
     if (winScrollTop > navHeight) {
       aboutIcon.addClass('about-icon-bottom');
 
       navEle.addClass('fixed-top');
       $('body').css('padding-top', navHeight + 'px');
 
-      // down
-      if (winScrollTop >= startPos) {
+      if (scrollDirectionPower < 0) {
         $('#header').addClass('hide');
         $('.my-sticky').css('top', '1rem');
-      }
-      // up
-      else {
+        $('.navbar-collapse').collapse('hide');
+      } else {
         $('#header').removeClass('hide');
 
         var adjustedHeight = buzzrankingLogoHeight;
@@ -202,12 +192,13 @@ function initScrollHideNavbar() {
         var buzzrankingLogoHeight = $('.navbar-brand').outerHeight();
         $('.about-icon-bottom').css('top', buzzrankingLogoHeight);
       }
-    } else {
+    }
+    // disp all nav bar content
+    else {
       navEle.removeClass('fixed-top');
       aboutIcon.removeClass('about-icon-bottom');
       $('body').css('padding-top', '0px');
       navEle.css('top', '0px');
-
       $('.about-icon').css('top', '0px');
     }
 
@@ -220,8 +211,13 @@ function initScrollHideNavbar() {
   $('body').on('touchmove', function () {
     scrollEventFunction();
   });
-
 };
+
+function updateScrollDirectionPower(val) {
+  scrollDirectionPower += val;
+  scrollDirectionPower = _.max([_.min([scrollDirectionPower, 4]), -4]);
+}
+
 
 function initTopBtn() {
   var TopBtn = $('#PageTopBtn');

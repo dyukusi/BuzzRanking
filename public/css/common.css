@@ -878,3 +878,11 @@ blockquote.twitter-tweet a:focus {
     border: 0;
     opacity: 0.54;
 }
+
+.no-transition {
+    -webkit-transition: init;
+    -moz-transition: init;
+    -ms-transition: init;
+    -o-transition: init;
+    transition: init;
+}
