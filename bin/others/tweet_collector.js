@@ -13,6 +13,7 @@ const Moment = require('moment');
 let timeout = msec => new Promise(resolve => { setTimeout(() => {resolve('timeout')}, msec) });
 const ProductUtil = require(appRoot + '/lib/product_util.js');
 const ProductTweetStat = require(appRoot + '/models/product_tweet_stat');
+const GoogleAnalyticsAPI = require(appRoot + '/lib/google_analytics_api.js');
 
 const Tweet = require(appRoot + '/models/tweet');
 const TweetCountLog = require(appRoot + '/models/tweet_count_log');
@@ -175,7 +176,7 @@ async function createTaskQueue() {
   return taskQueue;
 }
 
-function calcPriority(tweetCount, latestUpdatedAt) {
+function calcPriority(tweetCount, pvNum = 0, latestUpdatedAt) {
   let hoursSinceLastUpdated = (new Moment() - new Moment(latestUpdatedAt)) / (1000 * 60 * 60);
 
   // いくら評価値が高くても最低n時間は次の更新までのインターバルをおくための閾値
@@ -183,7 +184,7 @@ function calcPriority(tweetCount, latestUpdatedAt) {
     return -1;
   }
 
-  let priority = tweetCount + hoursSinceLastUpdated + 1;
+  let priority = tweetCount + (pvNum * 30) + hoursSinceLastUpdated + 1;
 
   return priority;
 
@@ -216,10 +217,15 @@ async function calcProductBundleIdsSortedBySearchPriority() {
     .compact()
     .value();
 
+  var productBundleIdIntoPvInWeekHash = await GoogleAnalyticsAPI.getProductBundleIdIntoPvInWeekHash();
+
   // calc priority for already existing products
   _.each(latestTweetCountLogRows, row => {
-    var priority = calcPriority(row.tweet_count, row.created_at);
-    productBundleIdToPriorityHash[row.product_bundle_id] = priority;
+    var productBundleId = row.product_bundle_id;
+    var pvNum = productBundleIdIntoPvInWeekHash[productBundleId];
+
+    var priority = calcPriority(row.tweet_count, pvNum, row.created_at);
+    productBundleIdToPriorityHash[productBundleId] = priority;
   });
 
   // set highest priority for new products
