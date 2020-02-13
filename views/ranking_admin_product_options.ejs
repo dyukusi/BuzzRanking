@@ -15,6 +15,7 @@ productModels = __.sortBy(productModels, m => {
 }).reverse();
 var childCandidateProductModels = debugData.productBundleIdIntoChildCandidateProductModels[productBundleId];
 var productBundleIdIntoParentProductDataHash = debugData.productBundleIdIntoParentProductDataHash;
+var productBundleIdIntoPvHash = debugData.productBundleIdIntoPvHash;
 %>
 <div class="row">
     <div class="col-12">
@@ -35,6 +36,7 @@ var productBundleIdIntoParentProductDataHash = debugData.productBundleIdIntoPare
         <div class="row">
             <div class="col-12">
                 ・ProductBundleId: <%= productBundleModel.id %>
+                ・PV数: <%= productBundleIdIntoPvHash[productBundleModel.id] %>
             </div>
         </div>
 

@@ -64,17 +64,13 @@ const ProductUtil = require(appRoot + '/lib/product_util.js');
 
     <div class="row">
         <div class="col-12">
-            <a href="/admin/protected_bundles_having_candidate_child_products">
-                所属候補Productがある保護されているProductBundle一覧
-            </a>
+            所属候補Productがある保護されているProductBundle一覧(bin/for_dev/product_search/protected_bundles_having_belong_candidate_products.js)
         </div>
     </div>
 
     <div class="row">
         <div class="col-12">
-            <a href="/admin/ranked_bundles_without_protected">
-                総合ランキングで保護されていないProductBundle一覧
-            </a>
+            総合ランキングで保護されていないProductBundle一覧(bin/for_dev/product_search/ranked_bundles_without_protected.js
         </div>
     </div>
 
@@ -82,6 +78,14 @@ const ProductUtil = require(appRoot + '/lib/product_util.js');
         <div class="col-12">
             <a href="/admin/sort_by_child_product_num">
                 保護されていない子Product数が多い順ProductBundle一覧
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <a href="/admin/not_protected_in_pv_order">
+                保護されていないPV数順のProductBundle一覧
             </a>
         </div>
     </div>

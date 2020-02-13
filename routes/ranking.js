@@ -8,6 +8,7 @@ const CONST = require(appRoot + '/lib/const.js');
 const CacheKeyGenerator = require(appRoot + '/lib/cache_key_generator.js');
 const CacheUtil = require(appRoot + '/lib/cache_util.js');
 const ProductUtil = require(appRoot + '/lib/product_util.js');
+const GoogleAnalyticsAPI = require(appRoot + '/lib/google_analytics_api.js');
 
 const ProductBundle = require(appRoot + '/models/product_bundle');
 const ReleaseControl = require(appRoot + '/models/release_control.js');
@@ -226,10 +227,13 @@ async function createDataForDebug(productBundleIds) {
     });
   }
 
+  var productBundleIdIntoPvHash = await GoogleAnalyticsAPI.getProductBundleIdIntoPvInWeekHash();
+
   return {
     productBundleIdIntoTwitterAltSearchWordModelsHash,
     productBundleIdIntoChildCandidateProductModels,
     productBundleIdIntoParentProductDataHash,
+    productBundleIdIntoPvHash,
   };
 }
 

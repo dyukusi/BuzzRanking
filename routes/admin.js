@@ -18,6 +18,7 @@ const CacheUtil = require(appRoot + '/lib/cache_util.js');
 const ProductBundle = require(appRoot + '/models/product_bundle');
 const Ranking = require(appRoot + '/models/ranking.js');
 const ReleaseControl = require(appRoot + '/models/release_control.js');
+const GoogleAnalyticsAPI = require(appRoot + '/lib/google_analytics_api.js');
 
 function isAdmin(req, res, next) {
   var email = req.user ? req.user.email : null;
@@ -165,7 +166,34 @@ router.post('/raw_select_sql_for_product', isAdmin, async function (req, res, ne
   });
 });
 
+router.get('/not_protected_in_pv_order', isAdmin, async function (req, res, next) {
+  var productBundleIdIntoPvHash = await GoogleAnalyticsAPI.getProductBundleIdIntoPvInWeekHash();
+  var productBundleIds = __.keys(productBundleIdIntoPvHash);
 
+  var productBundleModels = await ProductBundle.findAll({
+    where: {
+      id: productBundleIds,
+    },
+  });
+
+  var targetProductBundleModels = __.filter(productBundleModels, m => {
+    return !m.isProtected();
+  });
+
+  var targetProductBundleIds = __.chain(targetProductBundleModels)
+    .sortBy(m => {
+      var pv = productBundleIdIntoPvHash[m.id];
+      return -1 * pv; // DESC
+    })
+    .map(m => {
+      return m.id;
+    })
+    .value();
+
+  console.log(targetProductBundleIds.length + " bundles were detected");
+
+  return res.redirect('/?category=all&debug_product_bundle_ids=' + targetProductBundleIds.join(','));
+});
 
 router.get('/select_by_validity_status', isAdmin, async function (req, res, next) {
   var qs = req.query;
@@ -228,76 +256,75 @@ router.get('/select_by_product_table_name', isAdmin, async function (req, res, n
   return res.redirect('/?category=all&debug_product_bundle_ids=' + targetProductBundleIds.join(','));
 });
 
+// router.get('/protected_bundles_having_candidate_child_products', isAdmin, async function (req, res, next) {
+//   var qs = req.query;
+//   var productBundleModels = await ProductBundle.findAll({
+//     where: {
+//       validityStatus: CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.PROTECTED,
+//     }
+//   });
+//
+//   var targetProductBundleIds = [];
+//   for (var i = 0; i < productBundleModels.length; i++) {
+//     var productBundleModel = productBundleModels[i];
+//     var productModels = await ProductUtil.selectProductModels({
+//       title: {
+//         [Op.like]: '%' + productBundleModel.name + '%',
+//       },
+//       productBundleId: {
+//         [Op.or]: [
+//           {
+//             [Op.ne]: productBundleModel.id,
+//           },
+//           {
+//             [Op.eq]: null,
+//           }
+//         ],
+//       },
+//     });
+//
+//     if (productModels.length) {
+//       targetProductBundleIds.push(productBundleModel.id);
+//     }
+//   }
+//
+//   console.log(targetProductBundleIds.length + " bundles were detected");
+//
+//   return res.redirect('/?category=all&debug_product_bundle_ids=' + targetProductBundleIds.join(','));
+// });
 
-router.get('/protected_bundles_having_candidate_child_products', isAdmin, async function (req, res, next) {
-  var qs = req.query;
-  var productBundleModels = await ProductBundle.findAll({
-    where: {
-      validityStatus: CONST.VALIDITY_STATUS_NAME_TO_ID_HASH.PROTECTED,
-    }
-  });
-
-  var targetProductBundleIds = [];
-  for (var i = 0; i < productBundleModels.length; i++) {
-    var productBundleModel = productBundleModels[i];
-    var productModels = await ProductUtil.selectProductModels({
-      title: {
-        [Op.like]: '%' + productBundleModel.name + '%',
-      },
-      productBundleId: {
-        [Op.or]: [
-          {
-            [Op.ne]: productBundleModel.id,
-          },
-          {
-            [Op.eq]: null,
-          }
-        ],
-      },
-    });
-
-    if (productModels.length) {
-      targetProductBundleIds.push(productBundleModel.id);
-    }
-  }
-
-  console.log(targetProductBundleIds.length + " bundles were detected");
-
-  return res.redirect('/?category=all&debug_product_bundle_ids=' + targetProductBundleIds.join(','));
-});
-
-router.get('/ranked_bundles_without_protected', isAdmin, async function (req, res, next) {
-  var qs = req.query;
-  var latestReleaseControlModel = await ReleaseControl.selectLatest();
-  var targetDateStr = latestReleaseControlModel.getMoment().format('YYYY-MM-DD');
-  var rankingModels = __.chain(await Ranking.findAll({
-    where: {
-      date: targetDateStr,
-      type: CONST.RANKING_TYPE_NAME_TO_ID_HASH.BUZZ,
-      productTypeBundleId: CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL,
-      productTypeId: CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL,
-    },
-  }))
-    .sortBy(rankingModel => {
-      return rankingModel.rank; // ASC
-    })
-    .value();
-
-  var productBundleIds = __.pluck(rankingModels, 'productBundleId');
-
-  var targetProductBundleIds = [];
-  for (var i = 0; i < productBundleIds.length; i++) {
-    var productBundleId = productBundleIds[i];
-    var productData = await ProductUtil.loadProductDataByProductBundleId(productBundleId);
-    if (!productData.productBundleModel.isProtected()) {
-      targetProductBundleIds.push(productBundleId);
-    }
-  }
-
-  console.log(targetProductBundleIds.length + " bundles were detected");
-
-  return res.redirect('/?category=all&debug_product_bundle_ids=' + targetProductBundleIds.join(','));
-});
+// router.get('/ranked_bundles_without_protected', isAdmin, async function (req, res, next) {
+//   var qs = req.query;
+//   var latestReleaseControlModel = await ReleaseControl.selectLatest();
+//   var targetDateStr = latestReleaseControlModel.getMoment().format('YYYY-MM-DD');
+//   var rankingModels = __.chain(await Ranking.findAll({
+//     where: {
+//       date: targetDateStr,
+//       type: CONST.RANKING_TYPE_NAME_TO_ID_HASH.BUZZ,
+//       productTypeBundleId: CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH.ALL,
+//       productTypeId: CONST.PRODUCT_TYPE_NAME_TO_ID_HASH.ALL,
+//     },
+//   }))
+//     .sortBy(rankingModel => {
+//       return rankingModel.rank; // ASC
+//     })
+//     .value();
+//
+//   var productBundleIds = __.pluck(rankingModels, 'productBundleId');
+//
+//   var targetProductBundleIds = [];
+//   for (var i = 0; i < productBundleIds.length; i++) {
+//     var productBundleId = productBundleIds[i];
+//     var productData = await ProductUtil.loadProductDataByProductBundleId(productBundleId);
+//     if (!productData.productBundleModel.isProtected()) {
+//       targetProductBundleIds.push(productBundleId);
+//     }
+//   }
+//
+//   console.log(targetProductBundleIds.length + " bundles were detected");
+//
+//   return res.redirect('/?category=all&debug_product_bundle_ids=' + targetProductBundleIds.join(','));
+// });
 
 router.get('/sort_by_child_product_num', isAdmin, async function (req, res, next) {
   var qs = req.query;
