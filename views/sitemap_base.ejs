@@ -6,7 +6,8 @@ const UrlGenerator = require(appRoot + '/lib/url_generator.js');
 const Moment = require('moment');
 
 // arguments
-var productBundleIdAndLastUpdatedAtRows;
+var targetProductBundleIds;
+var productBundleIdIntoLastUpdatedAtHash;
 var rankingLastUpdatedAtDateStr;
 %>
 
@@ -15,7 +16,7 @@ var rankingLastUpdatedAtDateStr;
     <!-- 各ランキングトップページ -->
     <%
     var rankingLastModStr = new Moment(rankingLastUpdatedAtDateStr).format('YYYY-MM-DD');
-    __.each(__.keys(CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH), (productTypeBundleId, bundleName) => {
+    __.each(CONST.PRODUCT_TYPE_BUNDLE_NAME_TO_ID_HASH, (productTypeBundleId, bundleName) => {
     %>
         <url>
             <loc><%= UrlGenerator.generateRankingPageURL({ productTypeBundleId: productTypeBundleId, }) %></loc>
@@ -36,10 +37,14 @@ var rankingLastUpdatedAtDateStr;
     </url>
 
     <!-- 商品個別詳細ページ -->
-    <% __.each(productBundleIdAndLastUpdatedAtRows, row => { %>
+    <%
+    __.each(targetProductBundleIds, productBundleId => {
+        var lastUpdatedAtStr = productBundleIdIntoLastUpdatedAtHash[productBundleId];
+        var lastUpdatedAtMoment = lastUpdatedAtStr ? new Moment(lastUpdatedAtStr) : new Moment('2020-02-11');
+    %>
         <url>
-            <loc><%= UrlGenerator.generateProductBundleDetailPageURL(row.productBundleId) %></loc>
-            <lastmod><%= new Moment(row.lastUpdatedAt).format('YYYY-MM-DD') %></lastmod>
+            <loc><%= UrlGenerator.generateProductBundleDetailPageURL(productBundleId) %></loc>
+            <lastmod><%= lastUpdatedAtMoment.format('YYYY-MM-DD') %></lastmod>
         </url>
     <% }); %>
 </urlset>
