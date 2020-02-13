@@ -19,7 +19,7 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
 // admin settings
-const ENABLE_HTML_CACHE = false;
+const ENABLE_HTML_CACHE = true;
 
 router.get('/', async function (req, res, next) {
   var isAdmin = Util.isAdminByReq(req);
