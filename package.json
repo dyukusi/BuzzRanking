@@ -81,7 +81,7 @@
     "twitter": "^1.7.1",
     "ua-parser-js": "^0.7.20",
     "uglify-es": "^3.3.9",
-    "underscore": "^1.9.1",
+    "underscore": "^1.12.1",
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
