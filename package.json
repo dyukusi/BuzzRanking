@@ -36,7 +36,7 @@
     "fast-levenshtein": "^2.0.6",
     "google-closure-compiler": "^20200112.0.0",
     "googleapis": "^47.0.0",
-    "grunt": "^1.0.4",
+    "grunt": "^1.5.3",
     "grunt-browserify": "^5.3.0",
     "grunt-contrib-cssmin": "^3.0.0",
     "grunt-contrib-sass": "^1.0.0",
