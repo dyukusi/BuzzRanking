@@ -28,7 +28,7 @@
     "ejs": "^2.6.2",
     "ejs-lint": "^0.3.0",
     "encoding-japanese": "^1.0.30",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "express-cluster": "0.0.5",
     "express-generator": "^4.16.1",
     "express-http-to-https": "^1.1.4",
